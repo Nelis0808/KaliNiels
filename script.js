@@ -1,15 +1,3 @@
-// ===================================
-// FunSite JavaScript
-// ===================================
-
-// Mobile Menu
-const menuBtn = document.getElementById("menuBtn");
-const nav     = document.getElementById("navLinks");
-
-menuBtn.addEventListener("click", () => {
-    nav.classList.toggle("show");
-});
-
 // =============================
 // Dark Mode
 // =============================

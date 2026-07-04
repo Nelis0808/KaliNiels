@@ -44,7 +44,9 @@
 
                     // 3. trigger animation delay
                     requestAnimationFrame(() => {
-                        card.classList.add("show");
+                        requestAnimationFrame(() => {
+                            card.classList.add("show");
+                        });
                     });
 
                 } catch (err) {
@@ -72,13 +74,14 @@
             align-items: center;
         }
 
-        .results {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-            width: min(90%, var(--container));
-            margin-inline: auto;
-        }
+    .results {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        width: min(90%, var(--container));
+        margin-inline: auto;
+        height: 160px;
+    }
 
         /* each result box */
         .result-box {
@@ -99,6 +102,7 @@
             opacity: 1;
             transform: translateY(0) scale(1);
             filter: blur(0);
+            width: 750px;
         }
     </style>
 </head>
@@ -120,8 +124,10 @@
     
     <!-- Results -->
     <div class="results" style="padding-bottom: 4rem;">
-        <div id="resultBinnen" class="result-box left"  style="transform: translateX(calc(var(--move-amount-btn) - 75px));"></div>
-        <div id="resultBuiten" class="result-box right" style="transform: translateX(calc(var(--move-amount-btn) - 130px));"></div>
+        <div id="resultBinnen" class="result-box left"
+            style="transform: translateX(calc(var(--move-amount-btn) - 75px));"></div>
+        <div id="resultBuiten" class="result-box right"
+            style="transform: translateX(calc(var(--move-amount-btn) - 130px));"></div>
     </div>
 
     <!-- Homepage -->
