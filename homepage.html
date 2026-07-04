@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Website</title>
+
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .card-no-hover:hover { transform: translateY(0px) }
+    </style>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">❤️</text></svg>'>
+    <script src="script.js" defer></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const startDate = new Date("2021-07-12");
+            const today = new Date();
+
+            const diffInMs = today - startDate;
+            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+            document.getElementById("daysTogether").textContent = diffInDays;
+        });
+    </script>
+    
+</head>
+<body>
+    <!-- Selection of pages -->
+    <section id="page-guide" class="container">
+        <h1 style="text-align: center;">Samen voor <span id="daysTogether"></span> dagen ❤️</h1>
+        <h2 style="text-align: center;">Klik om naar de specifieke pagina te gaan!</h2>
+
+        <div class="cards-grid">
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <a href="date.html" class="card" style="border: 2px solid darkblue;">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5uyvog8_HMfTln40kPRCdBf1mhfluPCIGWxbD1kPkGw&s=10" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Date Ideeën</b></h4>
+                    <p>Wat gaan we doen vandaag?</p>
+                </div>
+            </a>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+            <div class="card card-no-hover" style="cursor: not-allowed;">
+                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Komt ooit!</b></h4>
+                    <p>Hoop ik...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

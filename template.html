@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Website</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <header class="navbar">
+        <div class="container nav">
+            <div class="logo">FunSite</div>
+
+            <button id="menuBtn">☰</button>
+
+            <nav id="navLinks">
+                <a href="#hero">Home</a>
+                <a href="#features">Features</a>
+                <a href="#gallery">Gallery</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+            </nav>
+
+            <button id="themeToggle">🌙</button>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section id="hero" class="hero">
+        <div class="container">
+            <h1>Build Something Amazing</h1>
+            <p>Modern, responsive and fun websites.</p>
+
+            <a href="#features" class="btn btn-primary">
+                Get Started
+            </a>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats container">
+        <div class="counter">
+            <h2 data-target="5000">0</h2>
+            <p>Users</p>
+        </div>
+
+        <div class="counter">
+            <h2 data-target="250">0</h2>
+            <p>Projects</p>
+        </div>
+
+        <div class="counter">
+            <h2 data-target="99">0</h2>
+            <p>Satisfaction</p>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="container">
+        <h2>Features</h2>
+
+        <div class="card-hor fade-up">
+            Fast
+        </div>
+
+        <div class="card-hor fade-up">
+            Responsive
+        </div>
+
+        <div class="card-hor fade-up">
+            Secure
+        </div>
+    </section>
+
+    <!-- Cards -->
+    <section id="card-section" class="container">
+        <h2>Cards</h2>
+            
+        <div class="cards-grid">
+            <div class="card">
+                <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Person 1</b></h4>
+                    <p>This support multi line comment for and centering of the images! </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="https://www.w3schools.com/howto/img_avatar2.png" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Person 2</b></h4>
+                    <p>Information about the person!</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Person 2</b></h4>
+                    <p>Information about the person!</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="https://www.w3schools.com/howto/img_avatar2.png" alt="Avatar" class="card-img">
+                <div>
+                    <h4><b>Person 2</b></h4>
+                    <p>Information about the person!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery" class="container">
+        <h2>Gallery</h2>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="container">
+        <h2>Pricing</h2>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="container">
+        <h2>Contact</h2>
+
+        <form>
+            <input type="text" placeholder="Name">
+
+            <input type="email" placeholder="Email">
+
+            <textarea placeholder="Message"></textarea>
+
+            <button class="btn btn-primary">
+                Send
+            </button>
+        </form>
+    </section>
+
+    <footer>
+        <div class="container">
+            © 2026 Template site
+        </div>
+    </footer>
+
+    <button id="backToTop">↑</button>
+
+</body>
+</html>
