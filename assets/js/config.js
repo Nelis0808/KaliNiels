@@ -12,7 +12,7 @@
 
 export const siteConfig = {
   // Shown in the logo / footer / <title> tags.
-  siteName: 'OnzeSite',
+  siteName: 'MySite',
 
   // Used by the "days together" counter on the home page.
   // Format: YYYY-MM-DD.
