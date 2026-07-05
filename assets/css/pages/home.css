@@ -1,0 +1,29 @@
+/* =============================================================
+   PAGE: HOME (index.html)
+   Only rules unique to the home hub live here. Everything reusable
+   (cards, buttons, layout) already comes from assets/css/main.css.
+   ============================================================= */
+
+#page-guide {
+  padding-top: var(--space-8);
+}
+
+#page-guide h1 {
+  font-size: var(--fs-h2);
+}
+
+/* Gentle heartbeat on the emoji in the "days together" heading —
+   subtle signature touch, respects prefers-reduced-motion globally
+   via the rule in base/reset.css. */
+.heart-beat {
+  display: inline-block;
+  animation: heartbeat 1.8s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15%      { transform: scale(1.18); }
+  30%      { transform: scale(1); }
+  45%      { transform: scale(1.12); }
+  60%      { transform: scale(1); }
+}

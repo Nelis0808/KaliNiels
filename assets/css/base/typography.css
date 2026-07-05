@@ -1,0 +1,50 @@
+/* =============================================================
+   TYPOGRAPHY
+   ============================================================= */
+
+body {
+  font-size: var(--fs-base);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--color-text);
+  text-wrap: balance; /* keeps headings from wrapping into a lonely last word */
+}
+
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+h4 { font-size: var(--fs-lg); }
+
+p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+  max-width: 65ch; /* comfortable reading line-length */
+}
+
+small { font-size: var(--fs-sm); }
+
+.logo {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Screen-reader-only text: visually hidden but still announced.
+   Use for context that sighted users don't need but assistive
+   tech users do (e.g. "(opens in new tab)"). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

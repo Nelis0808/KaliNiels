@@ -1,0 +1,105 @@
+/* =============================================================
+   BUTTONS
+   ============================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px; /* comfortable touch target on mobile */
+  padding: 14px 28px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-family: var(--font-body);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: radial-gradient(circle at center, var(--color-tertiary) 0%, var(--color-primary) 150%);
+  color: var(--color-white);
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  transform: scale(1.025);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-outline {
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-outline:hover,
+.btn-outline:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Modifier for a bigger, more prominent call-to-action button
+   (used instead of an inline style="font-size:...") */
+.btn-lg {
+  font-size: 1.25rem;
+  padding: 18px 36px;
+}
+
+:root[data-theme='dark'] .btn-outline {
+  border-color: var(--color-white);
+  color: var(--color-white);
+}
+
+:root[data-theme='dark'] .btn-outline:hover {
+  background: var(--color-white);
+  color: var(--color-dark);
+}
+
+/* == BACK TO TOP ==
+   Floating button, hidden until the user scrolls down (see
+   assets/js/modules/navbar.js for the show/hide + click logic).
+   NOTE: this component existed as an id in the original markup
+   but had no styling at all — it's fully implemented here. */
+#backToTop {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: var(--z-back-to-top);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow);
+  font-size: 1.2rem;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+#backToTop.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+#backToTop:hover,
+#backToTop:focus-visible {
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 480px) {
+  /* Full-width buttons are easier to tap accurately on small phones,
+     but only for buttons that are meant to stand alone in a form/CTA
+     stack — opt in with .btn-block rather than making this global,
+     since some layouts (e.g. two hero buttons side by side) should
+     NOT stretch to 100% width. */
+  .btn-block {
+    width: 100%;
+  }
+}

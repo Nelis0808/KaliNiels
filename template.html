@@ -1,160 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  ==============================================================
+  PAGE TEMPLATE — starter file for every new page you build.
+  ==============================================================
+  This file is not linked from the navigation; it exists purely
+  as a copy-paste starting point.
+
+  TO CREATE A NEW PAGE:
+    1. Copy this file: cp template.html your-new-page.html
+    2. Update <title>, the meta description, and the <h1>/content.
+    3. Add a matching stylesheet at assets/css/pages/your-new-page.css
+       (copy assets/css/pages/page-template.css as a starting point)
+       and link it after main.css below.
+    4. Add a nav link to it in the header of EVERY page (including
+       this one) — the header markup is intentionally duplicated
+       plain HTML rather than templated, see README "Adding a new
+       page" for why.
+    5. Add an entry to `pages` in assets/js/config.js so it shows
+       up as a card on the home page.
+    6. Delete any of the demo sections below (stats, gallery,
+       pricing, contact) you don't need — they're only here to
+       show what's available out of the box.
+  ==============================================================
+-->
+<html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Website</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Beschrijf hier kort waar deze pagina over gaat.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
-    <link rel="stylesheet" href="style.css">
+  <title>Paginanaam | OnzeSite</title>
 
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 
-    <script src="script.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/page-template.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
 
-    <!-- Navigation -->
-    <header class="navbar">
-        <div class="container nav">
-            <div class="logo">FunSite</div>
+  <header class="navbar">
+    <div class="container nav">
+      <div class="logo">OnzeSite</div>
 
-            <button id="menuBtn">☰</button>
+      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
 
-            <nav id="navLinks">
-                <a href="#hero">Home</a>
-                <a href="#features">Features</a>
-                <a href="#gallery">Gallery</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#contact">Contact</a>
-            </nav>
+      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
+        <a href="index.html">Home</a>
+        <a href="date.html">Date Ideeën</a>
+        <a href="tournament.html">Toernooi</a>
+        <!-- <a href="your-new-page.html">Nieuwe Pagina</a> -->
+      </nav>
 
-            <button id="themeToggle">🌙</button>
-        </div>
-    </header>
+      <div class="nav-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+      </div>
+    </div>
+  </header>
 
-    <!-- Hero -->
+  <main id="main">
+    <!-- HERO: big intro band. Delete the <p> or button if not needed. -->
     <section id="hero" class="hero">
-        <div class="container">
-            <h1>Build Something Amazing</h1>
-            <p>Modern, responsive and fun websites.</p>
-
-            <a href="#features" class="btn btn-primary">
-                Get Started
-            </a>
-        </div>
+      <div class="container">
+        <h1>Build Something Amazing</h1>
+        <p>Vervang deze tekst door je eigen introductie.</p>
+        <a href="#features" class="btn btn-primary">Get Started</a>
+      </div>
     </section>
 
-    <!-- Stats -->
-    <section class="stats container">
-        <div class="counter">
-            <h2 data-target="5000">0</h2>
-            <p>Users</p>
+    <!-- STATS: animated counters. Give each h2 a data-target number;
+         assets/js/modules/counters.js counts up to it once it scrolls
+         into view. Delete the whole section if you don't need it. -->
+    <section id="stats" class="container">
+      <div class="stats">
+        <div class="counter fade-up">
+          <h2 data-target="128">0</h2>
+          <p>Voorbeeld statistiek</p>
         </div>
-
-        <div class="counter">
-            <h2 data-target="250">0</h2>
-            <p>Projects</p>
+        <div class="counter fade-up">
+          <h2 data-target="42">0</h2>
+          <p>Nog een statistiek</p>
         </div>
-
-        <div class="counter">
-            <h2 data-target="99">0</h2>
-            <p>Satisfaction</p>
+        <div class="counter fade-up">
+          <h2 data-target="7">0</h2>
+          <p>En nog een</p>
         </div>
+      </div>
     </section>
 
-    <!-- Features -->
+    <!-- FEATURES: simple horizontal feature cards -->
     <section id="features" class="container">
+      <div class="section-title">
         <h2>Features</h2>
-
+        <p>Korte uitleg van wat deze sectie laat zien.</p>
+      </div>
+      <div class="grid grid-3">
         <div class="card-hor fade-up">
-            Fast
+          <h3>Snel</h3>
+          <p>Geen build-stap nodig — open gewoon de HTML-bestanden.</p>
         </div>
-
         <div class="card-hor fade-up">
-            Responsive
+          <h3>Responsive</h3>
+          <p>Werkt op telefoon, tablet en laptop zonder extra werk.</p>
         </div>
-
         <div class="card-hor fade-up">
-            Secure
+          <h3>Uitbreidbaar</h3>
+          <p>Nieuwe pagina's en features volgen dit zelfde patroon.</p>
         </div>
+      </div>
     </section>
 
-    <!-- Cards -->
+    <!-- CARD GRID: reuses the same responsive grid as the home hub -->
     <section id="card-section" class="container">
-        <h2>Cards</h2>
-            
-        <div class="cards-grid">
-            <div class="card">
-                <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Person 1</b></h4>
-                    <p>This support multi line comment for and centering of the images! </p>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="https://www.w3schools.com/howto/img_avatar2.png" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Person 2</b></h4>
-                    <p>Information about the person!</p>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="https://www.w3schools.com/howto/img_avatar.png" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Person 2</b></h4>
-                    <p>Information about the person!</p>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="https://www.w3schools.com/howto/img_avatar2.png" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Person 2</b></h4>
-                    <p>Information about the person!</p>
-                </div>
-            </div>
+      <div class="section-title">
+        <h2>Voorbeeld kaarten</h2>
+      </div>
+      <div class="cards-grid">
+        <div class="card fade-up">
+          <div class="card-icon" aria-hidden="true">🌟</div>
+          <h4>Kaart één</h4>
+          <p>Korte beschrijving.</p>
         </div>
+        <div class="card fade-up">
+          <div class="card-icon" aria-hidden="true">🌟</div>
+          <h4>Kaart twee</h4>
+          <p>Korte beschrijving.</p>
+        </div>
+        <div class="card fade-up">
+          <div class="card-icon" aria-hidden="true">🌟</div>
+          <h4>Kaart drie</h4>
+          <p>Korte beschrijving.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- Gallery -->
+    <!-- GALLERY: placeholder "empty state" — replace with real <img>s later -->
     <section id="gallery" class="container">
-        <h2>Gallery</h2>
+      <div class="section-title">
+        <h2>Galerij</h2>
+      </div>
+      <div class="empty-state">Nog geen foto's toegevoegd.</div>
     </section>
 
-    <!-- Pricing -->
+    <!-- PRICING: another empty-state example -->
     <section id="pricing" class="container">
+      <div class="section-title">
         <h2>Pricing</h2>
+      </div>
+      <div class="empty-state">Nog geen inhoud toegevoegd.</div>
     </section>
 
-    <!-- Contact -->
-    <section id="contact" class="container">
+    <!-- CONTACT FORM: front-end only — hook up a real submit handler
+         or a form-backend (e.g. Formspree) before relying on this. -->
+    <section id="contact" class="container-narrow">
+      <div class="section-title">
         <h2>Contact</h2>
-
-        <form>
-            <input type="text" placeholder="Name">
-
-            <input type="email" placeholder="Email">
-
-            <textarea placeholder="Message"></textarea>
-
-            <button class="btn btn-primary">
-                Send
-            </button>
-        </form>
+      </div>
+      <form>
+        <input type="text" name="name" placeholder="Naam" required>
+        <input type="email" name="email" placeholder="E-mailadres" required>
+        <textarea name="message" placeholder="Bericht" required></textarea>
+        <button type="submit" class="btn btn-primary">Versturen</button>
+      </form>
     </section>
+  </main>
 
-    <footer>
-        <div class="container">
-            © 2026 Template site
-        </div>
-    </footer>
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> OnzeSite</p>
+    </div>
+  </footer>
 
-    <button id="backToTop">↑</button>
+  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
 
+  <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>

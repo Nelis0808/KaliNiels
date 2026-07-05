@@ -1,0 +1,23 @@
+/* =============================================================
+   PAGE: template.html
+   -------------------------------------------------------------
+   This file is intentionally almost empty — template.html is
+   built entirely from shared components (navbar, hero, stats,
+   cards, forms, footer) that already live in main.css.
+
+   This file exists anyway to demonstrate the pattern you should
+   follow for every NEW page you create:
+
+     1. Copy template.html -> your-new-page.html
+     2. Copy this file -> assets/css/pages/your-new-page.css
+     3. Link BOTH stylesheets in your new page's <head>, main.css
+        first so your page file can override it:
+
+          <link rel="stylesheet" href="assets/css/main.css">
+          <link rel="stylesheet" href="assets/css/pages/your-new-page.css">
+
+     4. Only put rules here that are truly unique to this one
+        page. If you catch yourself writing the same rule on two
+        different pages, promote it into a component file instead
+        (assets/css/components/) so both pages share it.
+   ============================================================= */

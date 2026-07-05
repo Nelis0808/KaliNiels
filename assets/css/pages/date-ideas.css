@@ -1,0 +1,76 @@
+/* =============================================================
+   PAGE: DATE IDEAS (date.html)
+   -------------------------------------------------------------
+   ORIGINAL BUG this file fixes: the two hero buttons and their
+   matching result boxes were positioned with hand-tuned fixed
+   pixel `transform: translateX(225px)` offsets. That only looked
+   right at one specific viewport width — on a phone the buttons
+   were shoved off-screen. Rebuilt below using flexbox spacing
+   (which naturally adapts to any screen) plus a purely decorative
+   entrance animation, so the "buttons fly apart" feel is kept
+   without hard-coding any pixel value.
+   ============================================================= */
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+/* Decorative "arrive from the middle" entrance. Purely cosmetic —
+   layout doesn't depend on it, so reduced-motion users (handled
+   globally in base/reset.css) simply see the buttons appear in place. */
+.hero-buttons .btn {
+  animation: btn-arrive 0.6s ease both;
+}
+
+#btnBuiten { animation-delay: 0.1s; }
+
+@keyframes btn-arrive {
+  from { opacity: 0; transform: translateY(12px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* == RESULT AREA == */
+.results {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  width: min(90%, var(--container));
+  margin-inline: auto;
+  padding-block: var(--space-6) var(--space-8);
+}
+
+.result-box {
+  flex: 1 1 320px;
+  max-width: 420px;
+  min-height: 120px; /* reserves space so the page doesn't jump when a card appears */
+  display: flex;
+  justify-content: center;
+}
+
+.idea-card {
+  width: 100%;
+  text-align: center;
+}
+
+/* Live region announcement for screen-reader users — see the
+   aria-live attribute set on #resultBinnen/#resultBuiten in the
+   HTML, and assets/js/modules/date-picker.js for how it's filled. */
+.result-box[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-buttons .btn {
+    width: 100%;
+  }
+}

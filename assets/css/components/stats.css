@@ -1,0 +1,31 @@
+/* =============================================================
+   STATS / ANIMATED COUNTERS
+   Pairs with assets/js/modules/counters.js, which counts each
+   [data-target] number up from 0 the first time it scrolls into
+   view. NOTE: this component was referenced by the original
+   template markup but had no CSS at all — implemented here.
+   ============================================================= */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  text-align: center;
+}
+
+.counter h2 {
+  font-size: var(--fs-h2);
+  color: var(--color-primary);
+}
+
+.counter p {
+  color: var(--color-text-muted);
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .stats {
+    grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+}

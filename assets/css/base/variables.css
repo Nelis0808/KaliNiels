@@ -1,0 +1,145 @@
+/* =============================================================
+   DESIGN TOKENS
+   -------------------------------------------------------------
+   Every color, spacing value, radius, shadow, etc. used anywhere
+   on the site is defined ONCE here as a CSS custom property.
+
+   Why this matters for you:
+   - Want to rebrand the whole site? Change the values in this
+     file and every page/component updates automatically.
+   - Never hard-code a color/spacing value in a component file.
+     Always reference a token (var(--...)) instead, and add a new
+     token here if you need one that doesn't exist yet.
+   ============================================================= */
+
+:root {
+  /* ---------------------------------------------------------
+     COLOR PALETTE — light theme (default)
+     Original design used CSS named colors (e.g. "mediumslateblue").
+     Kept the exact same palette, just expressed as hex so the
+     values are precise, easy to diff, and easy to run through
+     a contrast checker or design tool.
+     --------------------------------------------------------- */
+  --color-primary:        #7B68EE; /* mediumslateblue */
+  --color-secondary:      #6495ED; /* cornflowerblue  */
+  --color-tertiary:       #00BFFF; /* deepskyblue     */
+  --color-primary-dark:   #000080; /* navy            */
+  --color-secondary-dark: #4169E1; /* royalblue       */
+  --color-tertiary-dark:  #5F9EA0; /* cadetblue       */
+  --color-accent:         #FF69B4; /* hotpink         */
+
+  --color-success: #32CD32; /* limegreen */
+  --color-warning: #FFD700; /* gold      */
+  --color-danger:  #FF6347; /* tomato    */
+  --color-dark:    #191970; /* midnightblue */
+
+  /* Neutral / gray scale, light -> dark */
+  --gray-100: #FFFAFA; /* snow       */
+  --gray-200: #F5F5F5; /* whitesmoke */
+  --gray-300: #DCDCDC; /* gainsboro  */
+  --gray-400: #D3D3D3; /* lightgray  */
+  --gray-500: #A9A9A9; /* darkgray   */
+  --gray-600: #808080; /* gray       */
+  --gray-700: #708090; /* slategray  */
+  --gray-800: #696969; /* dimgray    */
+  --gray-900: #2F4F4F; /* darkslategray */
+
+  --color-white: #FFFFFF;
+
+  /* Semantic aliases — components should prefer these names over
+     raw color tokens above, so a theme swap only touches this block */
+  --color-bg:          var(--gray-200);
+  --color-surface:     var(--color-white);
+  --color-text:        var(--color-dark);
+  --color-text-muted:  var(--gray-800);
+  --color-border:      rgba(0, 0, 0, 0.08);
+
+  /* ---------------------------------------------------------
+     SPACING SCALE (rem based, respects the user's font-size)
+     Use these instead of one-off magic-number margins/paddings.
+     --------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  /* ---------------------------------------------------------
+     RADIUS / SHADOW / TRANSITION
+     --------------------------------------------------------- */
+  --radius-sm: 8px;
+  --radius:    16px;
+  --radius-lg: 24px;
+  --radius-xl: 40px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, .06);
+  --shadow:    0 10px 30px rgba(0, 0, 0, .10);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, .16);
+
+  --transition-fast: 0.15s ease;
+  --transition:       0.3s ease;
+  --transition-slow:  0.6s ease;
+
+  /* ---------------------------------------------------------
+     TYPOGRAPHY
+     --------------------------------------------------------- */
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  /* Fluid type scale — scales smoothly between mobile and desktop
+     instead of jumping at breakpoints. */
+  --fs-sm:   clamp(0.85rem, 0.8rem + 0.2vw, 0.95rem);
+  --fs-base: clamp(1rem,   0.95rem + 0.2vw, 1.05rem);
+  --fs-lg:   clamp(1.15rem, 1.05rem + 0.4vw, 1.35rem);
+  --fs-h3:   clamp(1.4rem, 1.2rem + 1vw, 1.8rem);
+  --fs-h2:   clamp(2rem,   1.5rem + 2vw,  3.2rem);
+  --fs-h1:   clamp(2.4rem, 1.8rem + 3vw,  4.6rem);
+
+  /* ---------------------------------------------------------
+     LAYOUT
+     --------------------------------------------------------- */
+  --container: 1200px;
+  --container-narrow: 720px;
+
+  /* Reference only — CSS can't use custom properties inside
+     @media conditions, so these breakpoints are also hard-coded
+     wherever a media query needs them. Keep both in sync.
+       --bp-sm: 480px   (phones)
+       --bp-md: 768px   (tablets / nav collapse)
+       --bp-lg: 992px   (small laptops)
+       --bp-xl: 1200px  (desktop) */
+
+  /* ---------------------------------------------------------
+     Z-INDEX SCALE — avoid random z-index values; add a new
+     named layer here if you introduce e.g. a modal or toast.
+     --------------------------------------------------------- */
+  --z-navbar: 900;
+  --z-overlay: 950;
+  --z-back-to-top: 800;
+
+  color-scheme: light;
+}
+
+/* ---------------------------------------------------------
+   DARK THEME — overrides the semantic aliases only.
+   Toggled by setting data-theme="dark" on <html> (see theme.js).
+   Because components only ever reference the *semantic* tokens
+   (--color-bg, --color-text, ...), dark mode support for any new
+   component is usually just "use the right semantic token" —
+   no extra dark-mode CSS required. See dark-mode.css for the
+   handful of components that need bespoke treatment.
+   --------------------------------------------------------- */
+:root[data-theme='dark'] {
+  --color-bg:         #121212;
+  --color-surface:    var(--gray-900);
+  --color-text:       var(--color-white);
+  --color-text-muted: var(--gray-400);
+  --color-border:     rgba(255, 255, 255, 0.08);
+
+  color-scheme: dark;
+}

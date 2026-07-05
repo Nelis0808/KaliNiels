@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+# This site has no build step — we just hand the whole repo to
+# GitHub Pages as-is. To enable it:
+#   Repo Settings → Pages → Source → "GitHub Actions"
+# Then push to your default branch and check the "Actions" tab.
+
+on:
+  push:
+    branches: ["main"] # rename to "master" here if that's your default branch
+  workflow_dispatch:      # lets you also trigger a deploy manually from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

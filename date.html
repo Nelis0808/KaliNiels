@@ -1,143 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  DATE IDEAS PAGE
+  Picks a random idea from assets/data/date-ideas-indoor.json or
+  date-ideas-outdoor.json (see assets/js/modules/date-picker.js).
+  Add more ideas by editing those two JSON files — no code changes
+  needed. Add a third category by following the pattern documented
+  at the top of date-picker.js.
+-->
+<html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Website</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Kies een willekeurig date-idee, binnen of buiten.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
-    <link rel="stylesheet" href="style.css">
+  <title>Date Ideeën | OnzeSite</title>
 
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 
-    <script src="script.js" defer></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-            async function showRandomIdea(fileName, resultId) {
-                const container = document.getElementById(resultId);
-
-                // 1. Hide current card first (if exists)
-                container.innerHTML = `<div class="card">...</div>`;
-
-                try {
-                    const response = await fetch(fileName);
-                    const text = await response.text();
-
-                    const ideas = text
-                        .split("\n")
-                        .map(line => line.trim())
-                        .filter(line => line !== "");
-
-                    const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
-
-                    // 2. Set new content hidden first
-                    container.innerHTML = `
-                        <div class="card">
-                            <h3>${randomIdea}</h3>
-                        </div>
-                    `;
-
-                    const card = container.querySelector(".card");
-
-                    // 3. trigger animation delay
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            card.classList.add("show");
-                        });
-                    });
-
-                } catch (err) {
-                    container.textContent = "Kon de ideeën niet laden.";
-                    console.error(err);
-                }
-            }
-
-            document.getElementById("btnBinnen").addEventListener("click", () => {
-                showRandomIdea("dates-binnen.txt", "resultBinnen");
-            });
-
-            document.getElementById("btnBuiten").addEventListener("click", () => {
-                showRandomIdea("dates-buiten.txt", "resultBuiten");
-            });
-
-        });
-    </script>
-    <style>
-        @property --move-amount-btn { syntax: '<length>'; inherits: true; initial-value: 225px; }
-        
-        .hero-buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-    .results {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 2rem;
-        width: min(90%, var(--container));
-        margin-inline: auto;
-        height: 160px;
-    }
-
-        /* each result box */
-        .result-box {
-            width: 45%;
-            min-height: 120px; /* reserve space */
-        }
-
-        /* animation state */
-        .card {
-            opacity: 0;
-            transform: translateY(20px) scale(0.98);
-            filter: blur(6px);
-            transition: all 0.4s ease;
-        }
-
-        /* when visible */
-        .card.show {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-            width: 750px;
-        }
-    </style>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/date-ideas.css">
 </head>
 <body>
-    <!-- Hero -->
-    <section id="hero" class="hero" style="padding: 2rem 0;">
-        <div class="container">
-            <h1>Kies een leuke date activiteit</h1><br><br>
-            <div class="hero-buttons">
-                <button id="btnBinnen" class="btn btn-primary" style="border:none; transform: translateX(var(--move-amount-btn));">
-                    Binnen activiteit
-                </button>
-                <button id="btnBuiten" class="btn btn-primary" style="border:none; transform: translateX(calc(-1 * var(--move-amount-btn)));">
-                    Buiten activiteit
-                </button>
-            </div>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om ideeën te kunnen kiezen.
+    </p>
+  </noscript>
+
+  <header class="navbar">
+    <div class="container nav">
+      <div class="logo">OnzeSite</div>
+
+      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
+
+      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
+        <a href="index.html">Home</a>
+        <a href="date.html">Date Ideeën</a>
+        <a href="tournament.html">Toernooi</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>Kies een leuke date activiteit</h1>
+        <p>Geen zin om te kiezen? Laat het toeval beslissen.</p>
+
+        <div class="hero-buttons">
+          <button id="btnBinnen" class="btn btn-primary">Binnen activiteit</button>
+          <button id="btnBuiten" class="btn btn-primary">Buiten activiteit</button>
         </div>
+      </div>
     </section>
-    
-    <!-- Results -->
-    <div class="results" style="padding-bottom: 4rem;">
-        <div id="resultBinnen" class="result-box left"
-            style="transform: translateX(calc(var(--move-amount-btn) - 75px));"></div>
-        <div id="resultBuiten" class="result-box right"
-            style="transform: translateX(calc(var(--move-amount-btn) - 130px));"></div>
+
+    <!-- Filled by assets/js/modules/date-picker.js. aria-live so screen
+         reader users are told when a new idea appears, aria-busy while
+         the (cached-after-first-load) JSON is being fetched. -->
+    <div class="results">
+      <div id="resultBinnen" class="result-box" aria-live="polite" aria-busy="false"></div>
+      <div id="resultBuiten" class="result-box" aria-live="polite" aria-busy="false"></div>
     </div>
 
-    <!-- Homepage -->
-    <section id="to-index" class="container" style="display:flex; justify-content:center; align-items:center;">
-        <a href="index.html">
-            <button class="btn btn-primary" style="font-size: 1.5rem; border: none;">
-                Homepage
-            </button>
-        </a>
+    <section id="to-index" class="container flex-center">
+      <a href="index.html" class="btn btn-primary btn-lg">Homepage</a>
     </section>
+  </main>
 
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> OnzeSite</p>
+    </div>
+  </footer>
+
+  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
+
+  <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>

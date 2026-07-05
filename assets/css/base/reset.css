@@ -1,0 +1,78 @@
+/* =============================================================
+   RESET
+   A small, modern reset. Keeps native form/typography behaviour
+   mostly intact (unlike aggressive resets) so components don't
+   need to re-declare basic things like font inheritance.
+   ============================================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px; /* the "1rem" baseline every clamp()/rem value is relative to */
+  -webkit-text-size-adjust: 100%; /* prevent iOS Safari auto-zooming text */
+}
+
+body {
+  min-height: 100svh; /* small-viewport-height unit avoids the iOS/Android address-bar jump */
+  line-height: 1.7;
+  overflow-x: hidden; /* guards against any accidental horizontal scroll on mobile */
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  transition: background var(--transition), color var(--transition);
+}
+
+img, picture, svg, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Form elements should inherit typography instead of using the browser default UI font */
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* Respect the user's OS-level "reduce motion" preference site-wide.
+   Individual components don't need to think about this themselves. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Consistent, visible focus ring for keyboard users on every
+   interactive element — only shown for keyboard navigation
+   (":focus-visible"), so mouse clicks stay visually clean. */
+:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

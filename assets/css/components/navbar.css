@@ -1,0 +1,139 @@
+/* =============================================================
+   NAVBAR
+   Sticky header shared by every page. On desktop the links show
+   inline; below 768px they collapse behind a hamburger button
+   (wired up in assets/js/modules/navbar.js).
+   ============================================================= */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-navbar);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, .8);
+  border-bottom: 1px solid var(--color-border);
+  transition: box-shadow var(--transition);
+}
+
+:root[data-theme='dark'] .navbar {
+  background: rgba(18, 18, 18, .85);
+}
+
+.navbar.scrolled {
+  box-shadow: var(--shadow-sm);
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) 0;
+  gap: var(--space-4);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.nav-links a {
+  position: relative;
+  padding-block: var(--space-1);
+  transition: color var(--transition-fast);
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  color: var(--color-primary);
+}
+
+.nav-links a.active {
+  color: var(--color-primary);
+}
+
+/* animated underline on hover, purely decorative -> aria-hidden not needed */
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width var(--transition-fast);
+}
+
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after {
+  width: 100%;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Hamburger + theme toggle: icon-only buttons, always >=44px so
+   they stay comfortably tappable on touch screens. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  transition: background var(--transition-fast);
+}
+
+.icon-btn:hover {
+  background: var(--color-border);
+}
+
+/* Hamburger button is desktop-hidden; JS never needs to know
+   which breakpoint we're in, only whether .show is toggled. */
+#menuBtn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #menuBtn {
+    display: inline-flex;
+  }
+
+  .nav-links {
+    /* Collapsed dropdown panel, positioned right under the sticky header */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow);
+
+    /* Hidden by default via clip-path + max-height so it can animate
+       open/closed instead of an abrupt display:none jump */
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition);
+  }
+
+  .nav-links.show {
+    max-height: 60vh;
+  }
+
+  .nav-links a {
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .nav-links a::after {
+    display: none; /* underline animation doesn't make sense in a stacked menu */
+  }
+}

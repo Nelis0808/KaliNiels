@@ -1,0 +1,116 @@
+/* =============================================================
+   CARDS
+   ============================================================= */
+
+/* == CARDS GRID ==
+   Uses CSS Grid auto-fill/minmax instead of the original
+   flex-wrap layout. Benefit: it reflows to however many columns
+   fit at the current viewport width with NO media queries needed
+   — one rule that works from a small phone up to an ultra-wide
+   monitor. Adjust the 220px minimum below to make cards bigger
+   or smaller before they wrap to a new column. */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+/* A card that is intentionally not interactive (e.g. "coming soon"
+   placeholders on the home hub). Prefer this class + aria-disabled
+   over deleting :hover styles per-instance with inline styles. */
+.card-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.card-disabled:hover,
+.card-disabled:focus-visible {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: var(--space-4);
+}
+
+/* Emoji/icon placeholder used instead of the original hotlinked
+   third-party stock images (unreliable, slow, and not brand-fitting).
+   Swap the emoji for an <img> or inline SVG per-card whenever you
+   have real artwork. */
+.card-icon {
+  font-size: 2.75rem;
+  line-height: 1;
+  margin-bottom: var(--space-4);
+}
+
+.card h4 {
+  margin-bottom: var(--space-2);
+}
+
+.card .badge {
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* == HORIZONTAL FEATURE CARDS ==
+   Used by the reusable page template (template.html) for simple
+   feature/benefit call-outs. */
+.card-hor {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.card-hor:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* == IDEA REVEAL CARD ==
+   Used on the Date Ideas page to present the randomly-picked idea.
+   Kept as a generic, reusable "reveal" animation any future feature
+   can use for "here's your randomly picked X" moments. */
+.reveal-card {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+  filter: blur(6px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow), filter var(--transition-slow);
+}
+
+.reveal-card.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}

@@ -1,0 +1,75 @@
+/* =============================================================
+   LAYOUT
+   Generic, reusable layout primitives. Page-specific layout
+   tweaks belong in assets/css/pages/<page>.css, not here.
+   ============================================================= */
+
+.container {
+  width: min(90%, var(--container));
+  margin-inline: auto;
+}
+
+.container-narrow {
+  width: min(90%, var(--container-narrow));
+  margin-inline: auto;
+}
+
+/* "Skip to content" link — invisible until a keyboard user tabs
+   to it, then jumps focus straight to <main>. Required for
+   accessible navigation past the header on every page. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: var(--z-overlay);
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: var(--space-3) var(--space-5);
+  border-radius: 0 0 var(--radius-sm) 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+section {
+  padding: var(--space-9) 0;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.section-title p {
+  max-width: var(--container-narrow);
+  margin-inline: auto;
+}
+
+/* == GENERIC GRID UTILITIES ==
+   Prefer these for simple N-column layouts. For "cards that should
+   just wrap responsively without a manual breakpoint", use the
+   .cards-grid component (components/cards.css) instead — it uses
+   auto-fill/minmax so it never needs a media query. */
+.grid   { display: grid; gap: var(--space-6); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* == RESPONSIVE ==
+   Mobile-first project, but these specific components were
+   designed desktop-first, so they collapse going *down*.
+   Keep breakpoint values in sync with the comment in variables.css */
+@media (max-width: 992px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  section { padding: var(--space-7) 0; }
+}
+
+@media (max-width: 480px) {
+  .container, .container-narrow { width: 95%; }
+}

@@ -1,0 +1,39 @@
+/* =============================================================
+   FOOTER
+   ============================================================= */
+
+.site-footer {
+  background: var(--color-dark);
+  color: var(--color-white);
+  padding: var(--space-7) 0;
+  margin-top: var(--space-9);
+}
+
+.site-footer .container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.site-footer p,
+.site-footer a {
+  color: var(--color-white);
+  margin: 0;
+}
+
+.site-footer a:hover {
+  color: var(--color-tertiary);
+}
+
+:root[data-theme='dark'] .site-footer {
+  background: #000;
+}
+
+@media (max-width: 480px) {
+  .site-footer .container {
+    flex-direction: column;
+    text-align: center;
+  }
+}

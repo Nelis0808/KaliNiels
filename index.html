@@ -1,105 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--
+  HOME PAGE
+  The "hub" page: shows the days-together counter and a grid of
+  cards linking to every feature page. The card grid is rendered
+  by JS (assets/js/modules/home-cards.js) from the single source
+  of truth in assets/js/config.js — add a new feature page there,
+  not here.
+-->
+<html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Website</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
 
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .card-no-hover:hover { transform: translateY(0px) }
-    </style>
+  <!-- This is a private, personal site — keep it out of search engines.
+       Remove this tag if you ever want the site publicly discoverable. -->
+  <meta name="robots" content="noindex, nofollow">
 
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">❤️</text></svg>'>
-    <script src="script.js" defer></script>
-    <script>
-        window.addEventListener("DOMContentLoaded", () => {
-            const startDate = new Date("2021-07-12");
-            const today = new Date();
+  <meta name="description" content="Onze persoonlijke site vol date ideeën en herinneringen.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
-            const diffInMs = today - startDate;
-            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  <title>Home | OnzeSite</title>
 
-            document.getElementById("daysTogether").textContent = diffInDays;
-        });
-    </script>
-    
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <!-- Google Fonts: Fraunces for headings, Inter for body text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- main.css = shared design system, always first.
+       pages/home.css = rules unique to this page only. -->
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/home.css">
 </head>
 <body>
-    <!-- Selection of pages -->
-    <section id="page-guide" class="container">
-        <h1 style="text-align: center;">Samen voor <span id="daysTogether"></span> dagen ❤️</h1>
-        <h2 style="text-align: center;">Klik om naar de specifieke pagina te gaan!</h2>
+  <!-- Keyboard users can jump straight past the header to the content -->
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
 
-        <div class="cards-grid">
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <a href="date.html" class="card" style="border: 2px solid darkblue;">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5uyvog8_HMfTln40kPRCdBf1mhfluPCIGWxbD1kPkGw&s=10" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Date Ideeën</b></h4>
-                    <p>Wat gaan we doen vandaag?</p>
-                </div>
-            </a>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-            <div class="card card-no-hover" style="cursor: not-allowed;">
-                <img src="https://img.magnific.com/vrije-vector/work-in-progress-stempel-in-rubber-stijl_1017-7150.jpg?semt=ais_hybrid&w=740&q=80" alt="Avatar" class="card-img">
-                <div>
-                    <h4><b>Komt ooit!</b></h4>
-                    <p>Hoop ik...</p>
-                </div>
-            </div>
-        </div>
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze site werkt het best met JavaScript ingeschakeld.
+    </p>
+  </noscript>
+
+  <!-- ============ Shared header — kept identical on every page ============ -->
+  <header class="navbar">
+    <div class="container nav">
+      <div class="logo">OnzeSite</div>
+
+      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
+
+      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
+        <a href="index.html">Home</a>
+        <a href="date.html">Date Ideeën</a>
+        <a href="tournament.html">Toernooi</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="page-guide" class="container">
+      <h1 class="text-center">
+        Samen voor <span id="daysTogether">0</span> dagen
+        <span class="heart-beat" aria-hidden="true">❤️</span>
+      </h1>
+      <h2 class="text-center">Klik om naar de specifieke pagina te gaan!</h2>
+
+      <!-- Populated by assets/js/modules/home-cards.js from siteConfig.pages -->
+      <div id="pageCardsGrid" class="cards-grid"></div>
     </section>
+  </main>
+
+  <!-- ============ Shared footer — kept identical on every page ============ -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> OnzeSite</p>
+    </div>
+  </footer>
+
+  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
+
+  <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>

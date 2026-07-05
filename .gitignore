@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Node (only relevant if you add tooling later, e.g. a bundler)
+node_modules/
+npm-debug.log*
+
+# Local env files, in case you add a backend/API later
+.env
+.env.local
