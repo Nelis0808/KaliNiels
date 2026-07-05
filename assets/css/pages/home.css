@@ -12,9 +12,9 @@
   font-size: var(--fs-h2);
 }
 
-/* Gentle heartbeat on the emoji in the "days together" heading —
-   subtle signature touch, respects prefers-reduced-motion globally
-   via the rule in base/reset.css. */
+/* Gentle heartbeat on the emoji in the "days together" heading,
+  subtle signature touch, respects prefers-reduced-motion globally
+  via the rule in base/reset.css. */
 .heart-beat {
   display: inline-block;
   animation: heartbeat 1.8s ease-in-out infinite;

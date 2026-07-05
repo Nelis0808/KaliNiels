@@ -17,8 +17,7 @@
   gap: var(--space-3);
 }
 
-.site-footer p,
-.site-footer a {
+.site-footer p, .site-footer a {
   color: var(--color-white);
   margin: 0;
 }

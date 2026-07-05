@@ -20,11 +20,11 @@
 import { qs, escapeHtml } from './utils.js';
 
 const PRESET_FILES = {
-  indoor: new URL('../../data/date-ideas-indoor.json', import.meta.url),
+  indoor:  new URL('../../data/date-ideas-indoor.json', import.meta.url),
   outdoor: new URL('../../data/date-ideas-outdoor.json', import.meta.url),
 };
 
-/** Fisher–Yates shuffle — unbiased, unlike `array.sort(() => Math.random() - 0.5)`. */
+/** Fisher–Yates shuffle, unbiased, unlike `array.sort(() => Math.random() - 0.5)`. */
 function shuffle(items) {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i -= 1) {

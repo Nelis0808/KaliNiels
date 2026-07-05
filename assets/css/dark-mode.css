@@ -1,5 +1,5 @@
 /* =============================================================
-   DARK MODE — component-specific overrides
+   DARK MODE, component-specific overrides
    -------------------------------------------------------------
    Most components never need to appear here at all: they're
    already built from semantic tokens (--color-bg, --color-text,
@@ -10,7 +10,7 @@
    therefore needs an explicit dark-mode variant.
 
    Dark mode is toggled by JS setting data-theme="dark" on <html>
-   (see assets/js/modules/theme.js) — never toggle a `.dark` class
+   (see assets/js/modules/theme.js), never toggle a `.dark` class
    on <body> anywhere; keep every dark-mode rule scoped under the
    [data-theme='dark'] attribute selector so there's one source
    of truth for "are we in dark mode".

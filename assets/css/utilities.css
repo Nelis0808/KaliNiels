@@ -28,13 +28,13 @@
 .gap-2 { gap: var(--space-6); }
 
 /* Hide an element visually AND from assistive tech (unlike .sr-only,
-   which hides visually but keeps it announced). Use for e.g. an
-   icon that's purely decorative next to a text label. */
+  which hides visually but keeps it announced). Use for e.g. an
+  icon that's purely decorative next to a text label. */
 .hidden { display: none !important; }
 
 /* An empty section/placeholder that hasn't been built yet.
-   Better than a bare empty <section></section> — gives visitors
-   (and future-you) a clear signal instead of a blank gap. */
+  Better than a bare empty <section></section> — gives visitors
+  (and future-you) a clear signal instead of a blank gap. */
 .empty-state {
   text-align: center;
   padding: var(--space-7) var(--space-5);
@@ -44,8 +44,8 @@
 }
 
 /* == SCROLL / FADE ANIMATIONS ==
-   Applied via JS (assets/js/modules/reveal.js) once an element
-   with class="fade-up" scrolls into the viewport. */
+  Applied via JS (assets/js/modules/reveal.js) once an element
+  with class="fade-up" scrolls into the viewport. */
 .fade-up {
   opacity: 0;
   transform: translateY(40px);
@@ -64,4 +64,24 @@
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-15px); }
+}
+
+.fade-down {
+  opacity: 0;
+  transform: translateY(-40px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+.fade-down.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sink {
+  animation: sink 4s ease-in-out infinite;
+}
+
+@keyframes sink {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(15px); }
 }

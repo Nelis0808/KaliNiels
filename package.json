@@ -2,7 +2,7 @@
   "name": "mysite",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal date-ideas site — static HTML/CSS/JS, no build step required.",
+  "description": "Personal date-ideas site, static HTML/CSS/JS, no build step required.",
   "scripts": {
     "start": "npx --yes http-server -c-1 -o",
     "dev": "npx --yes live-server --no-browser"

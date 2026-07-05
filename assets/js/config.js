@@ -2,7 +2,7 @@
 // SITE CONFIGURATION
 // -----------------------------------------------------------------
 // The one file you should need to touch for day-to-day content
-// changes. Nothing in here is page-specific markup — it's data
+// changes. Nothing in here is page-specific markup, it's data
 // that the JS modules read to render/behave correctly.
 //
 // This is the main "extension point" of the whole template:

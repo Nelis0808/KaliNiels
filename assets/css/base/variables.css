@@ -14,7 +14,7 @@
 
 :root {
   /* ---------------------------------------------------------
-     COLOR PALETTE — light theme (default)
+     COLOR PALETTE, light theme (default)
      Original design used CSS named colors (e.g. "mediumslateblue").
      Kept the exact same palette, just expressed as hex so the
      values are precise, easy to diff, and easy to run through
@@ -46,7 +46,7 @@
 
   --color-white: #FFFFFF;
 
-  /* Semantic aliases — components should prefer these names over
+  /* Semantic aliases  , components should prefer these names over
      raw color tokens above, so a theme swap only touches this block */
   --color-bg:          var(--gray-200);
   --color-surface:     var(--color-white);
@@ -91,14 +91,14 @@
   --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
-  /* Fluid type scale — scales smoothly between mobile and desktop
+  /* Fluid type scale  , scales smoothly between mobile and desktop
      instead of jumping at breakpoints. */
-  --fs-sm:   clamp(0.85rem, 0.8rem + 0.2vw, 0.95rem);
-  --fs-base: clamp(1rem,   0.95rem + 0.2vw, 1.05rem);
+  --fs-sm:   clamp(0.85rem, 0.8rem  + 0.2vw, 0.95rem);
+  --fs-base: clamp(1rem   , 0.95rem + 0.2vw, 1.05rem);
   --fs-lg:   clamp(1.15rem, 1.05rem + 0.4vw, 1.35rem);
-  --fs-h3:   clamp(1.4rem, 1.2rem + 1vw, 1.8rem);
-  --fs-h2:   clamp(2rem,   1.5rem + 2vw,  3.2rem);
-  --fs-h1:   clamp(2.4rem, 1.8rem + 3vw,  4.6rem);
+  --fs-h3:   clamp(1.4rem , 1.2rem  + 1vw  , 1.8rem);
+  --fs-h2:   clamp(2rem   , 1.5rem  + 2vw  , 3.2rem);
+  --fs-h1:   clamp(2.4rem , 1.8rem  + 3vw  , 4.6rem);
 
   /* ---------------------------------------------------------
      LAYOUT
@@ -106,7 +106,7 @@
   --container: 1200px;
   --container-narrow: 720px;
 
-  /* Reference only — CSS can't use custom properties inside
+  /* Reference only  , CSS can't use custom properties inside
      @media conditions, so these breakpoints are also hard-coded
      wherever a media query needs them. Keep both in sync.
        --bp-sm: 480px   (phones)
@@ -115,7 +115,7 @@
        --bp-xl: 1200px  (desktop) */
 
   /* ---------------------------------------------------------
-     Z-INDEX SCALE — avoid random z-index values; add a new
+     Z-INDEX SCALE  , avoid random z-index values; add a new
      named layer here if you introduce e.g. a modal or toast.
      --------------------------------------------------------- */
   --z-navbar: 900;
@@ -126,11 +126,11 @@
 }
 
 /* ---------------------------------------------------------
-   DARK THEME — overrides the semantic aliases only.
+   DARK THEME, overrides the semantic aliases only.
    Toggled by setting data-theme="dark" on <html> (see theme.js).
    Because components only ever reference the *semantic* tokens
    (--color-bg, --color-text, ...), dark mode support for any new
-   component is usually just "use the right semantic token" —
+   component is usually just "use the right semantic token"  ,
    no extra dark-mode CSS required. See dark-mode.css for the
    handful of components that need bespoke treatment.
    --------------------------------------------------------- */

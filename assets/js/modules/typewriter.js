@@ -1,17 +1,20 @@
 // =================================================================
 // TYPEWRITER EFFECT
-// Animates the main `.hero h1` heading, typing it out character by
-// character. Skipped entirely for prefers-reduced-motion users, and
-// the full text is exposed via aria-label immediately so screen
-// readers never have to "wait" for the animation to finish.
+// Animates any heading marked with `data-typewriter`, typing it out
+// character by character. Opt-in on purpose — not every hero heading
+// should have this effect, so it only runs where you explicitly add
+// the attribute in the HTML, e.g.:
+//
+//   <h1 data-typewriter>Example</h1>
+//
+// Skipped entirely for prefers-reduced-motion users, and the full
+// text is exposed via aria-label immediately so screen readers never
+// have to "wait" for the animation to finish.
 // =================================================================
 
-import { prefersReducedMotion } from './utils.js';
+import { qsa, prefersReducedMotion } from './utils.js';
 
-export function initTypewriter() {
-  const heading = document.querySelector('.hero h1');
-  if (!heading) return;
-
+function typewrite(heading) {
   const fullText = heading.textContent;
   heading.setAttribute('aria-label', fullText);
 
@@ -29,4 +32,8 @@ export function initTypewriter() {
   }
 
   typeNextChar();
+}
+
+export function initTypewriter() {
+  qsa('[data-typewriter]').forEach(typewrite);
 }

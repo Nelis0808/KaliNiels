@@ -18,7 +18,8 @@ function applyTheme(theme, toggleBtn) {
   if (toggleBtn) {
     toggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
     toggleBtn.setAttribute('aria-pressed', String(theme === 'dark'));
-    toggleBtn.setAttribute('aria-label', theme === 'dark' ? 'Zet lichte modus aan' : 'Zet donkere modus aan');
+    toggleBtn.setAttribute('aria-label', theme === 'dark' ? 
+      'Zet lichte modus aan' : 'Zet donkere modus aan');
   }
 
   document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));

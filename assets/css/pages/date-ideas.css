@@ -1,14 +1,9 @@
 /* =============================================================
    PAGE: DATE IDEAS (date.html)
    -------------------------------------------------------------
-   ORIGINAL BUG this file fixes: the two hero buttons and their
-   matching result boxes were positioned with hand-tuned fixed
-   pixel `transform: translateX(225px)` offsets. That only looked
-   right at one specific viewport width — on a phone the buttons
-   were shoved off-screen. Rebuilt below using flexbox spacing
-   (which naturally adapts to any screen) plus a purely decorative
-   entrance animation, so the "buttons fly apart" feel is kept
-   without hard-coding any pixel value.
+   Flexbox spacing (which naturally adapts to any screen) plus a
+   purely decorative entrance animation, so the "buttons fly apart" 
+   feel is kept without hard-coding any pixel value.
    ============================================================= */
 
 .hero-buttons {
@@ -19,9 +14,6 @@
   flex-wrap: wrap;
 }
 
-/* Decorative "arrive from the middle" entrance. Purely cosmetic —
-   layout doesn't depend on it, so reduced-motion users (handled
-   globally in base/reset.css) simply see the buttons appear in place. */
 .hero-buttons .btn {
   animation: btn-arrive 0.6s ease both;
 }

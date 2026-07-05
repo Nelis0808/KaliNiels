@@ -1,5 +1,5 @@
 /* =============================================================
-   MAIN STYLESHEET — single entry point
+   MAIN STYLESHEET, single entry point
    -------------------------------------------------------------
    Every HTML page links only to this one file:
      <link rel="stylesheet" href="assets/css/main.css">
@@ -48,7 +48,7 @@
 @import url('./dark-mode.css');
 
 /* =============================================================
-   HERO — shared by any page that opts into the big radial-gradient
+   HERO, shared by any page that opts into the big radial-gradient
    hero band (date.html, template.html). Lives here rather than in
    a component file because it's a section-level layout choice
    used by more than one page but not universal to every page.

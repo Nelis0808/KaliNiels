@@ -53,7 +53,6 @@
   color: var(--color-primary);
 }
 
-/* animated underline on hover, purely decorative -> aria-hidden not needed */
 .nav-links a::after {
   content: "";
   position: absolute;
@@ -76,8 +75,6 @@
   gap: var(--space-3);
 }
 
-/* Hamburger + theme toggle: icon-only buttons, always >=44px so
-   they stay comfortably tappable on touch screens. */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -93,8 +90,6 @@
   background: var(--color-border);
 }
 
-/* Hamburger button is desktop-hidden; JS never needs to know
-   which breakpoint we're in, only whether .show is toggled. */
 #menuBtn {
   display: none;
 }
@@ -118,7 +113,7 @@
     box-shadow: var(--shadow);
 
     /* Hidden by default via clip-path + max-height so it can animate
-       open/closed instead of an abrupt display:none jump */
+      open/closed instead of an abrupt display:none jump */
     max-height: 0;
     overflow: hidden;
     transition: max-height var(--transition);
@@ -134,6 +129,6 @@
   }
 
   .nav-links a::after {
-    display: none; /* underline animation doesn't make sense in a stacked menu */
+    display: none;
   }
 }

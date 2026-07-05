@@ -6,6 +6,8 @@
 
 import { qsa, prefersReducedMotion } from './utils.js';
 
+const threshold = 0.2;
+
 export function initRevealOnScroll() {
   const items = qsa('.fade-up');
   if (items.length === 0) return;
@@ -25,7 +27,7 @@ export function initRevealOnScroll() {
         }
       });
     },
-    { threshold: 0.2 }
+    { threshold: threshold }
   );
 
   items.forEach((item) => observer.observe(item));

@@ -31,7 +31,7 @@ const CATEGORIES = {
 };
 
 const ideasCache = new Map(); // category -> string[]
-const lastShown = new Map(); // category -> last idea shown, to avoid an immediate repeat
+const lastShown = new Map();  // category -> last idea shown, to avoid an immediate repeat
 
 async function loadIdeas(category) {
   if (ideasCache.has(category)) return ideasCache.get(category);

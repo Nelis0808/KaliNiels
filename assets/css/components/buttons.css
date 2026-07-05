@@ -42,7 +42,7 @@
 }
 
 /* Modifier for a bigger, more prominent call-to-action button
-   (used instead of an inline style="font-size:...") */
+  (used instead of an inline style="font-size:...") */
 .btn-lg {
   font-size: 1.25rem;
   padding: 18px 36px;
@@ -59,10 +59,8 @@
 }
 
 /* == BACK TO TOP ==
-   Floating button, hidden until the user scrolls down (see
-   assets/js/modules/navbar.js for the show/hide + click logic).
-   NOTE: this component existed as an id in the original markup
-   but had no styling at all — it's fully implemented here. */
+  Floating button, hidden until the user scrolls down (see
+  assets/js/modules/navbar.js for the show/hide + click logic). */
 #backToTop {
   position: fixed;
   right: var(--space-5);
@@ -95,10 +93,10 @@
 
 @media (max-width: 480px) {
   /* Full-width buttons are easier to tap accurately on small phones,
-     but only for buttons that are meant to stand alone in a form/CTA
-     stack — opt in with .btn-block rather than making this global,
-     since some layouts (e.g. two hero buttons side by side) should
-     NOT stretch to 100% width. */
+    but only for buttons that are meant to stand alone in a form/CTA
+    stack, opt in with .btn-block rather than making this global,
+    since some layouts (e.g. two hero buttons side by side) should
+    NOT stretch to 100% width. */
   .btn-block {
     width: 100%;
   }
