@@ -1,4 +1,4 @@
-# OnzeSite
+# MySite
 
 A small personal "date ideas" site, rebuilt as a clean, dependency-free
 static-site **template**: plain HTML/CSS/JS, no build step, no framework,
@@ -154,7 +154,7 @@ To add a new feature:
 This is the one file you'll likely touch most often:
 
 - `siteName` — shown in `<title>`/logo/footer (keep in sync with the
-  hard-coded "OnzeSite" text in the HTML files — see the note in §4
+  hard-coded "MySite" text in the HTML files — see the note in §4
   about why the header isn't templated).
 - `relationshipStartDate` — drives the "days together" counter.
 - `nav` — kept here for reference/future templating; today the actual

@@ -1,5 +1,5 @@
 {
-  "name": "onzesite",
+  "name": "MySite",
   "version": "1.0.0",
   "private": true,
   "description": "Personal date-ideas site — static HTML/CSS/JS, no build step required.",

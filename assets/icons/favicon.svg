@@ -1,3 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y=".9em" font-size="90">❤️</text>
+  <defs>
+    <clipPath id="leftHalf">
+      <rect x="0.1" y="0" width="50" height="100"/>
+    </clipPath>
+  </defs>
+
+  <!-- Scale to 80% and center -->
+  <g transform="translate(10 10) scale(0.8)">
+    <!-- Original left half -->
+    <g clip-path="url(#leftHalf)">
+      <text x="-5" y="85" font-size="90">❤️</text>
+    </g>
+
+    <!-- Mirrored copy -->
+    <g clip-path="url(#leftHalf)" transform="translate(100,0) scale(-1,1)">
+      <text x="-5" y="85" font-size="90">❤️</text>
+    </g>
+  </g>
 </svg>
