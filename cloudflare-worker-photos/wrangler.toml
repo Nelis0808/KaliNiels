@@ -1,0 +1,19 @@
+name = "photo-gallery"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Binds your private R2 bucket to this worker as `env.PHOTOS_BUCKET`.
+# Create the bucket first (Cloudflare dashboard > R2 > Create bucket),
+# then either fill in its name below and run `wrangler deploy`, OR just
+# add the binding via the dashboard (Worker > Settings > Bindings > R2
+# Bucket) if you're not using the CLI — see STAPPENPLAN-FOTOS.md.
+[[r2_buckets]]
+binding = "PHOTOS_BUCKET"
+bucket_name = "private-photos"
+
+# Secrets (PASSPHRASE_A, PASSPHRASE_B, TOKEN_SECRET) are NOT set here.
+# After deploying, run:
+#   wrangler secret put PASSPHRASE_A
+#   wrangler secret put PASSPHRASE_B
+#   wrangler secret put TOKEN_SECRET
+# (or set them via the dashboard: Settings > Variables and Secrets > Add > Encrypt.)

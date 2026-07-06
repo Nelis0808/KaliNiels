@@ -31,6 +31,8 @@ import { initDaysCounter } from './modules/days-counter.js';
 import { initHomeCards } from './modules/home-cards.js';
 import { initDatePicker } from './modules/date-picker.js';
 import { initTournament } from './modules/tournament.js';
+import { initTicketmaster } from './modules/ticketmaster.js';
+import { initPhotoGallery } from './modules/photo-gallery.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Site-wide chrome (safe no-ops on pages without these elements)
@@ -51,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initHomeCards();    // index.html
   initDatePicker();   // date.html
   initTournament();   // tournament.html
+  initTicketmaster(); // ticketmaster.html
+  initPhotoGallery(); // photos.html
 
   console.log(`${document.title} — initialized ✅`);
 });

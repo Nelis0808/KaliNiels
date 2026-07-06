@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!--
+  TICKETMASTER PAGE
+  Live concert data from the Ticketmaster Discovery API, fetched
+  through a small Cloudflare Worker proxy (see /cloudflare-worker at
+  the repo root) so the real API key never ships to the browser.
+  Logic lives in assets/js/modules/ticketmaster.js — this file only
+  contains the toolbar (tabs + filters) and the results container.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Actuele info over aankomende concerten en ticketverkoop, via Ticketmaster.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Ticketmaster</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/ticketmaster.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om concerten op te halen.
+    </p>
+  </noscript>
+
+  <header class="navbar">
+    <div class="container nav">
+      <div class="logo">Ticketmaster</div>
+
+      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
+
+      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
+        <a href="index.html">Home</a>
+        <a href="date.html">Date Ideeën</a>
+        <a href="tournament.html">Toernooi</a>
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🎟️ Ticketmaster</h1>
+        <p>Aankomende concerten en ticketverkoop, live van Ticketmaster.</p>
+      </div>
+    </section>
+
+    <section class="container" id="ticketmasterApp">
+      <div class="tm-toolbar">
+        <div class="tm-tabs" role="tablist" aria-label="Wat wil je zien?">
+          <button type="button" id="tmTabUpcoming" class="tm-tab" role="tab" aria-selected="true" aria-controls="tmResultsPanel">
+            Aankomende concerten
+          </button>
+          <button type="button" id="tmTabSales" class="tm-tab" role="tab" aria-selected="false" aria-controls="tmResultsPanel">
+            Aankomende sales
+          </button>
+          <button type="button" id="tmTabSearch" class="tm-tab" role="tab" aria-selected="false" aria-controls="tmResultsPanel">
+            Zoek op naam
+          </button>
+        </div>
+
+        <div class="tm-filters">
+          <div id="tmSearchRow" class="tm-search-row hidden">
+            <label for="tmSearchInput" class="sr-only">Artiest of band</label>
+            <input type="search" id="tmSearchInput" placeholder="Bijv. Coldplay, Metallica…" autocomplete="off">
+            <button type="button" id="tmSearchBtn" class="btn btn-primary">Zoeken</button>
+          </div>
+
+          <div class="tm-country-row">
+            <label for="tmCountry">Land</label>
+            <select id="tmCountry">
+              <option value="NL">Nederland</option>
+              <option value="BE">België</option>
+              <option value="DE">Duitsland</option>
+              <option value="GB">Verenigd Koninkrijk</option>
+              <option value="FR">Frankrijk</option>
+              <option value="US">Verenigde Staten</option>
+              <option value="">Alle landen</option>
+            </select>
+
+            <button type="button" id="tmRefresh" class="btn btn-outline">Vernieuwen</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tmResultsPanel" role="tabpanel" aria-label="Resultaten">
+        <p id="tmStatus" class="tm-status" role="status" aria-live="polite"></p>
+        <div id="tmResults" class="tm-results"></div>
+      </div>
+
+      <div class="text-center mt-2">
+        <button type="button" id="tmLoadMore" class="btn btn-primary hidden">Meer laden</button>
+      </div>
+    </section>
+  </main>
+
+  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<!--
+  PHOTOS PAGE — private gallery
+  Logic lives in assets/js/modules/photo-gallery.js. This file only
+  contains: the login form, the "logged in as ..." bar, a STATIC
+  placeholder grid (pure CSS, no real images — shown to anyone who
+  isn't logged in), and an empty results grid that JS fills with the
+  real photos after a successful login. See STAPPENPLAN-FOTOS.md for
+  how the private storage + login is set up.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Een privégalerij vol herinneringen — alleen voor jullie twee.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Onze Foto's</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/photos.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om in te loggen en foto's te tonen.
+    </p>
+  </noscript>
+
+  <header class="navbar">
+    <div class="container nav">
+      <div class="logo">Foto's</div>
+
+      <button id="menuBtn" class="icon-btn" aria-label="Menu openen" aria-expanded="false" aria-controls="navLinks">☰</button>
+
+      <nav id="navLinks" class="nav-links" aria-label="Hoofdmenu">
+        <a href="index.html">Home</a>
+        <a href="date.html">Date Ideeën</a>
+        <a href="tournament.html">Toernooi</a>
+
+        <div id="navMoreDropdown" class="nav-dropdown">
+          <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
+            Meer <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div id="navMoreMenu" class="nav-dropdown-menu" role="menu"></div>
+        </div>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>📸 Onze Foto's</h1>
+        <p>Een galerij vol herinneringen — alleen zichtbaar voor jullie twee.</p>
+      </div>
+    </section>
+
+    <section class="container" id="photoGalleryApp">
+      <form id="pgLoginForm" class="pg-login-form">
+        <div class="pg-login-field">
+          <label for="pgPassphrase">Wachtwoord</label>
+          <input type="password" id="pgPassphrase" placeholder="Jouw wachtwoord" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Inloggen</button>
+        <p id="pgLoginError" class="pg-login-error" role="alert"></p>
+      </form>
+
+      <div id="pgLoggedInBar" class="pg-loggedin-bar hidden">
+        <p>Ingelogd als <strong id="pgLoggedInLabel"></strong></p>
+        <button type="button" id="pgLogoutBtn" class="btn btn-outline btn-sm">Uitloggen</button>
+      </div>
+
+      <p id="pgStatus" class="pg-status" role="status" aria-live="polite"></p>
+
+      <!-- LOGGED-OUT DEFAULT: static placeholder tiles, pure CSS gradients,
+           no real images loaded or requested — this is what anyone without
+           the passphrase sees. -->
+      <div id="pgPlaceholder" class="pg-grid">
+        <div class="pg-locked-card pg-gradient-1"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+        <div class="pg-locked-card pg-gradient-2"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+        <div class="pg-locked-card pg-gradient-3"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+        <div class="pg-locked-card pg-gradient-4"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+        <div class="pg-locked-card pg-gradient-5"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+        <div class="pg-locked-card pg-gradient-6"><span class="pg-lock" aria-hidden="true">🔒</span></div>
+      </div>
+
+      <!-- LOGGED-IN: filled by assets/js/modules/photo-gallery.js after a
+           valid passphrase — never contains anything server-rendered. -->
+      <div id="pgResults" class="pg-grid hidden"></div>
+    </section>
+  </main>
+
+  <button id="backToTop" class="icon-btn" aria-label="Naar boven scrollen">↑</button>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
