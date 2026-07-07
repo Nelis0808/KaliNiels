@@ -20,6 +20,14 @@
 //   POST /login                  { passphrase } -> { token, who }
 //   GET  /photos                 (auth)         -> { photos: [...] }
 //   GET  /photos/object?key=...  (auth)         -> raw image bytes
+//
+// CAPTIONS: captions.json (uploaded to the same private R2 bucket,
+// see STAPPENPLAN-FOTOS.md) maps each filename to a [short, long]
+// array — short shows under the thumbnail, long shows in the
+// lightbox when the photo is clicked:
+//   { "img.jpg": ["Short description", "Longer description..."] }
+// A plain string value (the old format) still works and is used for
+// both the short and long caption. See captions.example.json.
 // =================================================================
 
 const ALLOWED_ORIGINS = [
@@ -200,11 +208,23 @@ export default {
 
         const photos = listing.objects
           .filter((obj) => isImageKey(obj.key))
-          .map((obj) => ({
-            key: obj.key,
-            caption: captions[obj.key] || '',
-            uploaded: obj.uploaded,
-          }))
+          .map((obj) => {
+            const raw = captions[obj.key];
+            let caption = '';
+            let captionLong = '';
+
+            if (Array.isArray(raw)) {
+              // New format: ["short", "long"]
+              caption = raw[0] || '';
+              captionLong = raw[1] || caption;
+            } else if (typeof raw === 'string') {
+              // Old format: a single string, used for both.
+              caption = raw;
+              captionLong = raw;
+            }
+
+            return { key: obj.key, caption, captionLong, uploaded: obj.uploaded };
+          })
           .sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded)); // newest first
 
         return jsonResponse({ photos, who: auth.who }, 200, headers);

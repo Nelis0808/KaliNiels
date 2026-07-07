@@ -121,34 +121,84 @@
   border: none;
   background: none;
   cursor: pointer;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .pg-card-trigger:disabled {
   cursor: default;
 }
 
-.pg-card-trigger:focus-visible .pg-card-image {
+.pg-card-trigger:focus-visible {
   outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
+  outline-offset: -3px;
 }
 
+/* Thumbnail container. Uses `contain` (never `cover`) so photos of any
+   orientation/aspect ratio show in full, letterboxed on a soft neutral
+   background instead of being cropped and "zoomed in" — the crop only
+   ever happens intentionally, in the lightbox, never here. */
 .pg-card-image {
   aspect-ratio: 4 / 3;
-  background-size: cover;
+  background-color: var(--color-bg);
+  background-size: contain;
+  background-repeat: no-repeat;
   background-position: center;
-  background-color: var(--color-border);
+  background-origin: content-box;
+  background-clip: content-box;
+  box-sizing: border-box;
+  padding: var(--space-2);
 }
 
-/* == LIGHTBOX == */
+.pg-card-loading {
+  background-image: linear-gradient(110deg, var(--color-border) 8%, var(--color-surface) 18%, var(--color-border) 33%);
+  background-size: 200% 100%;
+  animation: pg-shimmer 1.4s linear infinite;
+}
+
+@keyframes pg-shimmer {
+  to { background-position-x: -200%; }
+}
+
+.pg-card-error {
+  background-color: var(--color-border);
+  position: relative;
+}
+
+.pg-card-error::after {
+  content: '⚠️ kon niet laden';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  padding: var(--space-2);
+}
+
+.pg-card figcaption {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* == LIGHTBOX (extended preview + longer caption on click) == */
 .pg-lightbox {
   position: fixed;
   inset: 0;
   z-index: var(--z-lightbox);
-  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
+  background: rgba(0, 0, 0, 0.85); /* dims/defocuses the rest of the page */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+body.pg-lightbox-locked {
+  overflow: hidden;
 }
 
 .pg-lightbox-content {
@@ -163,7 +213,7 @@
 
 .pg-lightbox-content img {
   max-width: 100%;
-  max-height: 80vh;
+  max-height: 75vh;
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-lg);
   object-fit: contain;
@@ -173,6 +223,8 @@
   color: var(--color-white);
   text-align: center;
   font-size: var(--fs-md);
+  max-width: 65ch;
+  line-height: 1.5;
 }
 
 .pg-lightbox-close {
@@ -193,123 +245,6 @@
 .pg-lightbox-close:hover,
 .pg-lightbox-close:focus-visible {
   background: rgba(255, 255, 255, 0.3);
-}
-
-/* Prevents the page behind the lightbox from scrolling while it's open. */
-body.pg-lightbox-locked {
-  overflow: hidden;
-}
-
-.pg-card-loading {
-  background-image: linear-gradient(110deg, var(--color-border) 8%, var(--color-surface) 18%, var(--color-border) 33%);
-  background-size: 200% 100%;
-  animation: pg-shimmer 1.4s linear infinite;
-}
-
-.pg-card-error {
-  background: var(--color-border);
-  position: relative;
-}
-
-.pg-card-error::after {
-  content: '⚠️ kon niet laden';
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
-}
-
-.pg-card figcaption {
-  padding: var(--space-3) var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
-}
-
-@keyframes pg-shimmer {
-  to { background-position-x: -200%; }
-}
-
-/* == CLICKABLE PHOTO TRIGGER (reset button styles) == */
-.pg-card-trigger {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-radius: var(--radius);
-}
-
-.pg-card-trigger:disabled {
-  cursor: default;
-}
-
-.pg-card-trigger:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* == LIGHTBOX == */
-.pg-lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-lightbox);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-6);
-  background: rgba(0, 0, 0, 0.85); /* dims/defocuses the rest of the page */
-  backdrop-filter: blur(4px);
-}
-
-body.pg-lightbox-locked {
-  overflow: hidden;
-}
-
-.pg-lightbox-content {
-  margin: 0;
-  max-width: min(90vw, 900px);
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.pg-lightbox-content img {
-  max-width: 100%;
-  max-height: 75vh;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg);
-  object-fit: contain;
-}
-
-.pg-lightbox-content figcaption {
-  color: var(--color-white);
-  text-align: center;
-  font-size: var(--fs-md);
-}
-
-.pg-lightbox-close {
-  position: absolute;
-  top: var(--space-5);
-  right: var(--space-5);
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  border: none;
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-white);
-  font-size: var(--fs-lg);
-  cursor: pointer;
-}
-
-.pg-lightbox-close:hover,
-.pg-lightbox-close:focus-visible {
-  background: rgba(255, 255, 255, 0.25);
   outline: 2px solid var(--color-white);
   outline-offset: 2px;
 }

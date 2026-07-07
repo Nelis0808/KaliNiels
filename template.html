@@ -69,8 +69,27 @@
       </nav>
 
       <div class="nav-actions">
-        <button id="colorThemeToggle" class="icon-btn" aria-label="Zet roze thema aan" aria-pressed="false">🌸</button>
-        <button id="themeToggle" class="icon-btn" aria-label="Donkere modus" aria-pressed="false">🌙</button>
+        <div id="navSettingsDropdown" class="settings-dropdown">
+          <button id="navSettingsBtn" class="icon-btn settings-trigger" type="button"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="navSettingsMenu" aria-label="Instellingen">⚙️</button>
+          <div id="navSettingsMenu" class="settings-menu" role="menu" aria-label="Instellingen">
+            <div class="settings-menu-heading">Instellingen</div>
+
+            <div class="settings-item">
+              <span class="settings-item-label">🌙 Donkere modus</span>
+              <button id="themeToggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="Zet donkere modus aan"></button>
+            </div>
+
+            <div class="settings-item">
+              <span class="settings-item-label">🎨 Roze thema</span>
+              <button id="colorThemeToggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="Zet roze thema aan"></button>
+            </div>
+
+            <!-- Auto-filled by assets/js/modules/settings-dropdown.js from
+                 siteConfig.settings — disabled "Binnenkort" placeholders. -->
+            <div id="settingsExtra"></div>
+          </div>
+        </div>
       </div>
     </div>
   </header>

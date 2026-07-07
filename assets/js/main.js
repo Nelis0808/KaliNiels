@@ -23,6 +23,7 @@
 import { initTheme, initColorTheme } from './modules/theme.js';
 import { initMobileMenu, initScrolledShadow, initSmoothScroll, initBackToTop, initActiveNavLink } from './modules/navbar.js';
 import { initNavDropdown } from './modules/nav-dropdown.js';
+import { initSettingsDropdown } from './modules/settings-dropdown.js';
 import { initRevealOnScroll } from './modules/reveal.js';
 import { initCounters } from './modules/counters.js';
 import { initTypewriter } from './modules/typewriter.js';
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initColorTheme();
   initNavDropdown();  /* Must run before initMobileMenu*/
+  initSettingsDropdown();
   initMobileMenu();
   initScrolledShadow();
   initActiveNavLink();

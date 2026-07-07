@@ -12,6 +12,12 @@
 // re-enter your passphrase on every visit from the same device/
 // browser. Logging out, or the token expiring, clears it.
 //
+// CAPTIONS: each photo can carry two captions — `caption` (short,
+// always shown under the thumbnail) and `captionLong` (shown in the
+// lightbox when you click the photo, falls back to `caption` if not
+// set). Both come from captions.json in the R2 bucket via the worker
+// — see cloudflare-worker-photos/captions.example.json for the format.
+//
 // EXTENDING: want a 3rd person? Add a PASSPHRASE_C secret + a 'c'
 // branch in the worker's /login handler, and add 'c' to
 // `siteConfig.photos.personLabels` here on the site side.
@@ -159,6 +165,10 @@ export function initPhotoGallery() {
         const figure = document.createElement('figure');
         figure.className = 'pg-card';
 
+        // Long caption (shown in the lightbox) falls back to the short
+        // one if the worker/captions.json didn't provide a longer variant.
+        const longCaption = photo.captionLong || photo.caption;
+
         const trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'pg-card-trigger';
@@ -170,7 +180,7 @@ export function initPhotoGallery() {
         imageDiv.setAttribute('aria-hidden', 'true');
         trigger.appendChild(imageDiv);
         trigger.addEventListener('click', () => {
-          if (trigger.dataset.imageUrl) openLightbox(trigger.dataset.imageUrl, photo.caption);
+          if (trigger.dataset.imageUrl) openLightbox(trigger.dataset.imageUrl, longCaption);
         });
         figure.appendChild(trigger);
 
@@ -179,10 +189,6 @@ export function initPhotoGallery() {
           caption.textContent = photo.caption; // textContent — never innerHTML
           figure.appendChild(caption);
         }
-
-        trigger.addEventListener('click', () => {
-          if (trigger.dataset.imageUrl) openLightbox(trigger.dataset.imageUrl, photo.caption);
-        });
 
         resultsGrid.appendChild(figure);
         return { photo, imageDiv, trigger };

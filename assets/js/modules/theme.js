@@ -11,6 +11,12 @@
 // touching the other — picking "roze" carries into dark mode too,
 // since dark mode never redefines the brand hue tokens itself.
 //
+// Both toggles now live inside the settings dropdown (see
+// settings-dropdown.js) as `.switch` elements (role="switch"),
+// instead of the two standalone icon buttons this used to be. This
+// module only flips `aria-checked` + the label — the visuals live in
+// assets/css/components/settings.css.
+//
 // EXTENDING: listen for the `themechange` / `colorthemechange`
 // events this module fires on `document` if some future feature
 // (e.g. a chart library) needs to re-render when a theme flips.
@@ -23,9 +29,9 @@ function applyTheme(theme, toggleBtn) {
   document.documentElement.setAttribute('data-theme', theme);
 
   if (toggleBtn) {
-    toggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-    toggleBtn.setAttribute('aria-pressed', String(theme === 'dark'));
-    toggleBtn.setAttribute('aria-label', theme === 'dark' ? 
+    const isDark = theme === 'dark';
+    toggleBtn.setAttribute('aria-checked', String(isDark));
+    toggleBtn.setAttribute('aria-label', isDark ?
       'Zet lichte modus aan' : 'Zet donkere modus aan');
   }
 
@@ -41,7 +47,7 @@ export function initTheme() {
 
   applyTheme(initialTheme, toggleBtn);
 
-  if (!toggleBtn) return; // page has no theme toggle button — nothing left to wire up
+  if (!toggleBtn) return; // page has no theme toggle — nothing left to wire up
 
   toggleBtn.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
@@ -55,11 +61,9 @@ function applyColorTheme(colorTheme, toggleBtn) {
   document.documentElement.setAttribute('data-color-theme', colorTheme);
 
   if (toggleBtn) {
-    // Icon shows the theme a click will switch TO (same convention as
-    // the light/dark toggle above), not the currently active one.
-    toggleBtn.textContent = colorTheme === 'pink' ? '🔵' : '🌸';
-    toggleBtn.setAttribute('aria-pressed', String(colorTheme === 'pink'));
-    toggleBtn.setAttribute('aria-label', colorTheme === 'pink' ?
+    const isPink = colorTheme === 'pink';
+    toggleBtn.setAttribute('aria-checked', String(isPink));
+    toggleBtn.setAttribute('aria-label', isPink ?
       'Zet blauwe thema aan' : 'Zet roze thema aan');
   }
 
@@ -74,7 +78,7 @@ export function initColorTheme() {
 
   applyColorTheme(initialColorTheme, toggleBtn);
 
-  if (!toggleBtn) return; // page has no color-theme toggle button — nothing left to wire up
+  if (!toggleBtn) return; // page has no color-theme toggle — nothing left to wire up
 
   toggleBtn.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-color-theme');

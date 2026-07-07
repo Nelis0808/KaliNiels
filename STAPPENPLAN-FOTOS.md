@@ -53,16 +53,31 @@ automatisch op (de Worker vraagt live de inhoud van de bucket op).
 
 Een kant-en-klaar voorbeeld staat in `cloudflare-worker-photos/captions.example.json`
 in deze zip. Kopieer het, hernoem naar `captions.json`, en vervang de
-bestandsnamen door die van je eigen geüploade foto's:
+bestandsnamen door die van je eigen geüploade foto's. Elke foto krijgt
+twee bijschriften in een `[kort, lang]` array:
+- **kort** — altijd zichtbaar onder de foto in het overzicht.
+- **lang** — verschijnt pas wanneer je op de foto klikt (in de
+  uitvergrote weergave).
 
 ```json
 {
-  "vakantie-parijs.jpg": "Ons weekendje Parijs, mei 2026",
-  "verjaardag.png": "Jouw verjaardag ✨"
+  "vakantie-parijs.jpg": ["Ons weekendje Parijs", "Ons weekendje Parijs, mei 2026 — met te veel croissants en te weinig slaap."],
+  "verjaardag.png": ["Jouw verjaardag ✨", "Jouw verjaardag dit jaar, met taart en veel te veel cadeaus."]
 }
 ```
 
-en upload dat bestand ook in dezelfde R2-bucket (bestandsnaam moet
+Alleen een los woord of zinnetje nodig, zonder aparte lange versie?
+Dan mag het ook gewoon een enkele string blijven (zoals in de oude
+versie) — die wordt dan voor zowel het korte als het lange bijschrift
+gebruikt:
+
+```json
+{
+  "shrek.jpg": "Looking shreksy"
+}
+```
+
+Upload dit bestand ook in dezelfde R2-bucket (bestandsnaam moet
 letterlijk `captions.json` zijn). Foto's zonder match tonen gewoon
 geen bijschrift.
 

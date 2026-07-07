@@ -99,6 +99,21 @@ export const siteConfig = {
     },
   ],
 
+  // Extra rows shown (disabled, with a "Binnenkort" badge) in the
+  // settings dropdown (⚙️, top right of every page), underneath the
+  // two working settings (donkere modus + kleurthema, which are
+  // plain HTML + assets/js/modules/theme.js, not driven from here).
+  //
+  // This list exists purely so the panel has room to grow — add as
+  // many entries as you like, each just needs `label` (and optionally
+  // `emoji`). See settings-dropdown.js's "EXTENDING" comment for how
+  // to turn one of these into a real, working setting later.
+  settings: [
+    { label: 'Taal', emoji: '🌐' },
+    { label: 'Lettergrootte', emoji: '🔠' },
+    { label: 'Meldingen', emoji: '🔔' },
+  ],
+
   // Config for the Ticketmaster page (assets/js/modules/ticketmaster.js).
   //
   // IMPORTANT: this is a PUBLIC repo, so this file must never contain the
