@@ -3,23 +3,11 @@
    -------------------------------------------------------------
    Every color, spacing value, radius, shadow, etc. used anywhere
    on the site is defined ONCE here as a CSS custom property.
-
-   Why this matters for you:
-   - Want to rebrand the whole site? Change the values in this
-     file and every page/component updates automatically.
-   - Never hard-code a color/spacing value in a component file.
-     Always reference a token (var(--...)) instead, and add a new
-     token here if you need one that doesn't exist yet.
    ============================================================= */
 
 :root {
   /* ---------------------------------------------------------
      COLOR PALETTE, light theme (default)
-     Original design used CSS named colors (e.g. "mediumslateblue").
-     Kept the exact same palette, just expressed as hex so the
-     values are precise, easy to diff, and easy to run through
-     a contrast checker or design tool.
-
      The 7 "brand hue" tokens just below (--color-primary through
      --color-accent) are the ONLY tokens that change between the
      "blauw" and "roze" color themes (see the [data-color-theme]
@@ -27,18 +15,18 @@
      radius, shadow, type) is shared by both themes and both light
      and dark mode.
      --------------------------------------------------------- */
-  --color-primary:        #3867d6; /* mediumslateblue */
-  --color-secondary:      #6495ED; /* cornflowerblue  */
-  --color-tertiary:       #00BFFF; /* deepskyblue     */
-  --color-primary-dark:   #000080; /* navy            */
-  --color-secondary-dark: #4169E1; /* royalblue       */
-  --color-tertiary-dark:  #5F9EA0; /* cadetblue       */
-  --color-accent:         #FF69B4; /* hotpink         */
+  --color-primary:        #3867d6;
+  --color-secondary:      #6495ED;
+  --color-tertiary:       #00BFFF;
+  --color-primary-dark:   #000080;
+  --color-secondary-dark: #4169E1;
+  --color-tertiary-dark:  #5F9EA0;
+  --color-accent:         #FF69B4;
 
-  --color-success: #32CD32; /* limegreen */
-  --color-warning: #FFD700; /* gold      */
-  --color-danger:  #FF6347; /* tomato    */
-  --color-dark:    #191970; /* midnightblue */
+  --color-success: #32CD32;
+  --color-warning: #FFD700;
+  --color-danger:  #FF6347;
+  --color-dark:    #191970;
 
   /* Neutral / gray scale, light -> dark */
   --gray-100: #FFFAFA; /* snow       */
@@ -53,18 +41,15 @@
 
   --color-white: #FFFFFF;
 
-  /* Semantic aliases  , components should prefer these names over
-     raw color tokens above, so a theme swap only touches this block */
+  /* Semantic aliases, components should prefer these names over
+      raw color tokens above, so a theme swap only touches this block */
   --color-bg:          var(--gray-200);
   --color-surface:     var(--color-white);
   --color-text:        var(--color-dark);
   --color-text-muted:  var(--gray-800);
   --color-border:      rgba(0, 0, 0, 0.08);
 
-  /* ---------------------------------------------------------
-     SPACING SCALE (rem based, respects the user's font-size)
-     Use these instead of one-off magic-number margins/paddings.
-     --------------------------------------------------------- */
+  /* SPACING SCALE (rem based, respects the user's font-size) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -75,16 +60,14 @@
   --space-8: 4rem;
   --space-9: 6rem;
 
-  /* ---------------------------------------------------------
-     RADIUS / SHADOW / TRANSITION
-     --------------------------------------------------------- */
-  --radius-sm: 8px;
-  --radius:    16px;
-  --radius-lg: 24px;
-  --radius-xl: 40px;
+  /* RADIUS / SHADOW / TRANSITION */
+  --radius-sm:   8px;
+  --radius:      16px;
+  --radius-lg:   24px;
+  --radius-xl:   40px;
   --radius-full: 999px;
 
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, .06);
+  --shadow-sm: 0 2px  6px  rgba(0, 0, 0, .06);
   --shadow:    0 10px 30px rgba(0, 0, 0, .10);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, .16);
 
@@ -92,13 +75,11 @@
   --transition:       0.3s ease;
   --transition-slow:  0.6s ease;
 
-  /* ---------------------------------------------------------
-     TYPOGRAPHY
-     --------------------------------------------------------- */
+  /* TYPOGRAPHY */
   --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
-  /* Fluid type scale  , scales smoothly between mobile and desktop
+  /* Fluid type scale, scales smoothly between mobile and desktop
      instead of jumping at breakpoints. */
   --fs-sm:   clamp(0.85rem, 0.8rem  + 0.2vw, 0.95rem);
   --fs-base: clamp(1rem   , 0.95rem + 0.2vw, 1.05rem);
@@ -107,24 +88,19 @@
   --fs-h2:   clamp(2rem   , 1.5rem  + 2vw  , 3.2rem);
   --fs-h1:   clamp(2.4rem , 1.8rem  + 3vw  , 4.6rem);
 
-  /* ---------------------------------------------------------
-     LAYOUT
-     --------------------------------------------------------- */
+  /* LAYOUT */
   --container: 1200px;
   --container-narrow: 720px;
 
-  /* Reference only  , CSS can't use custom properties inside
+  /* Reference only, CSS can't use custom properties inside
      @media conditions, so these breakpoints are also hard-coded
-     wherever a media query needs them. Keep both in sync.
-       --bp-sm: 480px   (phones)
-       --bp-md: 768px   (tablets / nav collapse)
-       --bp-lg: 992px   (small laptops)
-       --bp-xl: 1200px  (desktop) */
+     wherever a media query needs them. Keep both in sync. */
+   --bp-sm: 480px;   /* (phones) */
+   --bp-md: 768px;   /* (tablets / nav collapse) */
+   --bp-lg: 992px;   /* (small laptops) */
+   --bp-xl: 1200px;  /* (desktop) */
 
-  /* ---------------------------------------------------------
-     Z-INDEX SCALE  , avoid random z-index values; add a new
-     named layer here if you introduce e.g. a modal or toast.
-     --------------------------------------------------------- */
+  /* Z-INDEX SCALE */
   --z-navbar: 900;
   --z-overlay: 950;
   --z-back-to-top: 800;
@@ -133,50 +109,28 @@
   color-scheme: light;
 }
 
-/* ---------------------------------------------------------
-   COLOR THEME: "blauw" vs "roze"
-   -------------------------------------------------------------
-   Toggled by JS setting data-color-theme="blue" | "pink" on <html>
-   (see assets/js/modules/theme.js, initColorTheme()). Only the 7
-   brand hue tokens are redefined here — every component already
-   references them (never a raw hex), so switching theme reskins
-   buttons, the hero gradient, badges, links, etc. everywhere at
-   once with zero component-file changes.
-
-   This also automatically carries into dark mode: dark mode (see
-   below) only redefines the neutral --color-bg/surface/text/border
-   tokens, never these brand tokens, so whichever color theme is
-   active stays active when dark mode is toggled too.
-   --------------------------------------------------------- */
+/* COLOR THEME */
 [data-color-theme='blue'] {
-  --color-primary:        #2d60c5; /* mediumslateblue */
-  --color-secondary:      #6495ED; /* cornflowerblue  */
-  --color-tertiary:       #00BFFF; /* deepskyblue     */
-  --color-primary-dark:   #000080; /* navy            */
-  --color-secondary-dark: #4169E1; /* royalblue       */
-  --color-tertiary-dark:  #5F9EA0; /* cadetblue       */
-  --color-accent:         #FF69B4; /* hotpink         */
+  --color-primary:        #2d60c5;
+  --color-secondary:      #6495ED;
+  --color-tertiary:       #00BFFF;
+  --color-primary-dark:   #000080;
+  --color-secondary-dark: #4169E1;
+  --color-tertiary-dark:  #5F9EA0;
+  --color-accent:         #FF69B4;
 }
 
 [data-color-theme='pink'] {
-  --color-primary:        #D6467A; /* rose            */
-  --color-secondary:      #FF6FA5; /* light rose      */
-  --color-tertiary:       #FFB6C1; /* lightpink       */
-  --color-primary-dark:   #7A1F45; /* deep rose       */
-  --color-secondary-dark: #C2185B; /* raspberry       */
-  --color-tertiary-dark:  #B76E79; /* dusty rose      */
-  --color-accent:         #5B8DEF; /* contrasting blue pop */
+  --color-primary:        #D6467A;
+  --color-secondary:      #FF6FA5;
+  --color-tertiary:       #FFB6C1;
+  --color-primary-dark:   #7A1F45;
+  --color-secondary-dark: #C2185B;
+  --color-tertiary-dark:  #B76E79;
+  --color-accent:         #5B8DEF;
 }
 
-/* ---------------------------------------------------------
-   DARK THEME, overrides the semantic aliases only.
-   Toggled by setting data-theme="dark" on <html> (see theme.js).
-   Because components only ever reference the *semantic* tokens
-   (--color-bg, --color-text, ...), dark mode support for any new
-   component is usually just "use the right semantic token"  ,
-   no extra dark-mode CSS required. See dark-mode.css for the
-   handful of components that need bespoke treatment.
-   --------------------------------------------------------- */
+/* DARK THEME: for specific adjustments, see dark-mode.css */
 :root[data-theme='dark'] {
   --color-bg:         #121212;
   --color-surface:    var(--gray-900);

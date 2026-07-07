@@ -1,9 +1,9 @@
-/* =============================================================
-   STATS / ANIMATED COUNTERS
-   Pairs with assets/js/modules/counters.js, which counts each
-   [data-target] number up from 0 the first time it scrolls into
-   view.
-   ============================================================= */
+/*  =============================================================
+    STATS / ANIMATED COUNTERS
+    Pairs with assets/js/modules/counters.js, which counts each
+    [data-target] number up from 0 the first time it scrolls into
+    view.
+    ============================================================= */
 
 .stats {
   display: grid;

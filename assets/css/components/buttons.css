@@ -1,12 +1,12 @@
-/* =============================================================
-   BUTTONS
-   ============================================================= */
-
+/*  =============================================================
+    BUTTONS
+    ============================================================= */
+/* Section begin: Button */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px; /* comfortable touch target on mobile */
+  min-height: 44px;
   padding: 14px 28px;
   border-radius: var(--radius-full);
   font-weight: 700;
@@ -35,19 +35,18 @@
   color: var(--color-primary);
 }
 
-.btn-outline:hover,
-.btn-outline:focus-visible {
+.btn-outline:hover, .btn-outline:focus-visible {
   background: var(--color-primary);
   color: var(--color-white);
 }
 
-/* Modifier for a bigger, more prominent call-to-action button
-  (used instead of an inline style="font-size:...") */
 .btn-lg {
   font-size: 1.25rem;
   padding: 18px 36px;
 }
+/* Section end: Button */
 
+/* Section begin: ROOT */
 :root[data-theme='dark'] .btn-outline {
   border-color: var(--color-white);
   color: var(--color-white);
@@ -57,10 +56,9 @@
   background: var(--color-white);
   color: var(--color-dark);
 }
+/* Section end: ROOT */
 
-/* == BACK TO TOP ==
-  Floating button, hidden until the user scrolls down (see
-  assets/js/modules/navbar.js for the show/hide + click logic). */
+/* Section begin: BACK TO TOP */
 #backToTop {
   position: fixed;
   right: var(--space-5);
@@ -90,6 +88,7 @@
 #backToTop:focus-visible {
   box-shadow: var(--shadow-lg);
 }
+/* Section end: BACK TO TOP */
 
 @media (max-width: 480px) {
   /* Full-width buttons are easier to tap accurately on small phones,

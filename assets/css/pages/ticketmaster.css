@@ -28,11 +28,11 @@
   color: var(--color-text-muted);
   font-weight: 700;
   font-family: var(--font-body);
-  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast),
+                background var(--transition-fast);
 }
 
-.tm-tab:hover,
-.tm-tab:focus-visible {
+.tm-tab:hover, .tm-tab:focus-visible {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
@@ -159,17 +159,17 @@
 }
 
 .tm-badge-upcoming {
-  background: rgba(255, 215, 0, 0.18); /* gold tint */
+  background: rgba(255, 215, 0, 0.18);
   color: #7a5b00;
 }
 
 .tm-badge-onsale {
-  background: rgba(50, 205, 50, 0.16); /* limegreen tint */
+  background: rgba(50, 205, 50, 0.16);
   color: #1f7a1f;
 }
 
 .tm-badge-presale {
-  background: rgba(100, 149, 237, 0.18); /* cornflowerblue tint */
+  background: rgba(100, 149, 237, 0.18);
   color: #1d4ea3;
 }
 

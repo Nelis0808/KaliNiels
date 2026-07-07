@@ -44,9 +44,9 @@
   margin-inline: auto;
 }
 
-/* == MATCH SCREEN ==
-  Two big option "buttons" facing off, separated by a VS divider.
-  Side-by-side on wider screens, stacked on phones. */
+/*  == MATCH SCREEN ==
+    Two big option "buttons" facing off, separated by a VS divider.
+    Side-by-side on wider screens, stacked on phones. */
 .match {
   display: flex;
   align-items: stretch;

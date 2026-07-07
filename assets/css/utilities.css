@@ -1,10 +1,8 @@
-/* =============================================================
-   UTILITIES
-   Small, single-purpose helper classes. Fine to combine several
-   on one element. If you find yourself repeating the same
-   one-off inline style="" attribute more than twice, that's a
-   sign it belongs here as a utility instead.
-   ============================================================= */
+/*  =============================================================
+    UTILITIES
+    Small, single-purpose helper classes. Fine to combine several
+    on one element. Used to prevent repetition
+    ============================================================= */
 
 .text-center { text-align: center; }
 .text-muted  { color: var(--color-text-muted); }
@@ -27,14 +25,14 @@
 .gap-1 { gap: var(--space-4); }
 .gap-2 { gap: var(--space-6); }
 
-/* Hide an element visually AND from assistive tech (unlike .sr-only,
-  which hides visually but keeps it announced). Use for e.g. an
-  icon that's purely decorative next to a text label. */
+/*  Hide an element visually AND from assistive tech (unlike .sr-only,
+      which hides visually but keeps it announced). Use for e.g. an
+      icon that's purely decorative next to a text label. */
 .hidden { display: none !important; }
 
-/* An empty section/placeholder that hasn't been built yet.
-  Better than a bare empty <section></section> — gives visitors
-  (and future-you) a clear signal instead of a blank gap. */
+/*  An empty section/placeholder that hasn't been built yet.
+      Better than a bare empty <section></section>: gives visitors
+      (and future-you) a clear signal instead of a blank gap. */
 .empty-state {
   text-align: center;
   padding: var(--space-7) var(--space-5);
@@ -44,8 +42,8 @@
 }
 
 /* == SCROLL / FADE ANIMATIONS ==
-  Applied via JS (assets/js/modules/reveal.js) once an element
-  with class="fade-up" scrolls into the viewport. */
+    Applied via JS (assets/js/modules/reveal.js) once an element
+    with class="fade-up" scrolls into the viewport. */
 .fade-up {
   opacity: 0;
   transform: translateY(40px);

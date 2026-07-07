@@ -1,9 +1,9 @@
-/* =============================================================
-   NAVBAR
-   Sticky header shared by every page. On desktop the links show
-   inline; below 768px they collapse behind a hamburger button
-   (wired up in assets/js/modules/navbar.js).
-   ============================================================= */
+/*  =============================================================
+    NAVBAR
+    Sticky header shared by every page. On desktop the links show
+    inline; below 768px they collapse behind a hamburger button
+    (wired up in assets/js/modules/navbar.js).
+    ============================================================= */
 
 .navbar {
   position: sticky;
@@ -44,8 +44,7 @@
   transition: color var(--transition-fast);
 }
 
-.nav-links a:hover,
-.nav-links a:focus-visible {
+.nav-links a:hover, .nav-links a:focus-visible {
   color: var(--color-primary);
 }
 
@@ -64,8 +63,7 @@
   transition: width var(--transition-fast);
 }
 
-.nav-links a:hover::after,
-.nav-links a:focus-visible::after {
+.nav-links a:hover::after, .nav-links a:focus-visible::after {
   width: 100%;
 }
 
@@ -113,7 +111,7 @@
     box-shadow: var(--shadow);
 
     /* Hidden by default via clip-path + max-height so it can animate
-      open/closed instead of an abrupt display:none jump */
+        open/closed instead of an abrupt display:none jump */
     max-height: 0;
     overflow: hidden;
     transition: max-height var(--transition);

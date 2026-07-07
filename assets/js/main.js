@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Site-wide chrome (safe no-ops on pages without these elements)
   initTheme();
   initColorTheme();
-  initNavDropdown();  /* Must run before initMobileMenu*/
+  initNavDropdown();        /* Must run before initMobileMenu*/
   initSettingsDropdown();
   initMobileMenu();
   initScrolledShadow();

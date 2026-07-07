@@ -5,14 +5,15 @@
 // button is clicked, never repeating the immediately-previous pick.
 //
 // Data files live in assets/data/. Paths below are resolved with
-// `new URL(..., import.meta.url)` rather than a plain relative
+// 'new URL(..., import.meta.url)' rather than a plain relative
 // string — that resolves relative to THIS FILE's location, not the
 // page that imported it, so this module keeps working unchanged
 // no matter which page/folder depth imports it in the future.
 //
-// EXTENDING: to add a third category (e.g. "weekend trips"), add
-// a new entry to CATEGORIES, a matching JSON file in assets/data/,
-// and a button + result container in the HTML with matching ids.
+// EXTENDING: to add a third category:
+// 1. Add a new entry to CATEGORIES
+// 2. A matching JSON file in assets/data/
+// 3. A button + result container in the HTML with matching ids.
 // =================================================================
 
 import { escapeHtml } from './utils.js';

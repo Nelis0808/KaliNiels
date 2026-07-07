@@ -1,10 +1,6 @@
-/* =============================================================
-   PAGE: DATE IDEAS (date.html)
-   -------------------------------------------------------------
-   Flexbox spacing (which naturally adapts to any screen) plus a
-   purely decorative entrance animation, so the "buttons fly apart" 
-   feel is kept without hard-coding any pixel value.
-   ============================================================= */
+/*  =============================================================
+    PAGE: DATE IDEAS (date.html)
+    ============================================================= */
 
 .hero-buttons {
   display: flex;
@@ -39,7 +35,7 @@
 .result-box {
   flex: 1 1 320px;
   max-width: 420px;
-  min-height: 120px; /* reserves space so the page doesn't jump when a card appears */
+  min-height: 150px; /* reserves space so the page doesn't jump when a card appears */
   display: flex;
   justify-content: center;
 }
@@ -49,9 +45,6 @@
   text-align: center;
 }
 
-/* Live region announcement for screen-reader users — see the
-   aria-live attribute set on #resultBinnen/#resultBuiten in the
-   HTML, and assets/js/modules/date-picker.js for how it's filled. */
 .result-box[aria-busy='true'] {
   opacity: 0.6;
 }

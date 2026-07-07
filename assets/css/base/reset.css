@@ -1,9 +1,9 @@
-/* =============================================================
-   RESET
-   A small, modern reset. Keeps native form/typography behaviour
-   mostly intact (unlike aggressive resets) so components don't
-   need to re-declare basic things like font inheritance.
-   ============================================================= */
+/*  =============================================================
+    RESET
+    Keeps native form/typography behaviour
+    mostly intact (unlike aggressive resets) so components don't
+    need to re-declare basic things like font inheritance.
+    ============================================================= */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -58,7 +58,7 @@ ul, ol {
 }
 
 /* Respect the user's OS-level "reduce motion" preference site-wide.
-  Individual components don't need to think about this themselves. */
+    Individual components don't need to think about this themselves. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -69,8 +69,8 @@ ul, ol {
 }
 
 /* Consistent, visible focus ring for keyboard users on every
-  interactive element  only shown for keyboard navigation
-  (":focus-visible"), so mouse clicks stay visually clean. */
+    interactive element  only shown for keyboard navigation
+    (":focus-visible"), so mouse clicks stay visually clean. */
 :focus-visible {
   outline: 3px solid var(--color-secondary);
   outline-offset: 2px;

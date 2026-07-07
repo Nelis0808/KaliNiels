@@ -1,13 +1,8 @@
-/* =============================================================
-   NAV DROPDOWN ("Meer" menu)
-   -------------------------------------------------------------
-   Lists every page from config.js that ISN'T one of the permanent
-   nav links (see PERMANENT_LINKS in nav-dropdown.js) — including
-   "coming soon" placeholders, shown disabled with a badge.
-
-   Floating panel on desktop; becomes an inline accordion inside the
-   stacked mobile menu via the media query at the bottom (no JS
-   changes needed for that — same open/close class, different CSS).
+/*  =============================================================
+    NAV DROPDOWN
+    Lists every page from config.js that ISN'T one of the permanent
+    nav links (see PERMANENT_LINKS in nav-dropdown.js), meant for
+    placeholders.
    ============================================================= */
 
 .nav-dropdown {
@@ -25,8 +20,7 @@
   transition: color var(--transition-fast);
 }
 
-.nav-dropdown-trigger:hover,
-.nav-dropdown-trigger:focus-visible {
+.nav-dropdown-trigger:hover, .nav-dropdown-trigger:focus-visible {
   color: var(--color-primary);
 }
 
@@ -57,8 +51,7 @@
   display: flex;
 }
 
-.nav-dropdown-menu a,
-.nav-dropdown-menu .dropdown-item-disabled {
+.nav-dropdown-menu a, .nav-dropdown-menu .dropdown-item-disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -69,8 +62,7 @@
   white-space: nowrap;
 }
 
-.nav-dropdown-menu a:hover,
-.nav-dropdown-menu a:focus-visible {
+.nav-dropdown-menu a:hover, .nav-dropdown-menu a:focus-visible {
   background: var(--color-border);
   color: var(--color-primary);
 }

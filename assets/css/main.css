@@ -1,25 +1,24 @@
-/* =============================================================
-   MAIN STYLESHEET, single entry point
-   -------------------------------------------------------------
-   Every HTML page links only to this one file:
-     <link rel="stylesheet" href="assets/css/main.css">
+/*  =============================================================
+    MAIN STYLESHEET, single entry point
+    Every HTML page links only to this one file:
+      <link rel="stylesheet" href="assets/css/main.css">
 
-   It pulls in every partial below in the order the cascade needs:
-   tokens -> reset -> typography -> layout -> components -> theme.
+    It pulls in every partial below in the order the cascade needs:
+    tokens -> reset -> typography -> layout -> components -> theme.
 
-   HOW TO EXTEND:
-   - New reusable UI piece (e.g. a modal, a tag, a tooltip)?
-     Add assets/css/components/<name>.css and @import it here.
-   - New page with layout that's unique to it?
-     Don't put it here — create assets/css/pages/<page>.css and
-     link it as a SECOND <link> tag on that page only, after
-     main.css. That keeps main.css page-agnostic and reusable.
+    HOW TO EXTEND:
+    - New reusable UI piece (e.g. a modal, a tag, a tooltip)?
+      Add assets/css/components/<name>.css and @import it here.
+    - New page with layout that's unique to it?
+      Don't put it here: create assets/css/pages/<page>.css and
+      link it as a SECOND <link> tag on that page only, after
+      main.css.
 
    PERFORMANCE NOTE: @import causes one extra network round trip
    per file. Totally fine for a small/medium site like this one.
    If the project grows large enough for this to matter, swap to
    a tiny build step (e.g. `npx lightningcss` or Vite) that
-   concatenates + minifies these into one file at deploy time —
+   concatenates + minifies these into one file at deploy time:
    nothing about the source structure has to change to do that.
    ============================================================= */
 

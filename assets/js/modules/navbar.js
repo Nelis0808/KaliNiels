@@ -6,15 +6,14 @@
 // on every page, but not every page has every element (e.g. only
 // template.html currently has #backToTop). Without the guard, a
 // missing element on one page would throw and silently stop every
-// later line in the file from running — that was the exact bug in
-// the original script.js (see README "What changed" section).
+// later line in the file from running.
 // =================================================================
 
 import { qsa } from './utils.js';
 
 /** Hamburger button <-> collapsible mobile nav panel. */
 export function initMobileMenu() {
-  const menuBtn = document.getElementById('menuBtn');
+  const menuBtn  = document.getElementById('menuBtn');
   const navLinks = document.getElementById('navLinks');
   if (!menuBtn || !navLinks) return;
 
@@ -32,7 +31,7 @@ export function initMobileMenu() {
   });
 }
 
-/** Adds aria-current + an `.active` class to whichever nav link matches the current page. */
+/** Adds aria-current + an '.active' class to whichever nav link matches the current page. */
 export function initActiveNavLink() {
   const navLinks = document.getElementById('navLinks');
   if (!navLinks) return;

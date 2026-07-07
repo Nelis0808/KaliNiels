@@ -1,14 +1,12 @@
-/* =============================================================
-   CARDS
-   ============================================================= */
+/*  =============================================================
+    CARDS
+    ============================================================= */
 
-/* == CARDS GRID ==
-  Uses CSS Grid auto-fill/minmax instead of the original
-  flex-wrap layout. Benefit: it reflows to however many columns
-  fit at the current viewport width with NO media queries needed
-  , one rule that works from a small phone up to an ultra-wide
-  monitor. Adjust the 220px minimum below to make cards bigger
-  or smaller before they wrap to a new column. */
+/*  == CARDS GRID ==
+    Uses CSS Grid auto-fill/minmax instead of the original
+    flex-wrap layout. Benefit: it reflows to however many columns
+    fit at the current viewport width with NO media queries needed,
+    one rule that works from a small phone up to an ultra-wide monitor. */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -29,8 +27,7 @@
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
-.card:hover,
-.card:focus-visible {
+.card:hover, .card:focus-visible {
   transform: scale(1.05);
   box-shadow: var(--shadow-lg);
 }
@@ -40,8 +37,7 @@
   opacity: 0.6;
 }
 
-.card-disabled:hover,
-.card-disabled:focus-visible {
+.card-disabled:hover, .card-disabled:focus-visible {
   transform: none;
   box-shadow: var(--shadow-sm);
 }

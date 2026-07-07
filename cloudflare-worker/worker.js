@@ -88,8 +88,6 @@ export default {
     }
 
     if (!env.TICKETMASTER_API_KEY) {
-      // You forgot `wrangler secret put TICKETMASTER_API_KEY` (or the
-      // dashboard equivalent) — see STAPPENPLAN.md.
       return jsonError('Server misconfigured: missing TICKETMASTER_API_KEY secret', 500, headers);
     }
 

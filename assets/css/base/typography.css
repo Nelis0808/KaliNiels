@@ -1,6 +1,6 @@
-/* =============================================================
-   TYPOGRAPHY
-   ============================================================= */
+/*  =============================================================
+    TYPOGRAPHY
+    ============================================================= */
 
 body {
   font-size: var(--fs-base);
@@ -11,7 +11,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.15;
   font-weight: 700;
   color: var(--color-text);
-  text-wrap: balance; /* keeps headings from wrapping into a lonely last word */
+  text-wrap: balance;
 }
 
 h1 { font-size: var(--fs-h1); }
@@ -22,7 +22,7 @@ h4 { font-size: var(--fs-lg); }
 p {
   color: var(--color-text-muted);
   margin-bottom: var(--space-4);
-  max-width: 65ch; /* comfortable reading line-length */
+  max-width: 65ch;
 }
 
 small { font-size: var(--fs-sm); }
@@ -35,8 +35,8 @@ small { font-size: var(--fs-sm); }
 }
 
 /* Screen-reader-only text: visually hidden but still announced.
-   Use for context that sighted users don't need but assistive
-   tech users do (e.g. "(opens in new tab)"). */
+    Use for context that sighted users don't need but assistive
+    tech users do (e.g. "(opens in new tab)"). */
 .sr-only {
   position: absolute;
   width: 1px;

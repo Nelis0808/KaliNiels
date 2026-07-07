@@ -14,7 +14,7 @@
 // Set all three as Cloudflare "secrets" (never in this file, never in git).
 // Bind the R2 bucket to this worker as `PHOTOS_BUCKET`.
 //
-// Deploy instructions: see STAPPENPLAN-FOTOS.md at the repo root.
+// Deploy instructions: see PHOTO-GALLERY.md at the repo root.
 //
 // Routes:
 //   POST /login                  { passphrase } -> { token, who }
@@ -22,7 +22,7 @@
 //   GET  /photos/object?key=...  (auth)         -> raw image bytes
 //
 // CAPTIONS: captions.json (uploaded to the same private R2 bucket,
-// see STAPPENPLAN-FOTOS.md) maps each filename to a [short, long]
+// see PHOTO-GALLERY.md) maps each filename to a [short, long]
 // array — short shows under the thumbnail, long shows in the
 // lightbox when the photo is clicked:
 //   { "img.jpg": ["Short description", "Longer description..."] }
@@ -38,7 +38,7 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5500',
 ];
 
-const SESSION_LENGTH_SECONDS = 30 * 24 * 60 * 60; // "onthouden" — ~30 days
+const SESSION_LENGTH_SECONDS = 30 * 24 * 60 * 60; // ~30 days
 const IMAGE_CONTENT_TYPES = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',

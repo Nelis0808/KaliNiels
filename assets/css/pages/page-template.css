@@ -9,7 +9,7 @@
    follow for every NEW page you create:
 
      1. Copy template.html -> your-new-page.html
-     2. Copy this file -> assets/css/pages/your-new-page.css
+     2. Copy this file     -> assets/css/pages/your-new-page.css
      3. Link BOTH stylesheets in your new page's <head>, main.css
         first so your page file can override it:
 

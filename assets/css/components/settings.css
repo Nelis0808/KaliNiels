@@ -1,18 +1,18 @@
 /* =============================================================
-   SETTINGS DROPDOWN (top-right "⚙️" menu)
+   SETTINGS DROPDOWN "⚙️"
    -------------------------------------------------------------
-   Lives in .nav-actions, separate from the "Meer" nav-dropdown
-   (which only exists inside the collapsible mobile nav-links).
+   Lives in .nav-actions, separate from the "More" nav-dropdown
    Because this one has to stay usable at every screen width, it
    deliberately does NOT reuse .nav-dropdown-menu's mobile
-   accordion override — it always floats, same as before.
+   accordion override; it always floats, same as before.
 
    Renders two live controls (dark mode, color theme) plus any
-   extra entries from siteConfig.settings — see
-   assets/js/modules/settings-dropdown.js. Adding a real 4th
-   setting later means: give it a working control markup here
-   (copy a .settings-item block) and wire it up in its own module,
-   the same pattern as theme.js.
+   extra entries from siteConfig.settings: see
+   assets/js/modules/settings-dropdown.js. 
+   
+   Adding a real 'X'th setting later means: give it a working control 
+   markup here (copy a .settings-item block) and wire it up in its
+   own module, the same pattern as theme.js.
    ============================================================= */
 
 .settings-dropdown {
@@ -82,8 +82,8 @@
   color: var(--color-text-muted);
 }
 
-/* == TOGGLE SWITCH (used for dark mode + color theme, and reusable
-   for any future on/off setting) == */
+/* TOGGLE SWITCH (used for dark mode + color theme, and reusable
+    for any future on/off setting) == */
 .switch {
   position: relative;
   flex-shrink: 0;
@@ -122,7 +122,7 @@
   outline-offset: 2px;
 }
 
-/* Disabled placeholder switch — visually "off" and inert */
+/* Disabled placeholder switch: visually "off" and inert */
 .settings-item-disabled .switch {
   opacity: 0.5;
   cursor: not-allowed;

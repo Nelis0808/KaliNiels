@@ -22,7 +22,7 @@
 // (e.g. a chart library) needs to re-render when a theme flips.
 // =================================================================
 
-const STORAGE_KEY = 'theme-preference';
+const STORAGE_KEY       = 'theme-preference';
 const COLOR_STORAGE_KEY = 'color-theme-preference';
 
 function applyTheme(theme, toggleBtn) {
@@ -32,7 +32,7 @@ function applyTheme(theme, toggleBtn) {
     const isDark = theme === 'dark';
     toggleBtn.setAttribute('aria-checked', String(isDark));
     toggleBtn.setAttribute('aria-label', isDark ?
-      'Zet lichte modus aan' : 'Zet donkere modus aan');
+      'To light mode' : 'To dark mode');
   }
 
   document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
@@ -64,7 +64,7 @@ function applyColorTheme(colorTheme, toggleBtn) {
     const isPink = colorTheme === 'pink';
     toggleBtn.setAttribute('aria-checked', String(isPink));
     toggleBtn.setAttribute('aria-label', isPink ?
-      'Zet blauwe thema aan' : 'Zet roze thema aan');
+      'To blue theme' : 'To pink theme');
   }
 
   document.dispatchEvent(new CustomEvent('colorthemechange', { detail: { colorTheme } }));

@@ -90,17 +90,17 @@ export function initTournament() {
   const root = document.getElementById('tournamentApp');
   if (!root) return; // not on this page
 
-  const setupView = qs('#tournamentSetup', root);
-  const matchView = qs('#tournamentMatch', root);
-  const winnerView = qs('#tournamentWinner', root);
-  const optionsInput = qs('#tournamentOptions', root);
-  const startBtn = qs('#tournamentStart', root);
-  const errorEl = qs('#tournamentError', root);
-  const progressEl = qs('#tournamentProgress', root);
-  const matchButtons = [qs('#matchOptionA', root), qs('#matchOptionB', root)];
-  const restartBtn = qs('#tournamentRestart', root);
-  const winnerNameEl = qs('#tournamentWinnerName', root);
-  const historyList = qs('#tournamentHistory', root);
+  const setupView     = qs('#tournamentSetup', root);
+  const matchView     = qs('#tournamentMatch', root);
+  const winnerView    = qs('#tournamentWinner', root);
+  const optionsInput  = qs('#tournamentOptions', root);
+  const startBtn      = qs('#tournamentStart', root);
+  const errorEl       = qs('#tournamentError', root);
+  const progressEl    = qs('#tournamentProgress', root);
+  const matchButtons  = [qs('#matchOptionA', root), qs('#matchOptionB', root)];
+  const restartBtn    = qs('#tournamentRestart', root);
+  const winnerNameEl  = qs('#tournamentWinnerName', root);
+  const historyList   = qs('#tournamentHistory', root);
 
   let tournament = null;
 

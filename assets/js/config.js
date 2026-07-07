@@ -1,6 +1,5 @@
 // =================================================================
 // SITE CONFIGURATION
-// -----------------------------------------------------------------
 // The one file you should need to touch for day-to-day content
 // changes. Nothing in here is page-specific markup, it's data
 // that the JS modules read to render/behave correctly.
@@ -13,17 +12,15 @@
 export const siteConfig = {
   // Shown in the logo / footer / <title> tags.
   siteName: 'MySite',
-
-  // Used by the "days together" counter on the home page.
-  // Format: YYYY-MM-DD.
+  
   relationshipStartDate: '2021-07-12',
 
   // Top navigation, rendered on every page that includes a
   // <header class="navbar">. Add a new page? Add a link here too.
   nav: [
-    { label: 'Home', href: 'index.html' },
+    { label: 'Home'       , href: 'index.html' },
     { label: 'Date Ideeën', href: 'date.html' },
-    { label: 'Toernooi', href: 'tournament.html' },
+    { label: 'Toernooi'   , href: 'tournament.html' },
   ],
 
   // The clickable "hub" cards on the home page. This is the main
@@ -104,9 +101,7 @@ export const siteConfig = {
   // two working settings (donkere modus + kleurthema, which are
   // plain HTML + assets/js/modules/theme.js, not driven from here).
   //
-  // This list exists purely so the panel has room to grow — add as
-  // many entries as you like, each just needs `label` (and optionally
-  // `emoji`). See settings-dropdown.js's "EXTENDING" comment for how
+  // See settings-dropdown.js's "EXTENDING" comment for how
   // to turn one of these into a real, working setting later.
   settings: [
     { label: 'Taal', emoji: '🌐' },
@@ -115,35 +110,16 @@ export const siteConfig = {
   ],
 
   // Config for the Ticketmaster page (assets/js/modules/ticketmaster.js).
-  //
-  // IMPORTANT: this is a PUBLIC repo, so this file must never contain the
-  // real Ticketmaster API key. Instead, `workerUrl` points at a small
-  // serverless proxy (a Cloudflare Worker) that holds the real key as a
-  // secret on Cloudflare's side and forwards requests to Ticketmaster.
-  // See /cloudflare-worker at the repo root + STAPPENPLAN.md for how to
-  // deploy it (~5 minutes, free tier).
+  // STAPPENPLAN.md for usage.
   ticketmaster: {
-    // Replace with YOUR deployed worker URL after following STAPPENPLAN.md.
     workerUrl: 'https://ticketmaster-proxy.niels-luijten7.workers.dev',
-
-    // ISO 3166-1 country code pre-selected in the country filter dropdown.
     defaultCountry: 'NL',
   },
 
   // Config for the private photo gallery (assets/js/modules/photo-gallery.js).
-  //
-  // Just like `ticketmaster` above: NEVER put the real passphrases here.
-  // They live only as encrypted secrets on the Cloudflare Worker that
-  // guards the private R2 bucket where the actual photos are stored.
-  // This file only needs the worker's URL and display labels — see
-  // /cloudflare-worker-photos + STAPPENPLAN-FOTOS.md for the full setup.
+  // PHOTO_GALLERY.md for usage.
   photos: {
-    // Replace with YOUR deployed worker URL after following STAPPENPLAN-FOTOS.md.
     workerUrl: 'https://photo-gallery.niels-luijten7.workers.dev',
-
-    // Purely cosmetic display names for whoever's passphrase matched
-    // ("a" or "b" — the worker never sends real names, just which of the
-    // two passphrases was used). Change these to your actual names.
     personLabels: {
       a: 'Niels',
       b: 'Kalina',

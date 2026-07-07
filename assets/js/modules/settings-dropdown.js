@@ -1,12 +1,5 @@
 // =================================================================
 // SETTINGS DROPDOWN (top-right "⚙️" menu, every page)
-// -----------------------------------------------------------------
-// Replaces the old pair of standalone icon buttons (🌸/🌙) with a
-// single gear button that opens a panel. The two *working* settings
-// (dark mode, color theme) are plain markup in every HTML file —
-// see the `.settings-item` blocks in the header — and are wired up
-// by theme.js exactly as before, just against new element IDs/roles.
-//
 // This module only handles:
 //   1. Opening/closing the panel (click, outside click, Escape).
 //   2. Rendering any FUTURE settings from siteConfig.settings as

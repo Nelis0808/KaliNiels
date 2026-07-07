@@ -43,19 +43,19 @@ export function initTicketmaster() {
 
   const tabs = {
     upcoming: qs('#tmTabUpcoming', root),
-    sales: qs('#tmTabSales', root),
-    search: qs('#tmTabSearch', root),
+    sales:    qs('#tmTabSales', root),
+    search:   qs('#tmTabSearch', root),
   };
-  const searchRow = qs('#tmSearchRow', root);
-  const searchInput = qs('#tmSearchInput', root);
-  const searchBtn = qs('#tmSearchBtn', root);
+  const searchRow     = qs('#tmSearchRow', root);
+  const searchInput   = qs('#tmSearchInput', root);
+  const searchBtn     = qs('#tmSearchBtn', root);
   const countrySelect = qs('#tmCountry', root);
-  const refreshBtn = qs('#tmRefresh', root);
-  const statusEl = qs('#tmStatus', root);
-  const resultsEl = qs('#tmResults', root);
-  const loadMoreBtn = qs('#tmLoadMore', root);
+  const refreshBtn    = qs('#tmRefresh', root);
+  const statusEl      = qs('#tmStatus', root);
+  const resultsEl     = qs('#tmResults', root);
+  const loadMoreBtn   = qs('#tmLoadMore', root);
 
-  const workerUrl = siteConfig.ticketmaster?.workerUrl || '';
+  const workerUrl     = siteConfig.ticketmaster?.workerUrl || '';
   countrySelect.value = siteConfig.ticketmaster?.defaultCountry ?? 'NL';
 
   // Current query state — rebuilt whenever a tab, filter, or search changes.
