@@ -181,6 +181,7 @@
   padding: var(--space-3) var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
+  text-align: center;
 }
 
 /* == LIGHTBOX (extended preview + longer caption on click) == */
