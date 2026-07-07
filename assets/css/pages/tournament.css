@@ -39,6 +39,11 @@
   min-height: 1.5em;
 }
 
+#tournamentStart {
+  display: flex;
+  margin-inline: auto;
+}
+
 /* == MATCH SCREEN ==
   Two big option "buttons" facing off, separated by a VS divider.
   Side-by-side on wider screens, stacked on phones. */
