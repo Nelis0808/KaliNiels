@@ -33,3 +33,24 @@ export function debounce(fn, wait = 150) {
     timeoutId = setTimeout(() => fn(...args), wait);
   };
 }
+
+// -----------------------------------------------------------------
+// SITE ROOT PATH HELPER
+// -----------------------------------------------------------------
+// Config data (siteConfig.pages, siteConfig.nav, ...) stores hrefs
+// as root-relative strings like "index.html" or "games-hub.html".
+// That's correct when a page lives at the site root, but breaks for
+// pages nested in a subfolder (e.g. games/tictactoe.html), where the
+// browser would instead resolve "index.html" against games/.
+//
+// This module (utils.js) always lives at assets/js/modules/utils.js
+// — exactly 3 folders below the site root — so climbing up 3 levels
+// from its own URL reliably gives the site root, however deep the
+// page importing it happens to be.
+// -----------------------------------------------------------------
+const SITE_ROOT = new URL('../../../', import.meta.url).href;
+
+/** Resolves a root-relative path (e.g. "index.html", "assets/x.svg") to a URL that works from any page depth. */
+export function siteRootUrl(relativePath) {
+  return new URL(relativePath, SITE_ROOT).href;
+}

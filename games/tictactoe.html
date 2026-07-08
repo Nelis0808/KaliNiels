@@ -6,7 +6,12 @@
   board markup and the scoreboard. Play again resets the board but
   keeps the running score, so you can play many rounds in a row.
 
-  Lives at the site root (like every other page) — no subfolder.
+  Lives in the games/ subfolder (moved out of the site root). All
+  paths here are one level deeper ("../assets/...", "../games-hub.html")
+  to account for that. The shared header/footer partials and nav
+  links are resolved dynamically at runtime (assets/js/modules/layout.js
+  + utils.js's siteRootUrl helper), so they work correctly from here
+  too, whatever the page's folder depth.
 -->
 <html lang="nl">
 <head>
@@ -54,6 +59,7 @@
       <!-- Running score across multiple rounds -->
       <div class="ttt-scoreboard" aria-live="polite">
         <div class="ttt-score ttt-score-x">
+          <span class="ttt-score-avatar" id="avatarX" aria-hidden="true">❌</span>
           <span class="ttt-score-label">Speler ❌</span>
           <span id="scoreX" class="ttt-score-value">0</span>
         </div>
@@ -62,6 +68,7 @@
           <span id="scoreDraw" class="ttt-score-value">0</span>
         </div>
         <div class="ttt-score ttt-score-o">
+          <span class="ttt-score-avatar" id="avatarO" aria-hidden="true">⭕</span>
           <span class="ttt-score-label">Speler ⭕</span>
           <span id="scoreO" class="ttt-score-value">0</span>
         </div>

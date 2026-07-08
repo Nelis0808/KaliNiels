@@ -39,7 +39,10 @@ export function initActiveNavLink() {
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
   qsa('a', navLinks).forEach((link) => {
-    const linkPage = link.getAttribute('href');
+    // href is now an absolute URL (rewritten in layout.js so subfolder
+    // pages resolve correctly), so compare just the filename portion
+    // instead of the raw attribute string.
+    const linkPage = new URL(link.getAttribute('href'), window.location.href).pathname.split('/').pop();
     if (linkPage === currentPage) {
       link.classList.add('active');
       link.setAttribute('aria-current', 'page');

@@ -53,6 +53,61 @@
   color: var(--color-text-muted);
 }
 
+/* == PLAYER AVATARS ==
+   Photo -> custom SVG -> emoji, in that fallback order (see
+   tictactoe.js). Every tier is forced to the exact same box —
+   width/height + object-fit — so the layout never shifts no matter
+   the source image's native dimensions, or which fallback tier ends
+   up rendering. */
+.ttt-score-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ttt-score-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.ttt-score-avatar-img.ttt-avatar-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  line-height: 1;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.ttt-cell-avatar-img {
+  width: 60%;
+  height: 60%;
+  max-width: 44px;
+  max-height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ttt-cell-avatar-img.ttt-avatar-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  border-radius: 0;
+}
+
 /* == STATUS == */
 .ttt-status {
   font-size: var(--fs-lg);

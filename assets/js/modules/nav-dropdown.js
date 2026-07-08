@@ -9,7 +9,7 @@
 // =================================================================
 
 import { siteConfig } from '../config.js';
-import { qsa, escapeHtml } from './utils.js';
+import { qsa, escapeHtml, siteRootUrl } from './utils.js';
 
 // hrefs that already have their own permanent link in the nav —
 // keep this in sync with the <nav> markup in every HTML file.
@@ -19,7 +19,7 @@ function renderItem(page) {
   const isAvailable = page.status === 'available' && page.href;
 
   if (isAvailable) {
-    return `<a href="${page.href}" role="menuitem">${escapeHtml(page.title)}</a>`;
+    return `<a href="${siteRootUrl(page.href)}" role="menuitem">${escapeHtml(page.title)}</a>`;
   }
 
   return `

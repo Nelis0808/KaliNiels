@@ -12,6 +12,73 @@ const WIN_LINES = [
   [0, 4, 8], [2, 4, 6],            // diagonals
 ];
 
+// -----------------------------------------------------------------
+// PLAYER AVATARS — layered fallback
+// -----------------------------------------------------------------
+// Each player has three tiers of "who's who" visuals, tried in
+// order until one actually loads:
+//   1. photo   — a real (or placeholder) photo per player
+//   2. svg     — a custom drawn icon per player
+//   3. emoji   — plain ❌ / ⭕, always works, needs no network
+//
+// To use REAL photos later: just replace the files at
+// assets/icons/tictactoe/player-x-placeholder.png and
+// player-o-placeholder.png with actual photos (same filenames), or
+// change the `photo` path below to point wherever the real photo
+// lives. Nothing else needs to change — the fallback chain and the
+// board/scoreboard rendering stay exactly the same.
+// -----------------------------------------------------------------
+import { siteRootUrl } from './utils.js';
+
+const AVATARS = {
+  X: {
+    photo: siteRootUrl('assets/icons/tictactoe/player-x.png'),
+    svg: siteRootUrl('assets/icons/tictactoe/player-x.svg'),
+    emoji: '❌',
+    alt: 'Speler ❌',
+  },
+  O: {
+    photo: siteRootUrl('assets/icons/tictactoe/player-o.png'),
+    svg: siteRootUrl('assets/icons/tictactoe/player-o.svg'),
+    emoji: '⭕',
+    alt: 'Speler ⭕',
+  },
+};
+
+/** Builds an <img> that quietly degrades: photo -> svg -> emoji span, entirely via onerror (no network probing, no flicker on the happy path). */
+function buildAvatarImg(player, className) {
+  const avatar = AVATARS[player];
+  const img = document.createElement('img');
+  img.src = avatar.photo;
+  img.alt = avatar.alt;
+  img.className = className;
+  img.dataset.stage = 'photo';
+
+  img.addEventListener('error', () => {
+    if (img.dataset.stage === 'photo') {
+      // Photo missing/failed to load — drop to the custom SVG.
+      img.dataset.stage = 'svg';
+      img.src = avatar.svg;
+      return;
+    }
+    // SVG failed too — replace the <img> with a plain emoji span,
+    // which can't fail to render.
+    const fallback = document.createElement('span');
+    fallback.className = className + ' ttt-avatar-emoji';
+    fallback.textContent = avatar.emoji;
+    fallback.setAttribute('aria-hidden', 'true');
+    img.replaceWith(fallback);
+  });
+
+  return img;
+}
+
+/** Replaces a placeholder element's content with the layered avatar for a player, in place. */
+function mountAvatar(placeholder, player, className) {
+  if (!placeholder) return;
+  placeholder.replaceChildren(buildAvatarImg(player, className));
+}
+
 export function initTicTacToe() {
   const board = document.getElementById('tttBoard');
   if (!board) return; // not on the tic-tac-toe page
@@ -23,6 +90,10 @@ export function initTicTacToe() {
   const scoreDrawEl = document.getElementById('scoreDraw');
   const newRoundBtn = document.getElementById('tttNewRound');
   const resetScoreBtn = document.getElementById('tttResetScore');
+
+  // Scoreboard avatars — mounted once, they don't change during play.
+  mountAvatar(document.getElementById('avatarX'), 'X', 'ttt-score-avatar-img');
+  mountAvatar(document.getElementById('avatarO'), 'O', 'ttt-score-avatar-img');
 
   let cellValues = Array(9).fill(null);
   let currentPlayer = 'X';
@@ -77,7 +148,7 @@ export function initTicTacToe() {
     if (cellValues[index]) return; // already taken
 
     cellValues[index] = currentPlayer;
-    cell.textContent = playerLabel(currentPlayer);
+    mountAvatar(cell, currentPlayer, 'ttt-cell-avatar-img');
     cell.classList.add(currentPlayer === 'X' ? 'ttt-cell-x' : 'ttt-cell-o');
     cell.setAttribute('aria-disabled', 'true');
 
