@@ -1,0 +1,225 @@
+// =================================================================
+// BLACKJACK — AUTH + CHIP BALANCE (Cloudflare Worker)
+// -----------------------------------------------------------------
+// Same login pattern as the private photo gallery
+// (cloudflare/cloudflare-worker-photos/worker.js): two passphrases,
+// one per person, a signed token proves who's logged in. This
+// worker does NOT touch the photo gallery's secrets or storage —
+// it's a fourth, separate Worker with its own KV namespace.
+//
+// WHAT IT'S FOR: BlackJack (assets/js/modules/blackjack.js) is
+// playable by anyone, logged in or not. But your CHIP BALANCE only
+// exists, and only persists, if you're logged in — anonymous play
+// uses a fixed local stack that resets on refresh (see the module
+// for details). This worker is what makes the logged-in balance
+// durable across visits/devices, and is the thing that lets YOU
+// manually set someone's balance from the Cloudflare dashboard
+// (Workers & Pages → KV → your namespace → edit the "a" or "b" key)
+// without touching any code.
+//
+// Storage: one Cloudflare KV namespace, bound as `CHIPS_KV`, with
+// one key per person:
+//   "a" -> "1000"   (plain integer, stored as a string)
+//   "b" -> "1000"
+// Editing that value directly in the KV dashboard is a fully
+// supported way to top someone up or dock their chips — the worker
+// only ever reads it fresh, never caches it.
+//
+// Deploy instructions: see STAPPENPLAN-BLACKJACK.md at the repo root.
+//
+// Routes:
+//   POST /login          { passphrase }        -> { token, who, exp }
+//   GET  /chips           (auth)                -> { who, chips }
+//   PUT  /chips           (auth) { chips }      -> { who, chips }
+// =================================================================
+
+const ALLOWED_ORIGINS = [
+  'https://nelis0808.github.io',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+];
+
+const SESSION_LENGTH_SECONDS = 30 * 24 * 60 * 60; // ~30 days, same as the photo gallery
+const DEFAULT_CHIPS = 1000; // seeded once per person, the very first time they log in
+const MIN_CHIPS = 0;
+const MAX_CHIPS = 1_000_000; // sane ceiling so a bug can't write something absurd into KV
+
+function corsHeaders(origin) {
+  const allowed = ALLOWED_ORIGINS.includes(origin);
+  return {
+    'Access-Control-Allow-Origin': allowed ? origin : 'null',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
+  };
+}
+
+function jsonResponse(data, status, headers) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+  });
+}
+
+// ---- base64url + HMAC token helpers -------------------------------
+// Identical scheme to cloudflare-worker-photos/worker.js — a tiny
+// stateless JWT-alike. Deliberately duplicated rather than shared,
+// so this worker has zero dependency on the photo gallery's code or
+// secrets (they can be edited/rotated fully independently).
+
+function toBase64Url(bytes) {
+  let binary = '';
+  bytes.forEach((b) => { binary += String.fromCharCode(b); });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(str) {
+  const padded = str.replace(/-/g, '+').replace(/_/g, '/').padEnd(str.length + ((4 - (str.length % 4)) % 4), '=');
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+}
+
+async function hmacKey(secret) {
+  return crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  );
+}
+
+async function signToken(payload, secret) {
+  const payloadB64 = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const key = await hmacKey(secret);
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadB64));
+  const sigB64 = toBase64Url(new Uint8Array(signature));
+  return `${payloadB64}.${sigB64}`;
+}
+
+async function verifyToken(token, secret) {
+  if (!token || !token.includes('.')) return null;
+  const [payloadB64, sigB64] = token.split('.');
+
+  try {
+    const key = await hmacKey(secret);
+    const valid = await crypto.subtle.verify(
+      'HMAC',
+      key,
+      fromBase64Url(sigB64),
+      new TextEncoder().encode(payloadB64)
+    );
+    if (!valid) return null;
+
+    const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(payloadB64)));
+    if (typeof payload.exp !== 'number' || payload.exp < Date.now() / 1000) return null;
+    return payload; // { who: 'a' | 'b', exp }
+  } catch {
+    return null;
+  }
+}
+
+// Constant-time-ish string comparison, so a failed login doesn't leak
+// timing information about how many characters matched.
+function safeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
+async function requireAuth(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  return verifyToken(token, env.TOKEN_SECRET);
+}
+
+/** Reads a person's chip count from KV, seeding DEFAULT_CHIPS the first time. */
+async function readChips(env, who) {
+  const raw = await env.CHIPS_KV.get(who);
+  if (raw === null) {
+    await env.CHIPS_KV.put(who, String(DEFAULT_CHIPS));
+    return DEFAULT_CHIPS;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : DEFAULT_CHIPS;
+}
+
+export default {
+  async fetch(request, env, ctx) {
+    const origin = request.headers.get('Origin') || '';
+    const headers = corsHeaders(origin);
+    const url = new URL(request.url);
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers });
+    }
+
+    if (!env.TOKEN_SECRET || !env.PASSPHRASE_A || !env.PASSPHRASE_B) {
+      return jsonResponse({ error: 'Server misconfigured: missing secrets' }, 500, headers);
+    }
+
+    // ---- POST /login ----
+    if (url.pathname === '/login' && request.method === 'POST') {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonResponse({ error: 'Ongeldige aanvraag' }, 400, headers);
+      }
+
+      const passphrase = (body.passphrase || '').trim();
+      let who = null;
+      if (safeEqual(passphrase, env.PASSPHRASE_A)) who = 'a';
+      else if (safeEqual(passphrase, env.PASSPHRASE_B)) who = 'b';
+
+      if (!who) {
+        return jsonResponse({ error: 'Onjuist wachtwoord' }, 401, headers);
+      }
+
+      const exp = Math.floor(Date.now() / 1000) + SESSION_LENGTH_SECONDS;
+      const token = await signToken({ who, exp }, env.TOKEN_SECRET);
+      return jsonResponse({ token, who, exp }, 200, headers);
+    }
+
+    // ---- everything below requires a valid token ----
+    if (url.pathname === '/chips') {
+      if (!env.CHIPS_KV) {
+        return jsonResponse({ error: 'Server misconfigured: CHIPS_KV binding ontbreekt' }, 500, headers);
+      }
+
+      const auth = await requireAuth(request, env);
+      if (!auth) return jsonResponse({ error: 'Niet ingelogd of sessie verlopen' }, 401, headers);
+
+      // ---- GET /chips : current balance ----
+      if (request.method === 'GET') {
+        const chips = await readChips(env, auth.who);
+        return jsonResponse({ who: auth.who, chips }, 200, headers);
+      }
+
+      // ---- PUT /chips : save new balance after a hand ----
+      if (request.method === 'PUT') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return jsonResponse({ error: 'Ongeldige aanvraag' }, 400, headers);
+        }
+
+        const chips = Number.parseInt(body.chips, 10);
+        if (!Number.isFinite(chips) || chips < MIN_CHIPS || chips > MAX_CHIPS) {
+          return jsonResponse({ error: 'Ongeldig aantal chips' }, 400, headers);
+        }
+
+        await env.CHIPS_KV.put(auth.who, String(chips));
+        return jsonResponse({ who: auth.who, chips }, 200, headers);
+      }
+    }
+
+    return jsonResponse({ error: 'Not found' }, 404, headers);
+  },
+};

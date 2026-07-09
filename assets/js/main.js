@@ -46,6 +46,7 @@ import { initTicTacToe } from './modules/tictactoe.js';
 import { initConnect4 } from './modules/connect4.js';
 import { initWordle } from './modules/wordle.js';
 import { initHangman } from './modules/hangman.js';
+import { initBlackjack } from './modules/blackjack.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -81,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initConnect4();      // connect4.html
   initWordle();        // wordle.html
   initHangman();       // hangman.html
+  initBlackjack();     // games/blackjack.html
 
   console.log(`${document.title} — initialized ✅`);
 });

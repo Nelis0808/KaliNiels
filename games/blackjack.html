@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!--
+  BLACKJACK PAGE
+  Single-player vs dealer, classic rules (dealer hits until 17).
+  Logic lives in assets/js/modules/blackjack.js — this file only
+  contains the table layout, chip tray, and the (optional) login
+  form. Same "one script, guarded init function" pattern as every
+  other game page — see connect4.html for the identical structure.
+
+  LOGIN IS OPTIONAL: you can play as a guest with a fixed local
+  stack of chips that resets on refresh. Logging in (same
+  passphrase-based system as photos.html) unlocks:
+    - a chip balance that's saved server-side and follows you
+      across visits/devices (via the "blackjack" Cloudflare Worker)
+    - the "special" card face variant (assets/icons/playing-cards/
+      special-cards/) for aces, faces, and jokers instead of the
+      plain ones — everything else (number cards) looks the same
+      either way.
+
+  Lives in the games/ subfolder, same relative-path rules as the
+  other game pages (see tictactoe.html's comment for details).
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Speel BlackJack tegen de dealer, met chips en (optioneel) een opgeslagen saldo.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>BlackJack</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/blackjack.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🃏 BlackJack</h1>
+        <p>Kom zo dicht mogelijk bij 21, zonder eroverheen te gaan. De dealer speelt tot 17.</p>
+      </div>
+    </section>
+
+    <section class="container" id="bjApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <!-- Login bar: guest by default, optional login for a saved
+           balance + special cards. Same idea as photo-gallery.js's
+           login form, just inline instead of gating the whole page. -->
+      <div id="bjAuthBar" class="bj-auth-bar">
+        <div id="bjGuestBadge" class="bj-auth-status">
+          🕶️ Je speelt als gast — saldo wordt niet opgeslagen.
+          <button id="bjShowLogin" class="btn btn-outline bj-btn-sm" type="button">Inloggen</button>
+        </div>
+
+        <div id="bjLoggedInBadge" class="bj-auth-status hidden">
+          ✅ Ingelogd als <span id="bjWhoLabel"></span> — saldo wordt opgeslagen.
+          <button id="bjLogoutBtn" class="btn btn-outline bj-btn-sm" type="button">Uitloggen</button>
+        </div>
+
+        <form id="bjLoginForm" class="bj-login-form hidden">
+          <label for="bjPassphrase" class="bj-sr-only">Wachtwoord</label>
+          <input id="bjPassphrase" type="password" placeholder="Wachtwoord" autocomplete="current-password" required>
+          <button type="submit" class="btn btn-primary bj-btn-sm">Inloggen</button>
+          <button id="bjCancelLogin" type="button" class="btn btn-outline bj-btn-sm">Annuleren</button>
+        </form>
+        <p id="bjLoginError" class="bj-login-error" aria-live="polite"></p>
+      </div>
+
+      <!-- Chip balance + bet controls -->
+      <div class="bj-chips-bar" aria-live="polite">
+        <div class="bj-balance">
+          <span class="bj-balance-label">Saldo</span>
+          <span id="bjBalance" class="bj-balance-value">0</span>
+        </div>
+        <div class="bj-balance">
+          <span class="bj-balance-label">Inzet</span>
+          <span id="bjBet" class="bj-balance-value">0</span>
+        </div>
+      </div>
+
+      <!-- Clickable chip tray, filled by blackjack.js from assets/icons/chips -->
+      <div id="bjChipTray" class="bj-chip-tray" role="group" aria-label="Kies je inzet"></div>
+
+      <div class="bj-actions">
+        <button id="bjClearBet" class="btn btn-outline" type="button">Inzet wissen</button>
+        <button id="bjDeal" class="btn btn-primary" type="button">Deel kaarten</button>
+      </div>
+
+      <!-- Table -->
+      <div id="bjTable" class="bj-table hidden">
+        <div class="bj-hand-area">
+          <div class="bj-hand-label">
+            Dealer <span id="bjDealerScore" class="bj-hand-score"></span>
+          </div>
+          <div id="bjDealerCards" class="bj-cards"></div>
+        </div>
+
+        <p id="bjStatus" class="ttt-status" aria-live="polite"></p>
+
+        <div class="bj-hand-area">
+          <div class="bj-hand-label">
+            Jij <span id="bjPlayerScore" class="bj-hand-score"></span>
+          </div>
+          <div id="bjPlayerCards" class="bj-cards"></div>
+        </div>
+
+        <div class="bj-actions">
+          <button id="bjHit" class="btn btn-primary" type="button">Kaart (Hit)</button>
+          <button id="bjStand" class="btn btn-outline" type="button">Passen (Stand)</button>
+          <button id="bjDouble" class="btn btn-outline" type="button">Verdubbelen</button>
+        </div>
+
+        <div class="bj-actions">
+          <button id="bjNextHand" class="btn btn-primary hidden" type="button">Volgende hand</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- <div data-include="chrome-end"></div> Commented out, same reason as connect4.html -->
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

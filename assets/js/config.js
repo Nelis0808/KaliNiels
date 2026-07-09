@@ -145,4 +145,14 @@ export const siteConfig = {
   shoppingList: {
     workerUrl: 'https://boodschappenlijst.niels-luijten7.workers.dev',
   },
+
+  // Config for BlackJack's optional login + saved chip balance
+  // (assets/js/modules/blackjack.js). STAPPENPLAN-BLACKJACK.md for usage.
+  blackjack: {
+    workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
+  },
 };

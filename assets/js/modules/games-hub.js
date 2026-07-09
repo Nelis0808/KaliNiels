@@ -40,6 +40,13 @@ const games = [
     status: 'available',
   },
   {
+    title: 'BlackJack',
+    description: 'Kom zo dicht mogelijk bij 21. Speel gratis als gast, of log in voor een opgeslagen chipsaldo.',
+    href: 'games/blackjack.html',
+    emoji: '🃏',
+    status: 'available',
+  },
+  {
     title: 'Geheugenspel',
     description: 'Draai de kaartjes om en vind alle paren.',
     emoji: '🧠',
