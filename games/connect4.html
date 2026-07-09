@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+  CONNECT 4 PAGE ("Vier op een Rij")
+  Same-device two-player game. Logic lives in
+  assets/js/modules/connect4.js — this file only contains the
+  scoreboard and an empty board container that the module fills
+  with 42 (7x6) drop-cells. Play again resets the board but keeps
+  the running score, same pattern as tictactoe.html.
+
+  Lives in the games/ subfolder, same relative-path rules as
+  tictactoe.html (see the comment there for details).
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Speel vier op een rij tegen elkaar, zo vaak als je wilt.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Vier op een Rij</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/connect4.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🔵🩷 Vier op een Rij</h1>
+        <p>Om de beurt een schijf laten vallen. Wie heeft er als eerste vier op een rij?</p>
+      </div>
+    </section>
+
+    <section class="container" id="c4App">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <!-- Running score across multiple rounds -->
+      <div class="ttt-scoreboard" aria-live="polite">
+        <div class="ttt-score c4-score-blue">
+          <span class="ttt-score-avatar" id="avatarBlue" aria-hidden="true">🔵</span>
+          <span class="ttt-score-label">Speler Blauw</span>
+          <span id="scoreBlue" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score ttt-score-draw">
+          <span class="ttt-score-label">Gelijk</span>
+          <span id="scoreDrawC4" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score c4-score-pink">
+          <span class="ttt-score-avatar" id="avatarPink" aria-hidden="true">🩷</span>
+          <span class="ttt-score-label">Speler Roze</span>
+          <span id="scorePink" class="ttt-score-value">0</span>
+        </div>
+      </div>
+
+      <p id="c4Status" class="ttt-status" aria-live="polite">Speler Blauw 🔵 is aan de beurt</p>
+
+      <!-- Filled with 42 (7 columns x 6 rows) buttons by connect4.js -->
+      <div id="c4Board" class="c4-board" role="grid" aria-label="Vier op een rij bord, 7 kolommen bij 6 rijen"></div>
+
+      <div class="ttt-actions">
+        <button id="c4NewRound" class="btn btn-primary" type="button">Nieuwe ronde</button>
+        <button id="c4ResetScore" class="btn btn-outline" type="button">Score resetten</button>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -42,6 +42,9 @@ import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
 import { initGamesHub } from './modules/games-hub.js';
 import { initTicTacToe } from './modules/tictactoe.js';
+import { initConnect4 } from './modules/connect4.js';
+import { initWordle } from './modules/wordle.js';
+import { initHangman } from './modules/hangman.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -73,6 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPhotoGallery(); // photos.html
   initGamesHub();      // games-hub.html
   initTicTacToe();     // tictactoe.html
+  initConnect4();      // connect4.html
+  initWordle();        // wordle.html
+  initHangman();       // hangman.html
 
   console.log(`${document.title} — initialized ✅`);
 });

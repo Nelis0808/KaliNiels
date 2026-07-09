@@ -21,14 +21,23 @@ const games = [
   {
     title: 'Vier op een Rij',
     description: 'Wie krijgt er als eerste vier schijven op een rij?',
-    emoji: '🔴🟡',
-    status: 'coming-soon',
+    href: 'games/connect4.html',
+    emoji: '🔵',
+    status: 'available',
+  },
+  {
+    title: 'Wordle',
+    description: 'Raad het Engelse woord. Kies zelf hoeveel letters (4 t/m 10).',
+    href: 'games/wordle.html',
+    emoji: '🟩🟨',
+    status: 'available',
   },
   {
     title: 'Galgje',
     description: 'Raad het woord voordat het poppetje af is.',
+    href: 'games/hangman.html',
     emoji: '✏️',
-    status: 'coming-soon',
+    status: 'available',
   },
   {
     title: 'Geheugenspel',

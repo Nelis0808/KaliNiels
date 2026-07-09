@@ -169,7 +169,7 @@ export function initTicTacToe() {
 
   function startNewRound() {
     cellValues = Array(9).fill(null);
-    currentPlayer = 'X';
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
     roundOver = false;
 
     cells.forEach((cell) => {

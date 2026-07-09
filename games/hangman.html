@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<!--
+  HANGMAN PAGE ("Galgje")
+  Local single-device word game. Logic lives in
+  assets/js/modules/hangman.js — this file only contains the length
+  picker, the SVG drawing surface, and empty word/keyboard
+  containers (filled in by the module). Word list is shared with
+  Wordle: assets/data/word-list.json.
+
+  Lives in the games/ subfolder, same relative-path rules as
+  tictactoe.html (see the comment there for details).
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Raad het Engelse woord letter voor letter, voor het poppetje af is.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Galgje</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/wordle.css">
+  <link rel="stylesheet" href="../assets/css/pages/hangman.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>✏️ Galgje</h1>
+        <p>Raad het Engelse woord letter voor letter, voor het poppetje af is.</p>
+      </div>
+    </section>
+
+    <section class="container" id="hangmanApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <div class="wordle-settings">
+        <span class="wordle-settings-label">Aantal letters:</span>
+        <div id="hangmanLengthPicker" class="wordle-length-picker" role="group" aria-label="Kies het aantal letters"></div>
+      </div>
+
+      <p id="hangmanStatus" class="ttt-status" aria-live="polite">Woordenlijst laden…</p>
+
+      <svg id="hangmanDrawing" class="hangman-drawing" viewBox="0 0 200 240" role="img" aria-label="Galgje tekening"></svg>
+
+      <p id="hangmanWrongLetters" class="hangman-wrong-letters" aria-live="polite"></p>
+
+      <!-- Filled with one box per letter by hangman.js -->
+      <div id="hangmanWord" class="hangman-word" aria-live="polite"></div>
+
+      <!-- Filled with an A-Z layout by hangman.js -->
+      <div id="hangmanKeyboard" class="hangman-keyboard" aria-label="Letters"></div>
+
+      <div class="ttt-actions">
+        <button id="hangmanNewWord" class="btn btn-primary" type="button">Nieuw woord</button>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

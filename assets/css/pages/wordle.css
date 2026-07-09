@@ -1,0 +1,187 @@
+/* =============================================================
+   PAGE: WORDLE (games/wordle.html)
+   ============================================================= */
+
+/* == LENGTH PICKER == */
+.wordle-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.wordle-settings-label {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.wordle-length-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.wordle-length-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: transform var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.wordle-length-pill:hover {
+  transform: scale(1.08);
+}
+
+.wordle-length-pill-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* == GRID ==
+   --wordle-cols is set inline per game (word length 4-10). Cells
+   scale down on narrow screens via clamp() so a 10-letter word
+   still fits without horizontal scrolling. */
+.wordle-grid {
+  --wordle-cols: 5;
+  display: grid;
+  grid-template-columns: repeat(var(--wordle-cols), 1fr);
+  gap: clamp(4px, 1vw, 8px);
+  width: min(100%, calc(var(--wordle-cols) * 58px));
+  margin-inline: auto;
+  margin-bottom: var(--space-6);
+}
+
+.wordle-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1rem, 4vw, 1.6rem);
+  text-transform: uppercase;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: transform var(--transition-fast);
+}
+
+.wordle-cell-filled {
+  border-color: var(--color-text-muted);
+  transform: scale(1.03);
+}
+
+.wordle-cell-shake {
+  animation: wordle-shake 0.3s ease;
+}
+
+@keyframes wordle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.wordle-cell-reveal {
+  animation: wordle-flip 0.5s ease forwards;
+}
+
+@keyframes wordle-flip {
+  0%   { transform: rotateX(0deg); }
+  50%  { transform: rotateX(90deg); }
+  51%  { border-color: transparent; }
+  100% { transform: rotateX(0deg); }
+}
+
+.wordle-cell-correct {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-white);
+}
+
+.wordle-cell-present {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-dark);
+}
+
+.wordle-cell-absent {
+  background: var(--gray-600);
+  border-color: var(--gray-600);
+  color: var(--color-white);
+}
+
+/* == KEYBOARD == */
+.wordle-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.wordle-key-row {
+  display: flex;
+  gap: var(--space-1);
+  justify-content: center;
+  width: 100%;
+}
+
+.wordle-key {
+  min-width: 32px;
+  flex: 1;
+  max-width: 44px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.wordle-key:hover {
+  transform: translateY(-2px);
+}
+
+.wordle-key-wide {
+  flex: 1.6;
+  max-width: 70px;
+  font-size: var(--fs-sm);
+}
+
+.wordle-key-correct {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.wordle-key-present {
+  background: var(--color-warning);
+  color: var(--color-dark);
+}
+
+.wordle-key-absent {
+  background: var(--gray-700);
+  color: var(--color-white);
+}
+
+@media (max-width: 480px) {
+  .wordle-key {
+    height: 44px;
+    min-width: 24px;
+  }
+}

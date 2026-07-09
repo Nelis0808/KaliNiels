@@ -1,0 +1,104 @@
+/* =============================================================
+   PAGE: CONNECT 4 (games/connect4.html)
+   Reuses .ttt-scoreboard / .ttt-status / .ttt-actions from
+   games.css — only the board + disc styling lives here.
+   ============================================================= */
+
+.c4-score-blue .ttt-score-value { color: #7B68EE; }
+.c4-score-pink .ttt-score-value { color: #FF6B9D; }
+
+/* == BOARD ==
+   7 columns x 6 rows. connect4.js appends cells top-row-first
+   (game row 5, the top) down to bottom-row-last (game row 0, the
+   bottom) — see the DOM-building loop there. CSS grid places
+   elements in that same document order, top-to-bottom, so the
+   board already reads correctly with NO rotation needed: game row
+   0 (where gravity fills first) lands in the bottom grid row. */
+.c4-board {
+  --c4-cols: 7;
+  display: grid;
+  grid-template-columns: repeat(var(--c4-cols), 1fr);
+  gap: var(--space-2);
+  width: min(100%, 480px);
+  margin-inline: auto;
+  padding: var(--space-3);
+  background: var(--color-primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.c4-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.c4-board:not(.c4-board-over) .c4-cell:not(.c4-cell-blue):not(.c4-cell-pink):hover {
+  background: var(--color-border);
+  cursor: pointer;
+}
+
+.c4-cell-blue,
+.c4-cell-pink {
+  animation: c4-drop 0.35s ease-out;
+}
+
+@keyframes c4-drop {
+  from { transform: translateY(-140%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.c4-cell-win {
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, .18), 0 0 0 3px var(--color-accent);
+}
+
+/* == PLAYER AVATARS ==
+   Same fallback tiers (photo -> svg -> emoji) and sizing approach
+   as tictactoe's .ttt-*-avatar-img — see games.css. */
+.c4-score-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.c4-score-avatar-img.c4-avatar-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.c4-cell-avatar-img {
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.c4-cell-avatar-img.c4-avatar-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+}
+
+@media (max-width: 480px) {
+  .c4-board {
+    gap: var(--space-1);
+    padding: var(--space-2);
+  }
+}

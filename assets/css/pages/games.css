@@ -2,8 +2,14 @@
    PAGE: GAMES (games-hub.html, tictactoe.html)
    ============================================================= */
 
-/* == SHARED == */
-#tttApp {
+/* == SHARED ==
+   Same narrow, centered app column for every game page (tictactoe,
+   connect4, wordle, hangman) so everything — grid, keyboard,
+   buttons — centers consistently, phones included. */
+#tttApp,
+#c4App,
+#wordleApp,
+#hangmanApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
   text-align: center;

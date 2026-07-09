@@ -1,0 +1,103 @@
+/* =============================================================
+   PAGE: HANGMAN (games/hangman.html)
+   Reuses .wordle-length-pill / .ttt-status / .ttt-actions from
+   wordle.css and games.css — only the drawing, word display, and
+   A-Z keyboard live here.
+   ============================================================= */
+
+.hangman-drawing {
+  display: block;
+  width: min(100%, 220px);
+  margin-inline: auto;
+  margin-bottom: var(--space-3);
+}
+
+.hangman-wrong-letters {
+  min-height: 1.5em;
+  text-align: center;
+  color: var(--color-danger);
+  font-weight: 600;
+  margin-bottom: var(--space-5);
+}
+
+/* == WORD DISPLAY == */
+.hangman-word {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.hangman-letter-box {
+  width: 40px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--color-text-muted);
+  color: var(--color-text);
+}
+
+.hangman-letter-box-revealed {
+  color: var(--color-danger);
+  border-bottom-color: var(--color-danger);
+}
+
+/* == A-Z KEYBOARD == */
+.hangman-keyboard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 520px;
+  margin-inline: auto;
+}
+
+.hangman-key {
+  width: 40px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.hangman-key:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.hangman-key:disabled {
+  cursor: default;
+}
+
+.hangman-key-correct {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.hangman-key-wrong {
+  background: var(--gray-700);
+  color: var(--color-white);
+  opacity: 0.6;
+}
+
+@media (max-width: 480px) {
+  .hangman-key {
+    width: 32px;
+    height: 38px;
+  }
+
+  .hangman-letter-box {
+    width: 32px;
+    height: 40px;
+  }
+}
