@@ -31,7 +31,7 @@ const AVATARS = {
   P: {
     photo: siteRootUrl('assets/icons/connect4/player-pink.png'),
     svg: siteRootUrl('assets/icons/connect4/player-pink.svg'),
-    emoji: siteRootUrl('assets/icons/player-pink.svg'),
+    emoji: '🔴',
     alt: 'Speler Pink',
   },
 };

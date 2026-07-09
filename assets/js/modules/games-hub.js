@@ -22,7 +22,7 @@ const games = [
     title: 'Vier op een Rij',
     description: 'Wie krijgt er als eerste vier schijven op een rij?',
     href: 'games/connect4.html',
-    emoji: '🔵',
+    emoji: '🔵🔴',
     status: 'available',
   },
   {
