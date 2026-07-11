@@ -22,11 +22,13 @@ const WIN_LINES = [
 //   3. emoji   — plain ❌ / ⭕, always works, needs no network
 //
 // To use REAL photos later: just replace the files at
-// assets/icons/tictactoe/player-x-placeholder.png and
-// player-o-placeholder.png with actual photos (same filenames), or
-// change the `photo` path below to point wherever the real photo
-// lives. Nothing else needs to change — the fallback chain and the
-// board/scoreboard rendering stay exactly the same.
+// assets/icons/tictactoe/player-x.png and player-o.png with actual
+// photos (same filenames), or change the `photo` path below to
+// point wherever the real photo lives. Nothing else needs to
+// change — the fallback chain and the board/scoreboard rendering
+// stay exactly the same. Just make sure both files end up the same
+// dimensions/aspect ratio as each other, or whichever one doesn't
+// match will look visibly squashed/stretched next to the other.
 // -----------------------------------------------------------------
 import { siteRootUrl } from './utils.js';
 

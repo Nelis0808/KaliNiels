@@ -55,11 +55,11 @@
   transform: translateY(0);
 }
 
-/*  An inline image standing in for a color emoji that doesn't
-      exist (e.g. "pink circle" — there's only a pink HEART emoji,
-      not a pink circle, so assets/icons/player-pink.svg fills that
-      gap). Sized in `em` so it always matches the surrounding
-      text/emoji size, wherever it's dropped in. */
+/*  Sizes an inline SVG/image icon to match the surrounding text or
+      emoji, wherever it's dropped in (currently: the connect4
+      blue/pink player icons — see connect4.js/games-hub.js — which
+      use a matched-scale SVG pair since there's no "pink circle"
+      emoji to pair with blue's 🔵). */
 .emoji-icon {
   height: 1em;
   width: 1em;

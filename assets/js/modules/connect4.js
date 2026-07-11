@@ -13,13 +13,19 @@
 // tictactoe X/O colors, for a consistent look across both games.
 // To use REAL photos later, just replace
 // assets/icons/connect4/player-blue.png and player-pink.png with
-// actual photos (same filenames). Nothing else needs to change.
+// actual photos (same filenames). Nothing else needs to change —
+// just make sure both files end up the same dimensions/aspect ratio
+// as each other, or the loser of that comparison will look visibly
+// squashed/stretched next to the other player's avatar.
 //
-// Pink's final fallback is another IMAGE (assets/icons/player-pink.svg)
-// rather than an emoji: there's no "pink circle" emoji, only a pink
-// HEART (🩷) or a plain RED circle (🔴), and neither actually reads
-// as "this player is pink" — so pink always falls back to the real
-// pink SVG, never emoji text.
+// Pink's SVG/emoji fallback tiers are visually matched to blue's:
+// same circle SVG shape (assets/icons/connect4/player-pink.svg vs
+// player-blue.svg, identical viewBox/radius/ring), and — because no
+// "pink circle" emoji exists in Unicode, only a pink HEART (🩷),
+// which some devices don't render — the in-page status text
+// ("Roze ... is aan de beurt") uses that same pink circle SVG
+// inline instead of the heart, so it always looks identical in
+// shape to blue's plain-text 🔵, never a mismatched glyph.
 // =================================================================
 
 import { siteRootUrl } from './utils.js';
@@ -37,12 +43,12 @@ const AVATARS = {
   P: {
     photo: siteRootUrl('assets/icons/connect4/player-pink.png'),
     svg: siteRootUrl('assets/icons/connect4/player-pink.svg'),
-    finalFallback: siteRootUrl('assets/icons/player-pink.svg'),
+    emoji: '🩷',
     alt: 'Speler Roze',
   },
 };
 
-/** Builds an <img> that quietly degrades: photo -> custom SVG -> emoji/final-fallback-image (see tictactoe.js for the identical pattern). */
+/** Builds an <img> that quietly degrades: photo -> custom SVG -> emoji span, entirely via onerror (no network probing, no flicker on the happy path). Identical pattern for blue and pink — see tictactoe.js. */
 function buildAvatarImg(player, className) {
   const avatar = AVATARS[player];
   const img = document.createElement('img');
@@ -53,19 +59,13 @@ function buildAvatarImg(player, className) {
 
   img.addEventListener('error', () => {
     if (img.dataset.stage === 'photo') {
+      // Photo missing/failed to load — drop to the custom SVG.
       img.dataset.stage = 'svg';
       img.src = avatar.svg;
       return;
     }
-
-    if (avatar.finalFallback) {
-      // Pink: no fitting emoji exists, so the last resort is still a
-      // real image, not text.
-      img.dataset.stage = 'final';
-      img.src = avatar.finalFallback;
-      return;
-    }
-
+    // SVG failed too — replace the <img> with a plain emoji span,
+    // which can't fail to render.
     const fallback = document.createElement('span');
     fallback.className = className + ' c4-avatar-emoji';
     fallback.textContent = avatar.emoji;
@@ -163,12 +163,13 @@ export function initConnect4() {
 
   function playerLabel(player) {
     return player === 'B'
-      ? 'Blauw 🔵'
-      : 'Roze <img src="' + siteRootUrl('assets/icons/player-pink.svg') + '" alt="" class="emoji-icon">';
+      ? 'Blauw <img src="' + siteRootUrl('assets/icons/connect4/player-blue.svg') + '" alt="" class="emoji-icon">'
+      : 'Roze <img src="'  + siteRootUrl('assets/icons/connect4/player-pink.svg') + '" alt="" class="emoji-icon">';
   }
 
   // innerHTML (not textContent) because playerLabel() drops in a
-  // pink <img> — see the comment above buildAvatarImg for why.
+  // pink <img> for the status text — see the top-of-file comment
+  // for why (no reliable "pink circle" emoji to use as plain text).
   function updateStatus(html) {
     statusEl.innerHTML = html;
   }
