@@ -8,20 +8,8 @@
    ============================================================= */
 
 #giftsApp {
+  padding-top: 0px;
   padding-bottom: var(--space-8);
-}
-
-/* == STATUS LINE == */
-.gf-status {
-  text-align: center;
-  font-size: var(--fs-sm);
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-6);
-}
-
-.gf-status-error {
-  color: var(--color-danger);
-  font-weight: 600;
 }
 
 /* == TWO-COLUMN LAYOUT == */
@@ -30,6 +18,7 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-7);
   align-items: start;
+  margin-top: var(--space-6);
 }
 
 .gf-column {

@@ -36,7 +36,6 @@ export function initGifts() {
   const workerUrl = siteConfig.gifts?.workerUrl || '';
   const personLabels = siteConfig.gifts?.personLabels || {};
 
-  const statusEl = qs('#giftsStatus', root);
   const configWarning = qs('#giftsConfigWarning', root);
   const columnsEl = qs('#giftsColumns', root);
 
@@ -58,7 +57,6 @@ export function initGifts() {
   if (!workerConfigured()) {
     configWarning.classList.remove('hidden');
     columnsEl.classList.add('hidden');
-    statusEl.classList.add('hidden');
     return;
   }
 
@@ -72,18 +70,15 @@ export function initGifts() {
   // revoked on the next render instead of leaking memory forever.
   let activeObjectUrls = [];
 
-  function setStatus(text, isError = false) {
-    statusEl.textContent = text;
-    statusEl.classList.toggle('gf-status-error', isError);
-  }
+  // Errors are logged to the console (see loadGifts/saveGifts below)
+  // rather than shown in the UI — there's no status line on this
+  // page anymore.
 
   // ---- Rendering -----------------------------------------------------
 
   function render() {
     activeObjectUrls.forEach((url) => URL.revokeObjectURL(url));
     activeObjectUrls = [];
-
-    setStatus(gifts.length === 1 ? '1 cadeau-idee' : `${gifts.length} cadeau-ideeën`);
 
     PERSONS.forEach((person) => {
       const { list, empty } = columnEls[person];
@@ -153,7 +148,6 @@ export function initGifts() {
   // ---- Networking ------------------------------------------------
 
   async function loadGifts({ silent = false } = {}) {
-    if (!silent) setStatus('Laden…');
     try {
       const response = await fetch(`${workerUrl}/gifts`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -162,7 +156,6 @@ export function initGifts() {
       render();
     } catch (error) {
       console.error('Kon cadeaulijst niet laden:', error);
-      if (!silent) setStatus('❌ Kon lijst niet laden. Probeer het opnieuw.', true);
     }
   }
 
@@ -180,7 +173,6 @@ export function initGifts() {
       render();
     } catch (error) {
       console.error('Kon wijziging niet opslaan:', error);
-      setStatus('⚠️ Wijziging niet opgeslagen, lijst wordt hersteld…', true);
       await loadGifts({ silent: true });
     } finally {
       saveInFlight = false;

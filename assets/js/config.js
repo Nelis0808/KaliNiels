@@ -73,13 +73,6 @@ export const siteConfig = {
       status: 'available',
     },
     {
-      title: 'Cadeau Ideeën',
-      description: 'Voor de volgende gelegenheid.',
-      href: 'gifts.html',
-      emoji: '🎁',
-      status: 'available',
-    },
-    {
       title: 'Bucket List',
       description: 'Dingen die we samen willen doen.',
       emoji: '📝',
@@ -102,6 +95,13 @@ export const siteConfig = {
       description: 'Onze muziek, samen gemaakt.',
       emoji: '🎵',
       status: 'coming-soon',
+    },
+    {
+      title: 'Cadeau Ideeën',
+      description: 'Voor de volgende gelegenheid.',
+      href: 'gifts.html',
+      emoji: '🎁',
+      status: 'available',
     },
     {
       title: 'Verrassingen',
