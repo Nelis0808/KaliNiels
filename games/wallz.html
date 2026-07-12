@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <!--
   WALLZ PAGE
-  Same-device 2-player trail/wall game (Tron-lightcycle style, in the
-  spirit of wallz.gg): both players constantly move and leave a solid
-  wall behind them, first to crash loses. Player 1 = blue (WASD),
-  Player 2 = pink (arrow keys). Logic lives in
+  Same-device 2-player 9x9 grid "race to the other side, block your
+  opponent with walls" game (Quoridor-style). Player 1 = blue,
+  starts on (5,1), races to reach row 9. Player 2 = pink, starts on
+  (5,9), races to reach row 1. Each turn a player either moves one
+  step (no diagonals) or places one of their 10 2x1 walls — never
+  both. A wall can never be placed if it would leave either player
+  with zero possible path to their goal row. Logic lives in
   assets/js/modules/wallz.js — this file only contains the board
-  container, scoreboard, and the "voorkom overspringen" setting
-  toggle (persisted, defaults on — see the module's file header for
-  what it actually does).
+  container, scoreboard, turn/wall-count indicator, and actions.
 
   Lives in the games/ subfolder, same relative-path rules as
   tictactoe.html (see the comment there for details).
@@ -19,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Wallz: laat een muur van licht achter je en probeer de ander erin te laten crashen.">
+  <meta name="description" content="Wallz: race naar de overkant en zet muren neer om de ander te vertragen.">
   <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
@@ -50,7 +51,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1><img src="../assets/icons/connect4/player-blue.svg" alt="" class="emoji-icon"><img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon"> Wallz</h1>
-        <p>Laat een muur achter je en probeer de ander erin te laten crashen. Blauw: WASD, Roze: pijltjestoetsen.</p>
+        <p>Race naar de overkant en zet muren neer om de ander te vertragen. Blauw start onderaan, Roze start bovenaan.</p>
       </div>
     </section>
 
@@ -63,10 +64,6 @@
           <span class="ttt-score-label">Blauw</span>
           <span id="wallzScoreP1" class="ttt-score-value">0</span>
         </div>
-        <div class="ttt-score ttt-score-draw">
-          <span class="ttt-score-label">Gelijk</span>
-          <span id="wallzScoreDraw" class="ttt-score-value">0</span>
-        </div>
         <div class="ttt-score">
           <span class="ttt-score-avatar" aria-hidden="true"><img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon"></span>
           <span class="ttt-score-label">Roze</span>
@@ -76,12 +73,26 @@
 
       <p id="wallzStatus" class="ttt-status" aria-live="polite"></p>
 
-      <div class="wallz-settings">
-        <span class="settings-item-label">🚧 Voorkom overspringen</span>
-        <button id="wallzPreventJump" class="switch" type="button" role="switch" aria-checked="true" aria-label="Voorkom dat spelers over elkaar heen springen"></button>
+      <div class="wallz-walls-left" aria-live="polite">
+        <span class="wallz-walls-chip wallz-walls-chip-p1">
+          <img src="../assets/icons/connect4/player-blue.svg" alt="" class="emoji-icon">
+          Muren: <span id="wallzWallsP1">10</span>
+        </span>
+        <span class="wallz-walls-chip wallz-walls-chip-p2">
+          <img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon">
+          Muren: <span id="wallzWallsP2">10</span>
+        </span>
       </div>
 
-      <div id="wallzBoard" class="wallz-board" role="img" aria-label="Wallz speelveld"></div>
+      <div class="wallz-mode-row">
+        <button id="wallzModeMove" class="btn btn-outline wallz-mode-btn" type="button" aria-pressed="true">🚶 Zet doen</button>
+        <button id="wallzModeWall" class="btn btn-outline wallz-mode-btn" type="button" aria-pressed="false">🧱 Muur plaatsen</button>
+        <button id="wallzOrientation" class="btn btn-outline wallz-mode-btn" type="button" hidden>↕️ Verticaal</button>
+      </div>
+
+      <div id="wallzBoardWrap" class="wallz-board-wrap">
+        <div id="wallzBoard" class="wallz-board" role="group" aria-label="Wallz speelveld, 9 bij 9"></div>
+      </div>
 
       <div class="ttt-actions">
         <button id="wallzStart" class="btn btn-primary" type="button">Start</button>

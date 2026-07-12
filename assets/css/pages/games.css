@@ -11,6 +11,7 @@
 #wordleApp,
 #hangmanApp,
 #hangmanCustomApp,
+#snakeApp,
 #wallzApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;

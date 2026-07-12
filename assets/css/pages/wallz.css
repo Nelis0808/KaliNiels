@@ -1,87 +1,191 @@
 /* =============================================================
    PAGE: WALLZ (games/wallz.html)
    Reuses .ttt-scoreboard / .ttt-status / .ttt-actions from
-   games.css, and the .switch toggle look from
-   components/settings.css — only the board + trail styling and the
-   inline settings row live here.
+   games.css — the wall-count chips, mode toggle, and the 9x9 board
+   (with its wall-joints and wall bars) live here.
+
+   FIXED PLAYER COLORS: like snake.css, player 1/2 use fixed hex
+   values (--wallz-p1 / --wallz-p2) that match the blue/pink avatar
+   SVGs, rather than the theme-swappable --color-secondary /
+   --color-accent tokens — so both color themes (blue + pink) always
+   show the right player color under the right avatar.
+
+   BOARD GRID MODEL: a 17x17 CSS grid — 9 "cell" tracks (1fr) and 8
+   thin "wall gap" tracks (--wallz-gap) alternating, on both axes.
+   Cells sit on the even tracks; wall JOINTS (the clickable corners
+   used to place a wall) sit on the odd/odd (gap x gap) intersection
+   tracks; placed WALL BARS span 3 tracks (cell + gap + cell) in
+   their orientation's axis. All of this is positioned via inline
+   grid-row/grid-column styles set in wallz.js (see the big header
+   comment there for the coordinate math) — this file only styles
+   the resulting elements.
    ============================================================= */
 
-.wallz-settings {
+.wallz-walls-left {
   display: flex;
-  align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-5);
+}
+
+.wallz-walls-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-  width: fit-content;
-  margin-inline: auto;
+  font-weight: 700;
 }
 
-/* == BOARD ==
-   --wallz-cols/--wallz-rows set inline by wallz.js. Each cell is a
-   plain square div; painted via className swaps each tick rather
-   than re-creating the grid (see wallz.js's paintCell/buildHeadCell). */
-.wallz-board {
-  --wallz-cols: 30;
-  --wallz-rows: 20;
-  display: grid;
-  grid-template-columns: repeat(var(--wallz-cols), 1fr);
-  grid-template-rows: repeat(var(--wallz-rows), 1fr);
-  gap: 1px;
+.wallz-walls-chip-p1 { color: var(--wallz-p1); }
+.wallz-walls-chip-p2 { color: var(--wallz-p2); }
+
+.wallz-mode-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.wallz-mode-btn[aria-pressed='true'] {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.wallz-board-wrap {
   width: 100%;
-  max-width: 780px;
-  aspect-ratio: var(--wallz-cols) / var(--wallz-rows);
-  margin-inline: auto;
+  overflow-x: auto;
   margin-bottom: var(--space-6);
-  padding: var(--space-2);
+}
+
+.wallz-board {
+  --wallz-gap: 10px;
+  --wallz-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
+  --wallz-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+
+  position: relative;
+  display: grid;
+  grid-template-columns:
+    1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap)
+    1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr;
+  grid-template-rows:
+    1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap)
+    1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr;
+  width: 100%;
+  max-width: 620px;
+  aspect-ratio: 1 / 1;
+  margin-inline: auto;
+  padding: var(--space-3);
   background: var(--color-primary);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
 }
 
+/* == CELLS == */
 .wallz-cell {
+  position: relative;
   background: var(--color-surface);
-  border-radius: 1px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
-.wallz-cell-p1-trail {
-  background: var(--color-secondary);
+.wallz-cell-p1-home { background: color-mix(in srgb, var(--wallz-p1) 16%, var(--color-surface)); }
+.wallz-cell-p2-home { background: color-mix(in srgb, var(--wallz-p2) 16%, var(--color-surface)); }
+
+.wallz-cell-legal-move {
+  cursor: pointer;
+  box-shadow: inset 0 0 0 3px var(--color-tertiary);
 }
 
-.wallz-cell-p2-trail {
-  background: var(--color-accent);
-}
-
-.wallz-cell-p1-head,
-.wallz-cell-p2-head {
-  position: relative;
-  z-index: 2;
-}
-
-.wallz-cell-p1-head {
-  background: var(--color-secondary);
-}
-
-.wallz-cell-p2-head {
-  background: var(--color-accent);
+.wallz-cell-legal-move:hover,
+.wallz-cell-legal-move:focus-visible {
+  background: var(--color-border);
+  transform: scale(1.05);
 }
 
 .wallz-head-img {
-  width: 130%;
-  height: 130%;
+  width: 76%;
+  height: 76%;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
 }
 
+/* Both players sharing one cell: two smaller overlapping avatars
+   rather than a brand new icon asset — reuses the same blue/pink
+   SVGs so it stays visually consistent with every other game. */
+.wallz-head-img-both {
+  position: absolute;
+  width: 56%;
+  height: 56%;
+}
+
+.wallz-head-img-both-a { left: 6%; bottom: 8%; }
+.wallz-head-img-both-b { right: 6%; top: 8%; }
+
+/* == WALL JOINTS ==
+   The small clickable corners used to place a wall. Invisible
+   until wall-placement mode is on, to keep the board calm-looking
+   while moving. */
+.wallz-joint {
+  position: relative;
+  border-radius: var(--radius-full);
+  background: transparent;
+  pointer-events: none;
+}
+
+.wallz-board-wall-mode .wallz-joint {
+  pointer-events: auto;
+}
+
+.wallz-board-wall-mode .wallz-joint::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  opacity: 0.6;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
+}
+
+.wallz-board-wall-mode .wallz-joint:hover::after,
+.wallz-board-wall-mode .wallz-joint:focus-visible::after {
+  opacity: 1;
+}
+
+.wallz-joint-preview-ok::after { background: var(--color-success) !important; opacity: 0.85 !important; }
+.wallz-joint-preview-bad::after { background: var(--color-danger) !important; opacity: 0.85 !important; }
+
+/* == PLACED WALLS ==
+   Absolutely-positioned-by-grid-coordinates bars, layered above
+   cells/joints (the whole "wallz-walls-layer" wrapper spans the
+   full 17x17 board as one grid item — see wallz.js). */
+.wallz-walls-layer {
+  grid-row: 1 / -1;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  pointer-events: none;
+}
+
+.wallz-wall {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.wallz-wall-p1 { background: var(--wallz-p1); }
+.wallz-wall-p2 { background: var(--wallz-p2); }
+
 @media (max-width: 600px) {
   .wallz-board {
-    padding: var(--space-1);
-    gap: 0.5px;
+    --wallz-gap: 8px;
+    padding: var(--space-2);
   }
 }

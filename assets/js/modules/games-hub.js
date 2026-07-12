@@ -33,8 +33,15 @@ const games = [
     status: 'available',
   },
   {
+    title: 'Snake',
+    description: 'Laat een spoor achter je en probeer de ander erin te laten crashen.',
+    href: 'games/snake.html',
+    emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
+    status: 'available',
+  },
+  {
     title: 'Wallz',
-    description: 'Laat een muur achter je en probeer de ander erin te laten crashen.',
+    description: 'Race naar de overkant en zet muren neer om de ander te vertragen. Wie het eerst de overkant haalt wint.',
     href: 'games/wallz.html',
     emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
     status: 'available',

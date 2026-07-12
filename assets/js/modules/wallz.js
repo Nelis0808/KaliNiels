@@ -1,69 +1,68 @@
 // =================================================================
-// WALLZ ("Vier op een Rij"-achtige, maar dan een trail/wall game)
+// WALLZ (9x9 two-player "race to the other side, block them with
+// walls" game — Quoridor-style)
 // -----------------------------------------------------------------
-// Same-device two-player grid game, in the spirit of wallz.gg /
-// classic "Tron light-cycles": both players constantly move in a
-// direction on a grid, leaving a solid wall behind them. Whoever
-// crashes into any wall (their own trail, the other player's trail,
-// or the arena edge) first loses; if both crash the same tick, it's
-// a draw. Player 1 = blue (WASD), Player 2 = pink (arrow keys),
-// matching Connect 4's blue/pink pairing and avatar assets.
+// Same-device two-player game on a 9x9 grid.
 //
-// "DON'T LET PLAYERS JUMP OVER EACH OTHER" SETTING: normally, if
-// two players are adjacent and swap places in the same tick (each
-// moving into the other's just-vacated cell), a naive "did I hit a
-// wall cell" check lets both pass through unharmed — visually they
-// "jump over" each other. This is a togglable HOUSE RULE
-// (settingPreventJumping, persisted in localStorage): when on
-// (default), a same-tick position swap between the two players
-// counts as a head-on collision for both. When off, swapping through
-// each other is allowed, matching the more permissive version some
-// players prefer. See detectSwapCollision() below.
+// COORDINATES: the rules are specified with (col,row), 1-indexed,
+// bottom-left = (1,1), top-right = (9,9). Internally this file uses
+// zero-indexed {r, c} where r=0/c=0 is that same bottom-left corner
+// (r = row-1, c = col-1), and only converts to the 1-indexed
+// (col,row) form for on-screen labels. The board is rendered with
+// row 0 at the BOTTOM (CSS grid places row 0 at the top by default,
+// so rendering flips r -> displayRow = 8 - r).
 //
-// GRID/RENDERING: a plain CSS-grid board of divs (same technique as
-// connect4.js), redrawn each tick rather than using <canvas> — the
-// grid here (default 30x20) is small enough that this stays cheap
-// and keeps everything consistent with the rest of the site's
-// (non-canvas) game pages.
+// PLAYERS: Player 1 (blue) starts at col 5, row 1 -> {r:0, c:4} and
+// wins by reaching any cell in row 9 (r === 8). Player 2 (pink)
+// starts at col 5, row 9 -> {r:8, c:4} and wins by reaching any
+// cell in row 1 (r === 0). Row 1 (all of it) is tinted with
+// player 1's color, row 9 with player 2's — see rule 6 in the
+// project brief and .wallz-cell-p1-home / .wallz-cell-p2-home in
+// wallz.css.
 //
-// AVATARS: reuses connect4's exact blue/pink SVG icon pair
-// (assets/icons/connect4/player-blue.svg / player-pink.svg) for the
-// player heads before falling back to a plain colored square if
-// those ever fail to load — see buildHeadCell().
+// TURNS: on their turn, a player does EXACTLY ONE of:
+//   - move one step orthogonally (no diagonals) into an in-bounds
+//     cell not separated from their current cell by a wall. Players
+//     MAY share a cell (rule 11) — a special "both players here"
+//     icon is shown in that case (see buildCellContent()).
+//   - place one of their 10 remaining 2x1 walls, horizontal or
+//     vertical.
+//
+// WALLS / GRID MODEL: a wall lives at an integer "joint" (gr, gc),
+// gr/gc in 0..7, the corner shared by the 4 cells (gr,gc), (gr,gc+1),
+// (gr+1,gc), (gr+1,gc+1). A HORIZONTAL wall at (gr,gc) blocks
+// vertical movement between row gr and row gr+1 at BOTH column gc
+// and column gc+1 (a 2-wide wall). A VERTICAL wall at (gr,gc) blocks
+// horizontal movement between column gc and column gc+1 at BOTH row
+// gr and row gr+1. Two lookup sets track this:
+//   - rowBlock has "gr,gc" whenever movement between row gr/gr+1 at
+//     column gc is blocked.
+//   - colBlock has "gr,gc" whenever movement between column gc/gc+1
+//     at row gr is blocked.
+// A wall placement is rejected outright (rule 12, "hitbox") if any
+// segment it needs is already occupied, OR if another wall (either
+// orientation) already anchors the exact same joint (gr,gc) — two
+// walls crossing through the same point.
+//
+// LEGALITY CHECK (rule 10): a wall placement is only allowed if,
+// after placing it (hypothetically), BOTH players still have at
+// least one path to their own goal row. This is checked with a
+// small breadth-first search over the 9x9 grid using the same
+// rowBlock/colBlock sets used for real movement. Areas that become
+// permanently unreachable are fine (rule 10 explicitly allows that)
+// as long as it doesn't happen to be the only path either player
+// had left.
 // =================================================================
 
 import { qs, siteRootUrl } from './utils.js';
 
-const COLS = 30;
-const ROWS = 20;
-const TICK_MS = 110;
-const SETTING_STORAGE_KEY = 'wallzPreventJumping';
+const SIZE = 9;
+const TOTAL_WALLS = 10;
 
-const DIRECTIONS = {
-  up: { dx: 0, dy: -1 },
-  down: { dx: 0, dy: 1 },
-  left: { dx: -1, dy: 0 },
-  right: { dx: 1, dy: 0 },
+const AVATAR_SRC = {
+  1: siteRootUrl('assets/icons/connect4/player-blue.svg'),
+  2: siteRootUrl('assets/icons/connect4/player-pink.svg'),
 };
-
-const KEY_MAP = {
-  // Player 1 — WASD
-  KeyW: { player: 1, dir: 'up' },
-  KeyS: { player: 1, dir: 'down' },
-  KeyA: { player: 1, dir: 'left' },
-  KeyD: { player: 1, dir: 'right' },
-  // Player 2 — arrow keys
-  ArrowUp: { player: 2, dir: 'up' },
-  ArrowDown: { player: 2, dir: 'down' },
-  ArrowLeft: { player: 2, dir: 'left' },
-  ArrowRight: { player: 2, dir: 'right' },
-};
-
-function isOpposite(dirA, dirB) {
-  const a = DIRECTIONS[dirA];
-  const b = DIRECTIONS[dirB];
-  return a.dx === -b.dx && a.dy === -b.dy;
-}
 
 export function initWallz() {
   const root = document.getElementById('wallzApp');
@@ -73,215 +72,399 @@ export function initWallz() {
   const statusEl = qs('#wallzStatus', root);
   const scoreP1El = qs('#wallzScoreP1', root);
   const scoreP2El = qs('#wallzScoreP2', root);
-  const scoreDrawEl = qs('#wallzScoreDraw', root);
+  const wallsP1El = qs('#wallzWallsP1', root);
+  const wallsP2El = qs('#wallzWallsP2', root);
   const startBtn = qs('#wallzStart', root);
   const resetScoreBtn = qs('#wallzResetScore', root);
-  const preventJumpToggle = qs('#wallzPreventJump', root);
+  const modeMoveBtn = qs('#wallzModeMove', root);
+  const modeWallBtn = qs('#wallzModeWall', root);
+  const orientationBtn = qs('#wallzOrientation', root);
 
-  // ---- Build the grid once; cells are addressed by index, never rebuilt ----
-  const cells = [];
-  boardEl.style.setProperty('--wallz-cols', String(COLS));
-  boardEl.style.setProperty('--wallz-rows', String(ROWS));
-  for (let i = 0; i < COLS * ROWS; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'wallz-cell';
-    boardEl.appendChild(cell);
-    cells.push(cell);
-  }
+  const score = { 1: 0, 2: 0 };
 
-  function cellIndex(x, y) {
-    return y * COLS + x;
-  }
-
-  function inBounds(x, y) {
-    return x >= 0 && x < COLS && y >= 0 && y < ROWS;
-  }
-
-  // ---- Settings: "prevent jumping over each other" toggle, persisted ----
-  let preventJumping = localStorage.getItem(SETTING_STORAGE_KEY) !== 'false'; // default ON
-  preventJumpToggle.setAttribute('aria-checked', String(preventJumping));
-
-  function setPreventJumping(value) {
-    preventJumping = value;
-    preventJumpToggle.setAttribute('aria-checked', String(value));
-    localStorage.setItem(SETTING_STORAGE_KEY, String(value));
-  }
-
-  preventJumpToggle.addEventListener('click', () => setPreventJumping(!preventJumping));
-
-  // ---- Game state ----
-  let walls = new Set(); // "x,y" strings occupied by any trail
-  let players = null; // { 1: {x,y,dir,alive}, 2: {...} }
+  // ---- Mutable game state (re-created each round in resetBoard()) ----
+  let players; // { 1: {r,c}, 2: {r,c} }
+  let wallsLeft; // { 1: n, 2: n }
+  let rowBlock; // Set of "gr,gc"
+  let colBlock; // Set of "gr,gc"
+  let usedJoints; // Set of "gr,gc" — any wall anchored here, either orientation
+  let turn; // 1 | 2
+  let mode; // 'move' | 'wall'
+  let orientation; // 'v' | 'h'
   let running = false;
-  let tickTimer = null;
-  const score = { 1: 0, 2: 0, draw: 0 };
+  let gameOver = false;
 
-  function key(x, y) {
-    return `${x},${y}`;
+  const cellEls = new Map(); // "r,c" -> button element
+  const jointEls = new Map(); // "gr,gc" -> button element
+  const wallBarsWrap = document.createElement('div');
+  wallBarsWrap.className = 'wallz-walls-layer';
+
+  function key(r, c) {
+    return `${r},${c}`;
   }
 
-  function resetBoard() {
-    cells.forEach((cell) => {
-      cell.className = 'wallz-cell';
-      cell.replaceChildren();
-    });
-    walls = new Set();
-
-    players = {
-      1: { x: Math.floor(COLS * 0.25), y: Math.floor(ROWS / 2), dir: 'right', alive: true },
-      2: { x: Math.floor(COLS * 0.75), y: Math.floor(ROWS / 2), dir: 'left', alive: true },
-    };
-
-    walls.add(key(players[1].x, players[1].y));
-    walls.add(key(players[2].x, players[2].y));
-    paintCell(players[1].x, players[1].y, 'wallz-cell-p1-head');
-    paintCell(players[2].x, players[2].y, 'wallz-cell-p2-head');
+  function inBounds(r, c) {
+    return r >= 0 && r < SIZE && c >= 0 && c < SIZE;
   }
 
-  function paintCell(x, y, className) {
-    if (!inBounds(x, y)) return;
-    cells[cellIndex(x, y)].className = `wallz-cell ${className}`;
+  function toLabel(r, c) {
+    return `(${c + 1},${r + 1})`;
   }
 
-  function buildHeadCell(x, y, player) {
-    const cell = cells[cellIndex(x, y)];
-    cell.className = `wallz-cell wallz-cell-p${player}-head`;
-    cell.replaceChildren();
+  // -----------------------------------------------------------------
+  // BOARD CONSTRUCTION (built once; contents/classes updated per move)
+  // -----------------------------------------------------------------
+  function buildBoard() {
+    boardEl.replaceChildren();
+    cellEls.clear();
+    jointEls.clear();
 
-    const avatarSrc = player === 1
-      ? siteRootUrl('assets/icons/connect4/player-blue.svg')
-      : siteRootUrl('assets/icons/connect4/player-pink.svg');
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'wallz-cell';
+        cell.style.gridRow = String(17 - 2 * r);
+        cell.style.gridColumn = String(2 * c + 1);
+        cell.setAttribute('aria-label', `Vak ${toLabel(r, c)}`);
+        cell.addEventListener('click', () => handleCellClick(r, c));
+        boardEl.appendChild(cell);
+        cellEls.set(key(r, c), cell);
+      }
+    }
 
+    for (let gr = 0; gr < SIZE - 1; gr++) {
+      for (let gc = 0; gc < SIZE - 1; gc++) {
+        const joint = document.createElement('button');
+        joint.type = 'button';
+        joint.className = 'wallz-joint';
+        joint.style.gridRow = String(16 - 2 * gr);
+        joint.style.gridColumn = String(2 * gc + 2);
+        joint.setAttribute('aria-label', `Muur plaatsen bij ${toLabel(gr, gc)}`);
+        joint.addEventListener('click', () => handleJointClick(gr, gc));
+        joint.addEventListener('mouseenter', () => previewWall(gr, gc, true));
+        joint.addEventListener('mouseleave', () => previewWall(gr, gc, false));
+        boardEl.appendChild(joint);
+        jointEls.set(key(gr, gc), joint);
+      }
+    }
+
+    boardEl.appendChild(wallBarsWrap);
+  }
+
+  // -----------------------------------------------------------------
+  // MOVEMENT / CONNECTIVITY HELPERS
+  // -----------------------------------------------------------------
+  function isBlockedBetween(r, c, dr, dc) {
+    if (dr === 1) return rowBlock.has(key(r, c)); // moving up (toward row 9)
+    if (dr === -1) return rowBlock.has(key(r - 1, c)); // moving down
+    if (dc === 1) return colBlock.has(key(r, c)); // moving right
+    if (dc === -1) return colBlock.has(key(r, c - 1)); // moving left
+    return false;
+  }
+
+  function neighbors(r, c) {
+    const out = [];
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (inBounds(nr, nc) && !isBlockedBetween(r, c, dr, dc)) out.push({ r: nr, c: nc });
+    }
+    return out;
+  }
+
+  /** BFS: can `start` reach any cell in row `goalRow`? */
+  function hasPathToRow(start, goalRow) {
+    const seen = new Set([key(start.r, start.c)]);
+    const queue = [start];
+    while (queue.length) {
+      const cur = queue.shift();
+      if (cur.r === goalRow) return true;
+      for (const n of neighbors(cur.r, cur.c)) {
+        const k = key(n.r, n.c);
+        if (!seen.has(k)) {
+          seen.add(k);
+          queue.push(n);
+        }
+      }
+    }
+    return false;
+  }
+
+  // -----------------------------------------------------------------
+  // WALL PLACEMENT
+  // -----------------------------------------------------------------
+  function wallSegmentsFor(orient, gr, gc) {
+    return orient === 'h'
+      ? { set: 'row', keys: [key(gr, gc), key(gr, gc + 1)] }
+      : { set: 'col', keys: [key(gr, gc), key(gr + 1, gc)] };
+  }
+
+  function canPlaceWall(orient, gr, gc, player) {
+    if (wallsLeft[player] <= 0) return { ok: false, reason: 'Geen muren meer over.' };
+    if (usedJoints.has(key(gr, gc))) return { ok: false, reason: 'Daar ligt al een muur.' };
+
+    const { set, keys } = wallSegmentsFor(orient, gr, gc);
+    const target = set === 'row' ? rowBlock : colBlock;
+    if (keys.some((k) => target.has(k))) return { ok: false, reason: 'Muren mogen elkaar niet overlappen.' };
+
+    // Tentatively place, then verify both players still have a path.
+    keys.forEach((k) => target.add(k));
+    const p1Ok = hasPathToRow(players[1], SIZE - 1);
+    const p2Ok = hasPathToRow(players[2], 0);
+    keys.forEach((k) => target.delete(k));
+
+    if (!p1Ok || !p2Ok) {
+      return { ok: false, reason: 'Die muur blokkeert een speler volledig — niet toegestaan.' };
+    }
+    return { ok: true };
+  }
+
+  function placeWall(orient, gr, gc, player) {
+    const { set, keys } = wallSegmentsFor(orient, gr, gc);
+    const target = set === 'row' ? rowBlock : colBlock;
+    keys.forEach((k) => target.add(k));
+    usedJoints.add(key(gr, gc));
+    wallsLeft[player] -= 1;
+
+    const bar = document.createElement('div');
+    bar.className = `wallz-wall wallz-wall-${orient} wallz-wall-p${player}`;
+    if (orient === 'h') {
+      bar.style.gridRow = String(16 - 2 * gr);
+      bar.style.gridColumn = `${2 * gc + 1} / span 3`;
+    } else {
+      bar.style.gridRow = `${15 - 2 * gr} / span 3`;
+      bar.style.gridColumn = String(2 * gc + 2);
+    }
+    wallBarsWrap.appendChild(bar);
+  }
+
+  // -----------------------------------------------------------------
+  // RENDERING
+  // -----------------------------------------------------------------
+  function buildAvatar(player, extraClass) {
     const img = document.createElement('img');
-    img.src = avatarSrc;
+    img.src = AVATAR_SRC[player];
     img.alt = '';
-    img.className = 'wallz-head-img';
-    img.addEventListener('error', () => img.remove(), { once: true }); // falls back to the plain CSS-colored cell background
-    cell.appendChild(img);
+    img.className = `wallz-head-img ${extraClass}`;
+    return img;
+  }
+
+  function renderCells() {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const cell = cellEls.get(key(r, c));
+        const classes = ['wallz-cell'];
+        if (r === 0) classes.push('wallz-cell-p1-home');
+        if (r === SIZE - 1) classes.push('wallz-cell-p2-home');
+
+        const p1Here = players[1].r === r && players[1].c === c;
+        const p2Here = players[2].r === r && players[2].c === c;
+        if (p1Here && p2Here) classes.push('wallz-cell-both');
+        else if (p1Here) classes.push('wallz-cell-p1');
+        else if (p2Here) classes.push('wallz-cell-p2');
+
+        cell.className = classes.join(' ');
+        cell.replaceChildren();
+
+        if (p1Here && p2Here) {
+          cell.appendChild(buildAvatar(1, 'wallz-head-img-both wallz-head-img-both-a'));
+          cell.appendChild(buildAvatar(2, 'wallz-head-img-both wallz-head-img-both-b'));
+        } else if (p1Here) {
+          cell.appendChild(buildAvatar(1, ''));
+        } else if (p2Here) {
+          cell.appendChild(buildAvatar(2, ''));
+        }
+      }
+    }
+  }
+
+  function clearLegalMoveHighlights() {
+    cellEls.forEach((cell) => cell.classList.remove('wallz-cell-legal-move'));
+  }
+
+  function highlightLegalMoves() {
+    clearLegalMoveHighlights();
+    if (!running || gameOver || mode !== 'move') return;
+    const p = players[turn];
+    neighbors(p.r, p.c).forEach((n) => {
+      cellEls.get(key(n.r, n.c)).classList.add('wallz-cell-legal-move');
+    });
+  }
+
+  function updateWallsUi() {
+    wallsP1El.textContent = String(wallsLeft[1]);
+    wallsP2El.textContent = String(wallsLeft[2]);
+  }
+
+  function updateModeUi() {
+    modeMoveBtn.setAttribute('aria-pressed', String(mode === 'move'));
+    modeWallBtn.setAttribute('aria-pressed', String(mode === 'wall'));
+    orientationBtn.hidden = mode !== 'wall';
+    orientationBtn.textContent = orientation === 'v' ? '↕️ Verticaal' : '↔️ Horizontaal';
+    boardEl.classList.toggle('wallz-board-wall-mode', mode === 'wall');
+    jointEls.forEach((joint) => {
+      joint.tabIndex = mode === 'wall' ? 0 : -1;
+    });
   }
 
   function setStatus(text) {
     statusEl.textContent = text;
   }
 
-  function updateScoreboard() {
-    scoreP1El.textContent = String(score[1]);
-    scoreP2El.textContent = String(score[2]);
-    scoreDrawEl.textContent = String(score.draw);
+  function playerLabel(player) {
+    return player === 1 ? 'Blauw' : 'Roze';
   }
 
-  /** Same-tick "swap" collision: both players move into the cell the
-   *  other one just vacated. Only relevant/checked when the
-   *  preventJumping setting is on — see file header. */
-  function detectSwapCollision(nextP1, nextP2) {
-    if (!preventJumping) return false;
-    return nextP1.x === players[2].x && nextP1.y === players[2].y
-      && nextP2.x === players[1].x && nextP2.y === players[1].y;
+  function turnStatusText() {
+    return mode === 'wall'
+      ? `${playerLabel(turn)} is aan de beurt — kies een hoekpunt om een muur te plaatsen.`
+      : `${playerLabel(turn)} is aan de beurt — klik een gemarkeerd vak om te bewegen.`;
   }
 
-  function tick() {
-    if (!running) return;
-
-    const p1 = players[1];
-    const p2 = players[2];
-
-    const move1 = DIRECTIONS[p1.dir];
-    const move2 = DIRECTIONS[p2.dir];
-    const next1 = { x: p1.x + move1.dx, y: p1.y + move1.dy };
-    const next2 = { x: p2.x + move2.dx, y: p2.y + move2.dy };
-
-    const swapCollision = detectSwapCollision(next1, next2);
-
-    const p1HitsWall = !inBounds(next1.x, next1.y) || walls.has(key(next1.x, next1.y));
-    const p2HitsWall = !inBounds(next2.x, next2.y) || walls.has(key(next2.x, next2.y));
-    // Head-on into the exact same cell also always counts as a crash
-    // for both, regardless of the jump-over setting.
-    const headOnCollision = next1.x === next2.x && next1.y === next2.y;
-
-    const p1Dies = p1HitsWall || headOnCollision || swapCollision;
-    const p2Dies = p2HitsWall || headOnCollision || swapCollision;
-
-    if (!p1Dies) {
-      walls.add(key(p1.x, p1.y)); // old head becomes a trail cell
-      paintCell(p1.x, p1.y, 'wallz-cell-p1-trail');
-      p1.x = next1.x;
-      p1.y = next1.y;
-      buildHeadCell(p1.x, p1.y, 1);
-    }
-    if (!p2Dies) {
-      walls.add(key(p2.x, p2.y));
-      paintCell(p2.x, p2.y, 'wallz-cell-p2-trail');
-      p2.x = next2.x;
-      p2.y = next2.y;
-      buildHeadCell(p2.x, p2.y, 2);
-    }
-
-    if (p1Dies || p2Dies) {
-      endRound(p1Dies, p2Dies);
+  // -----------------------------------------------------------------
+  // WALL HOVER PREVIEW
+  // -----------------------------------------------------------------
+  function previewWall(gr, gc, show) {
+    if (!running || gameOver || mode !== 'wall') return;
+    const joint = jointEls.get(key(gr, gc));
+    if (!show) {
+      joint.classList.remove('wallz-joint-preview-ok', 'wallz-joint-preview-bad');
       return;
     }
-
-    tickTimer = setTimeout(tick, TICK_MS);
+    const result = canPlaceWall(orientation, gr, gc, turn);
+    joint.classList.toggle('wallz-joint-preview-ok', result.ok);
+    joint.classList.toggle('wallz-joint-preview-bad', !result.ok);
   }
 
-  function endRound(p1Dies, p2Dies) {
-    running = false;
-    clearTimeout(tickTimer);
+  // -----------------------------------------------------------------
+  // INTERACTION
+  // -----------------------------------------------------------------
+  function handleCellClick(r, c) {
+    if (!running || gameOver || mode !== 'move') return;
+    const p = players[turn];
+    const isLegal = neighbors(p.r, p.c).some((n) => n.r === r && n.c === c);
+    if (!isLegal) return;
 
-    if (p1Dies && p2Dies) {
-      score.draw += 1;
-      setStatus('Gelijkspel! Jullie botsten allebei tegelijk. 🤝');
-    } else if (p1Dies) {
-      score[2] += 1;
-      setStatus('Speler Roze wint! Speler Blauw crashte. 🩷');
-    } else {
-      score[1] += 1;
-      setStatus('Speler Blauw wint! Speler Roze crashte. 🔵');
+    p.r = r;
+    p.c = c;
+    renderCells();
+
+    const goalRow = turn === 1 ? SIZE - 1 : 0;
+    if (r === goalRow) {
+      endRound(turn);
+      return;
     }
+    endTurn();
+  }
 
-    updateScoreboard();
+  function handleJointClick(gr, gc) {
+    if (!running || gameOver || mode !== 'wall') return;
+    const result = canPlaceWall(orientation, gr, gc, turn);
+    if (!result.ok) {
+      setStatus(result.reason);
+      return;
+    }
+    placeWall(orientation, gr, gc, turn);
+    updateWallsUi();
+    previewWall(gr, gc, false);
+    endTurn();
+  }
+
+  function endTurn() {
+    turn = turn === 1 ? 2 : 1;
+    mode = 'move';
+    updateModeUi();
+    highlightLegalMoves();
+    setStatus(turnStatusText());
+  }
+
+  function endRound(winner) {
+    running = false;
+    gameOver = true;
+    clearLegalMoveHighlights();
+    score[winner] += 1;
+    scoreP1El.textContent = String(score[1]);
+    scoreP2El.textContent = String(score[2]);
+    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? '🔵' : '🩷'} Klik op "Nieuwe ronde" om opnieuw te spelen.`);
     startBtn.textContent = 'Nieuwe ronde';
     startBtn.disabled = false;
+  }
+
+  // -----------------------------------------------------------------
+  // ROUND LIFECYCLE
+  // -----------------------------------------------------------------
+  function resetBoard() {
+    players = {
+      1: { r: 0, c: 4 },
+      2: { r: SIZE - 1, c: 4 },
+    };
+    wallsLeft = { 1: TOTAL_WALLS, 2: TOTAL_WALLS };
+    rowBlock = new Set();
+    colBlock = new Set();
+    usedJoints = new Set();
+    turn = 1;
+    mode = 'move';
+    orientation = 'v';
+    gameOver = false;
+
+    wallBarsWrap.replaceChildren();
+    updateWallsUi();
+    updateModeUi();
+    renderCells();
+    highlightLegalMoves();
   }
 
   function startRound() {
     resetBoard();
     running = true;
     startBtn.disabled = true;
-    setStatus('Blauw (WASD) vs Roze (pijltjestoetsen) — ga!');
-    tickTimer = setTimeout(tick, TICK_MS);
-  }
-
-  function handleKeydown(event) {
-    if (!running || !players) return;
-    const mapping = KEY_MAP[event.code];
-    if (!mapping) return;
-
-    event.preventDefault();
-    const player = players[mapping.player];
-    // Ignore a 180-degree reversal in one tick — that would be an
-    // instant, unavoidable self-collision, which reads as a bug
-    // rather than a real player mistake.
-    if (isOpposite(player.dir, mapping.dir)) return;
-    player.dir = mapping.dir;
+    setStatus(turnStatusText());
   }
 
   function resetScore() {
     score[1] = 0;
     score[2] = 0;
-    score.draw = 0;
-    updateScoreboard();
+    scoreP1El.textContent = '0';
+    scoreP2El.textContent = '0';
   }
+
+  // -----------------------------------------------------------------
+  // WIRE UP CONTROLS
+  // -----------------------------------------------------------------
+  modeMoveBtn.addEventListener('click', () => {
+    if (!running || gameOver) return;
+    mode = 'move';
+    updateModeUi();
+    highlightLegalMoves();
+    setStatus(turnStatusText());
+  });
+
+  modeWallBtn.addEventListener('click', () => {
+    if (!running || gameOver) return;
+    if (wallsLeft[turn] <= 0) {
+      setStatus(`${playerLabel(turn)} heeft geen muren meer over.`);
+      return;
+    }
+    mode = 'wall';
+    clearLegalMoveHighlights();
+    updateModeUi();
+    setStatus(turnStatusText());
+  });
+
+  orientationBtn.addEventListener('click', () => {
+    orientation = orientation === 'v' ? 'h' : 'v';
+    updateModeUi();
+  });
 
   startBtn.addEventListener('click', startRound);
   resetScoreBtn.addEventListener('click', () => {
     resetScore();
     setStatus('Score gereset. Klik op "Start" om te beginnen.');
   });
-  document.addEventListener('keydown', handleKeydown);
 
   // ---- init ----
+  buildBoard();
   resetBoard();
-  updateScoreboard();
-  setStatus('Klik op "Start" om te beginnen. Blauw: WASD, Roze: pijltjestoetsen.');
+  setStatus('Klik op "Start" om te beginnen. Blauw start onderaan, Roze bovenaan.');
 }

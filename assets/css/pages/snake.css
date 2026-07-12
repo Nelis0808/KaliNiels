@@ -1,0 +1,80 @@
+/* =============================================================
+   PAGE: SNAKE (games/snake.html)
+   Reuses .ttt-scoreboard / .ttt-status / .ttt-actions from
+   games.css — only the board + trail styling lives here.
+
+   COLOR FIX: player 1/2 trail + head cells use FIXED brand colors
+   (--snake-p1 / --snake-p2 below) that match the blue/pink avatar
+   SVGs pixel-for-pixel, instead of the theme-swappable
+   --color-secondary/--color-accent tokens. Those tokens flip their
+   hex values in the pink color theme ([data-color-theme='pink'] in
+   variables.css), which used to make the board background clash
+   with the avatar images sitting on top of it (e.g. Player 1's blue
+   avatar rendering on a pink cell). Fixed hex values sidestep that
+   entirely — the same blue/pink pairing now holds in both the blue
+   and pink site themes.
+   ============================================================= */
+
+.snake-board {
+  --snake-cols: 30;
+  --snake-rows: 20;
+  --snake-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
+  --snake-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+  display: grid;
+  grid-template-columns: repeat(var(--snake-cols), 1fr);
+  grid-template-rows: repeat(var(--snake-rows), 1fr);
+  gap: 1px;
+  width: 100%;
+  max-width: 780px;
+  aspect-ratio: var(--snake-cols) / var(--snake-rows);
+  margin-inline: auto;
+  margin-bottom: var(--space-6);
+  padding: var(--space-2);
+  background: var(--color-primary);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.snake-cell {
+  background: var(--color-surface);
+  border-radius: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snake-cell-p1-trail {
+  background: var(--snake-p1);
+}
+
+.snake-cell-p2-trail {
+  background: var(--snake-p2);
+}
+
+.snake-cell-p1-head,
+.snake-cell-p2-head {
+  position: relative;
+  z-index: 2;
+}
+
+.snake-cell-p1-head {
+  background: var(--snake-p1);
+}
+
+.snake-cell-p2-head {
+  background: var(--snake-p2);
+}
+
+.snake-head-img {
+  width: 130%;
+  height: 130%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+}
+
+@media (max-width: 600px) {
+  .snake-board {
+    padding: var(--space-1);
+    gap: 0.5px;
+  }
+}

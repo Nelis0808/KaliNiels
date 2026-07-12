@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!--
+  SNAKE PAGE
+  Same-device 2-player trail/light-cycle game (Tron-lightcycle
+  style): both players constantly move and leave a solid trail
+  behind them, first to crash loses. Player 1 = blue (WASD),
+  Player 2 = pink (arrow keys). Logic lives in
+  assets/js/modules/snake.js — this file only contains the board
+  container, scoreboard, and actions.
+
+  NOTE: this used to live at games/wallz.html — it was renamed to
+  Snake because that's what it actually is (a Snake/light-cycle
+  trail game). The "wallz" URL/name is now used by the real Wallz
+  game (a 9x9 Quoridor-style wall-blocking game) — see
+  games/wallz.html.
+
+  Lives in the games/ subfolder, same relative-path rules as
+  tictactoe.html (see the comment there for details).
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Snake: laat een spoor achter je en probeer de ander erin te laten crashen.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Snake</title>
+
+  <link rel="icon" href="../assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/pages/games.css">
+  <link rel="stylesheet" href="../assets/css/pages/snake.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te kunnen spelen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1><img src="../assets/icons/connect4/player-blue.svg" alt="" class="emoji-icon"><img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon"> Snake</h1>
+        <p>Laat een spoor achter je en probeer de ander erin te laten crashen. Blauw: WASD, Roze: pijltjestoetsen.</p>
+      </div>
+    </section>
+
+    <section class="container" id="snakeApp">
+      <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <div class="ttt-scoreboard" aria-live="polite">
+        <div class="ttt-score">
+          <span class="ttt-score-avatar" aria-hidden="true"><img src="../assets/icons/connect4/player-blue.svg" alt="" class="emoji-icon"></span>
+          <span class="ttt-score-label">Blauw</span>
+          <span id="snakeScoreP1" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score ttt-score-draw">
+          <span class="ttt-score-label">Gelijk</span>
+          <span id="snakeScoreDraw" class="ttt-score-value">0</span>
+        </div>
+        <div class="ttt-score">
+          <span class="ttt-score-avatar" aria-hidden="true"><img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon"></span>
+          <span class="ttt-score-label">Roze</span>
+          <span id="snakeScoreP2" class="ttt-score-value">0</span>
+        </div>
+      </div>
+
+      <p id="snakeStatus" class="ttt-status" aria-live="polite"></p>
+
+      <div id="snakeBoard" class="snake-board" role="img" aria-label="Snake speelveld"></div>
+
+      <div class="ttt-actions">
+        <button id="snakeStart" class="btn btn-primary" type="button">Start</button>
+        <button id="snakeResetScore" class="btn btn-outline" type="button">Score resetten</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- <div data-include="chrome-end"></div> Commented out so it does not hinder buttons -->
+
+  <script type="module" src="../assets/js/main.js"></script>
+</body>
+</html>

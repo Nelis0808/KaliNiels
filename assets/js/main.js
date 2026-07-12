@@ -52,6 +52,7 @@ import { initHangman } from './modules/hangman.js';
 import { initHangmanCustom } from './modules/hangman-custom.js';
 import { initBlackjack } from './modules/blackjack.js';
 import { initSpiderette } from './modules/spiderette.js';
+import { initSnake } from './modules/snake.js';
 import { initWallz } from './modules/wallz.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initHangmanCustom(); // games/hangman-custom.html
   initBlackjack();     // games/blackjack.html
   initSpiderette();    // games/spiderette.html
+  initSnake();         // games/snake.html
   initWallz();         // games/wallz.html
 
   console.log(`${document.title} — initialized ✅`);
