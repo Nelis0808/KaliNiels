@@ -78,8 +78,9 @@ export function initWallz() {
   const wallsChipP2El = wallsP2El.closest('.wallz-walls-chip');
   const scoreP1WrapEl = scoreP1El.closest('.ttt-score');
   const scoreP2WrapEl = scoreP2El.closest('.ttt-score');
-  const startBtn = qs('#wallzStart', root);
+  const newRoundBtn = qs('#wallzStart', root);
   const resetScoreBtn = qs('#wallzResetScore', root);
+  const orientationBtn = qs('#wallzOrientation', root);
 
   const score = { 1: 0, 2: 0 };
 
@@ -90,9 +91,10 @@ export function initWallz() {
   let colBlock; // Set of "gr,gc"
   let usedJoints; // Set of "gr,gc" — any wall anchored here, either orientation
   let turn; // 1 | 2
-  let running = false;
+  let running = true;
   let gameOver = false;
-  let previewJoint = null; // { gr, gc, orient } | null — current hover/drag preview
+  let orientation = 'v'; // 'v' | 'h' — current wall orientation, set via button/Space, not snapping
+  let previewJoint = null; // { gr, gc } | null — current hover/drag preview
 
   const cellEls = new Map(); // "r,c" -> button element
   const jointEls = new Map(); // "gr,gc" -> button element
@@ -310,10 +312,27 @@ export function initWallz() {
   function updateTurnUi() {
     const p1Active = running && !gameOver && turn === 1;
     const p2Active = running && !gameOver && turn === 2;
-    wallsChipP1El.classList.toggle('wallz-chip-active', p1Active);
-    wallsChipP2El.classList.toggle('wallz-chip-active', p2Active);
-    scoreP1WrapEl.classList.toggle('wallz-chip-active', p1Active);
-    scoreP2WrapEl.classList.toggle('wallz-chip-active', p2Active);
+
+    [wallsChipP1El, scoreP1WrapEl].forEach((el) => {
+      el.classList.toggle('wallz-chip-active', p1Active);
+      el.style.setProperty('--wallz-turn-color', 'var(--wallz-p1)');
+    });
+    [wallsChipP2El, scoreP2WrapEl].forEach((el) => {
+      el.classList.toggle('wallz-chip-active', p2Active);
+      el.style.setProperty('--wallz-turn-color', 'var(--wallz-p2)');
+    });
+  }
+
+  function updateOrientationUi() {
+    orientationBtn.textContent = orientation === 'v' ? '↕️ Muur: Verticaal' : '↔️ Muur: Horizontaal';
+    orientationBtn.setAttribute('aria-pressed', String(orientation === 'h'));
+  }
+
+  function toggleOrientation() {
+    if (!running || gameOver) return;
+    orientation = orientation === 'v' ? 'h' : 'v';
+    updateOrientationUi();
+    refreshPreview();
   }
 
   function setStatus(text) {
@@ -324,61 +343,45 @@ export function initWallz() {
     return player === 1 ? 'Blauw' : 'Roze';
   }
 
-  function turnStatusText() {
-    return `${playerLabel(turn)} is aan de beurt — beweeg naar een gemarkeerd vak, of wijs een hoekpunt aan om een muur te plaatsen.`;
-  }
-
   // -----------------------------------------------------------------
   // WALL HOVER / DRAG PREVIEW
   // -----------------------------------------------------------------
-  // Orientation is never chosen with a separate button/mode: hovering
-  // (or, on touch, dragging a finger) over a joint picks vertical vs.
-  // horizontal automatically from the pointer's position within that
-  // joint's hit-box — closer to the top/bottom edge => horizontal
-  // wall, closer to the left/right edge => vertical wall. The wall is
-  // only actually placed on pointerup (click release, or lifting a
-  // finger on mobile) while still over that joint.
-  function orientationFromPointer(gr, gc, e) {
-    const joint = jointEls.get(key(gr, gc));
-    const rect = joint.getBoundingClientRect();
-    if (!rect.width || !rect.height) return 'v';
-    const dx = Math.abs(e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
-    const dy = Math.abs(e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
-    // Whichever axis the pointer has strayed further along (as a
-    // fraction of the joint's own size) decides the wall's
-    // orientation: a wall is "along" the axis perpendicular to that
-    // stray, so straying sideways (dx > dy) snaps to a vertical wall
-    // and straying up/down (dy > dx) snaps to a horizontal wall.
-    return dx > dy ? 'v' : 'h';
-  }
-
+  // Orientation is chosen explicitly — via the ↕️/↔️ button or the
+  // Space key (wired up in the WIRE UP CONTROLS section below) — not
+  // by snapping to cursor position, which was fiddly to aim. Hovering
+  // (or, on touch, dragging a finger) over a joint just previews a
+  // wall in whatever the current orientation is; the wall is only
+  // actually placed on release (click, or lifting a finger) while
+  // still over that joint.
   function clearPreview(gr, gc) {
     const joint = jointEls.get(key(gr, gc));
     joint.classList.remove('wallz-joint-preview-ok', 'wallz-joint-preview-bad', 'wallz-joint-preview-h', 'wallz-joint-preview-v');
     if (previewJoint && previewJoint.gr === gr && previewJoint.gc === gc) previewJoint = null;
   }
 
-  function updatePreview(gr, gc, e) {
+  function updatePreview(gr, gc) {
     if (!running || gameOver) return;
-    const orient = orientationFromPointer(gr, gc, e);
-    previewJoint = { gr, gc, orient };
+    previewJoint = { gr, gc };
     const joint = jointEls.get(key(gr, gc));
-    const result = canPlaceWall(orient, gr, gc, turn);
+    const result = canPlaceWall(orientation, gr, gc, turn);
     joint.classList.toggle('wallz-joint-preview-ok', result.ok);
     joint.classList.toggle('wallz-joint-preview-bad', !result.ok);
-    joint.classList.toggle('wallz-joint-preview-h', orient === 'h');
-    joint.classList.toggle('wallz-joint-preview-v', orient === 'v');
+    joint.classList.toggle('wallz-joint-preview-h', orientation === 'h');
+    joint.classList.toggle('wallz-joint-preview-v', orientation === 'v');
   }
 
-  function commitFromPointer(gr, gc, e) {
+  function refreshPreview() {
+    if (previewJoint) updatePreview(previewJoint.gr, previewJoint.gc);
+  }
+
+  function commitAt(gr, gc) {
     if (!running || gameOver) return;
-    const orient = orientationFromPointer(gr, gc, e);
-    const result = canPlaceWall(orient, gr, gc, turn);
+    const result = canPlaceWall(orientation, gr, gc, turn);
     if (!result.ok) {
       setStatus(result.reason);
       return;
     }
-    placeWall(orient, gr, gc, turn);
+    placeWall(orientation, gr, gc, turn);
     updateWallsUi();
     clearPreview(gr, gc);
     endTurn();
@@ -415,14 +418,14 @@ export function initWallz() {
     if (previewJoint && (previewJoint.gr !== hit.gr || previewJoint.gc !== hit.gc)) {
       clearPreview(previewJoint.gr, previewJoint.gc);
     }
-    updatePreview(hit.gr, hit.gc, e);
+    updatePreview(hit.gr, hit.gc);
   });
 
   document.addEventListener('pointerup', (e) => {
     if (!running || gameOver) return;
     const hit = jointFromPoint(e.clientX, e.clientY);
     if (!hit) return;
-    commitFromPointer(hit.gr, hit.gc, e);
+    commitAt(hit.gr, hit.gc);
   });
 
   // -----------------------------------------------------------------
@@ -450,7 +453,6 @@ export function initWallz() {
     turn = turn === 1 ? 2 : 1;
     updateTurnUi();
     highlightLegalMoves();
-    setStatus(turnStatusText());
   }
 
   function endRound(winner) {
@@ -458,12 +460,12 @@ export function initWallz() {
     gameOver = true;
     clearLegalMoveHighlights();
     updateTurnUi();
+    orientationBtn.disabled = true;
     score[winner] += 1;
     scoreP1El.textContent = String(score[1]);
     scoreP2El.textContent = String(score[2]);
-    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? '🔵' : '🩷'} Klik op "Nieuwe ronde" om opnieuw te spelen.`);
-    startBtn.textContent = 'Nieuwe ronde';
-    startBtn.disabled = false;
+    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? '🔵' : '🩷'} Nieuwe ronde start zo...`);
+    window.setTimeout(startRound, 1500);
   }
 
   // -----------------------------------------------------------------
@@ -480,10 +482,12 @@ export function initWallz() {
     usedJoints = new Set();
     turn = 1;
     gameOver = false;
+    orientation = 'v';
     previewJoint = null;
 
     wallBarsWrap.replaceChildren();
     updateWallsUi();
+    updateOrientationUi();
     renderCells();
     highlightLegalMoves();
   }
@@ -491,9 +495,8 @@ export function initWallz() {
   function startRound() {
     resetBoard();
     running = true;
-    startBtn.disabled = true;
+    orientationBtn.disabled = false;
     updateTurnUi();
-    setStatus(turnStatusText());
   }
 
   function resetScore() {
@@ -506,14 +509,28 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // WIRE UP CONTROLS
   // -----------------------------------------------------------------
-  startBtn.addEventListener('click', startRound);
+  newRoundBtn.addEventListener('click', startRound);
   resetScoreBtn.addEventListener('click', () => {
     resetScore();
-    setStatus('Score gereset. Klik op "Start" om te beginnen.');
+    setStatus('Score gereset.');
+  });
+  orientationBtn.addEventListener('click', toggleOrientation);
+
+  // Space bar also flips orientation — handy while the mouse/finger
+  // stays put on a joint. Ignored while typing wouldn't apply here
+  // (no text inputs on this page) but we still guard against
+  // repeated keydown-while-held firing many toggles in a row.
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || e.repeat) return;
+    if (!running || gameOver) return;
+    e.preventDefault();
+    toggleOrientation();
   });
 
   // ---- init ----
+  // The game starts automatically on page load — no "Start" click
+  // needed. startRound() itself sets the turn indicator, so Player 1
+  // is shown as active immediately.
   buildBoard();
-  resetBoard();
-  setStatus('Klik op "Start" om te beginnen. Blauw start onderaan, Roze bovenaan.');
+  startRound();
 }

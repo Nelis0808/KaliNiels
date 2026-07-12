@@ -51,7 +51,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1><img src="../assets/icons/connect4/player-blue.svg" alt="" class="emoji-icon"><img src="../assets/icons/connect4/player-pink.svg" alt="" class="emoji-icon"> Wallz</h1>
-        <p>Race naar de overkant en zet muren neer om de ander te vertragen. Blauw start onderaan, Roze start bovenaan. Beweeg over een hoekpunt om een muur te richten en klik (of laat los) om 'm neer te zetten.</p>
+        <p>Race naar de overkant en zet muren neer om de ander te vertragen. Blauw start onderaan, Roze start bovenaan. Kies vertikaal of horizontaal met de knop (of spatiebalk), beweeg naar een hoekpunt, en klik (of laat los) om de muur neer te zetten.</p>
       </div>
     </section>
 
@@ -84,12 +84,16 @@
         </span>
       </div>
 
+      <div class="wallz-orientation-row">
+        <button id="wallzOrientation" class="btn btn-outline" type="button">↕️ Muur: Verticaal</button>
+      </div>
+
       <div id="wallzBoardWrap" class="wallz-board-wrap">
         <div id="wallzBoard" class="wallz-board" role="group" aria-label="Wallz speelveld, 9 bij 9"></div>
       </div>
 
       <div class="ttt-actions">
-        <button id="wallzStart" class="btn btn-primary" type="button">Start</button>
+        <button id="wallzStart" class="btn btn-primary" type="button">Nieuwe ronde</button>
         <button id="wallzResetScore" class="btn btn-outline" type="button">Score resetten</button>
       </div>
     </section>

@@ -3,9 +3,11 @@
    Reuses .ttt-scoreboard / .ttt-status / .ttt-actions from
    games.css — the wall-count chips, turn indicator, and the 9x9
    board (with its wall-joints and wall bars) live here. There is no
-   separate "wall placement mode" any more: wall joints are always
-   live, and hovering/dragging over one auto-snaps its orientation
-   (see the WALL JOINTS section below and wallz.js).
+   separate "move mode" vs "wall mode" any more: wall joints are
+   always live. Orientation (vertical/horizontal) is chosen with the
+   ↕️/↔️ button or the Space key, not by snapping to cursor position
+   — see the ORIENTATION TOGGLE and WALL JOINTS sections below and
+   wallz.js.
 
    FIXED PLAYER COLORS: like snake.css, player 1/2 use fixed hex
    values (--wallz-p1 / --wallz-p2) that match the blue/pink avatar
@@ -49,17 +51,56 @@
 /* == TURN INDICATOR ==
    Applied to both the score card and the wall-count chip of
    whichever player currently has the move, so it's clear at a
-   glance even before a wall/cell is touched — this used to have no
-   visual indication at all, especially confusing for Player 1's
-   very first move. */
+   glance even before a wall/cell is touched — including right after
+   pressing "Start", before anyone has moved. Deliberately NOT built
+   on `currentColor` + `:has()` (too easy for the cascade/inheritance
+   to quietly undo), just an explicit solid fill + ring per player
+   variant so it's unmissable regardless of where it's applied. */
 .wallz-chip-active {
-  outline: 3px solid currentColor;
+  position: relative;
+  outline: 3px solid var(--wallz-turn-color, var(--color-primary));
   outline-offset: 2px;
-  box-shadow: var(--shadow-sm), 0 0 0 5px color-mix(in srgb, currentColor 18%, transparent);
+  box-shadow: var(--shadow-sm), 0 0 0 5px color-mix(in srgb, var(--wallz-turn-color, var(--color-primary)) 22%, transparent);
 }
 
-.ttt-score:has(#wallzScoreP1).wallz-chip-active { color: var(--wallz-p1); }
-.ttt-score:has(#wallzScoreP2).wallz-chip-active { color: var(--wallz-p2); }
+#wallzApp .ttt-scoreboard {
+  margin-top: var(--space-4);
+}
+
+.wallz-chip-active::before {
+  content: 'AAN DE BEURT';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, -6px);
+  white-space: nowrap;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--wallz-turn-color, var(--color-primary));
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Player identity color comes from an inline --wallz-turn-color
+   custom property set directly in JS on each active element (see
+   updateTurnUi() in wallz.js) — simpler and more robust than trying
+   to derive it from DOM position or :has(). */
+
+/* == ORIENTATION TOGGLE ==
+   The single control that decides whether the next wall placed will
+   be vertical or horizontal — replaces the old auto-snap-by-cursor
+   behavior with something predictable and explicit. */
+.wallz-orientation-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
 
 .wallz-board-wrap {
   width: 100%;
@@ -135,15 +176,13 @@
 .wallz-head-img-both-b { right: 6%; top: 8%; }
 
 /* == WALL JOINTS ==
-   The small corners used to place a wall. There is no separate
-   "wall mode" to switch into any more — every joint is always live.
-   Hovering (mouse) or dragging a finger (touch) over one previews a
-   wall that automatically snaps to horizontal or vertical depending
-   on where within the joint's hit-box the pointer sits (see
-   orientationFromPointer() in wallz.js); the wall is only actually
-   placed when the pointer is released over that joint. touch-action
-   is disabled so a drag on mobile previews walls instead of
-   scrolling the page. */
+   The small corners used to place a wall. Every joint is always
+   live — no separate "wall mode" to switch into. Hovering (mouse)
+   or dragging a finger (touch) over one previews a wall in whatever
+   orientation is currently selected (via the ↕️/↔️ button or Space,
+   see wallz.js); the wall is only actually placed when the pointer
+   is released over that joint. touch-action is disabled so a drag
+   on mobile previews walls instead of scrolling the page. */
 .wallz-joint {
   position: relative;
   border-radius: var(--radius-full);
