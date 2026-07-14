@@ -1,19 +1,21 @@
 {
-  "_comment": "Countries shown as pins on the world map (reizen.html). 'x'/'y' are percentage positions on the equirectangular world background (assets/icons/reizen/world-map.svg) — 0,0 is top-left, 100,100 is bottom-right. 'iso' must match the country name used in captions.json's 3rd caption field (case-insensitive match, see assets/js/modules/reizen-land.js). Add a country here the moment you have (or plan) photos captioned with it, even before you've actually been — status controls the pin's look.",
+  "_comment": "Countries shown as pins on the world map (reizen.html). 'iso' is a plain ISO 3166-1 alpha-2 code (NL, BE, US, ...) — the same standard everyone uses, so it's never ambiguous and never needs 'figuring out'. That code is looked up directly in assets/data/world-map.json (pin position, auto-computed from real geography) and assets/data/countries/<ISO>.json (that country's own high-detail outline, shown when you click its pin) — see assets/js/modules/geo-render.js. It must also match the country name used in captions.json's 3rd caption field (case-insensitive, matched against 'name' below — see assets/js/modules/reizen-land.js).",
+  "_pinComment": "'pin' is OPTIONAL — by default a country's pin sits at the geographic centroid of its mainland (computed automatically, see STAPPENPLAN-REIZEN.md's data-pipeline notes). Set 'pin' to override that with a specific {lon, lat} instead — e.g. a capital city, easy to look up on Wikipedia/Google Maps, no pixel-guessing involved. Longitude first, then latitude (same order as GeoJSON).",
+  "_cityPinsComment": "'cityPins' is OPTIONAL per country — a map of city name (must match the 'Plaats' used in captions.json, case-insensitive) to its real-world {lon, lat}. Look the coordinates up once (Wikipedia's infobox, or right-click 'What's here' on Google Maps) and they'll always render in exactly the right spot on that country's map, at any zoom — no trial and error. Leave a city out and reizen-land.js falls back to an automatic fan-out layout for it instead; nothing breaks.",
   "countries": [
-    { "iso": "NL", "name": "Nederland",           "x": 50.9, "y": 24.0, "status": "visited" },
-    { "iso": "BE", "name": "België",              "x": 50.5, "y": 25.3, "status": "visited" },
-    { "iso": "DE", "name": "Duitsland",           "x": 52.5, "y": 23.8, "status": "visited" },
-    { "iso": "FR", "name": "Frankrijk",           "x": 49.3, "y": 27.0, "status": "visited" },
-    { "iso": "ES", "name": "Spanje",              "x": 47.8, "y": 30.5, "status": "visited" },
-    { "iso": "PT", "name": "Portugal",            "x": 46.3, "y": 30.2, "status": "visited" },
-    { "iso": "IT", "name": "Italië",              "x": 52.3, "y": 29.0, "status": "visited" },
-    { "iso": "GB", "name": "Verenigd Koninkrijk", "x": 48.6, "y": 22.8, "status": "visited" },
-    { "iso": "AT", "name": "Oostenrijk",          "x": 53.2, "y": 26.0, "status": "wishlist" },
-    { "iso": "CH", "name": "Zwitserland",         "x": 51.4, "y": 26.5, "status": "wishlist" },
-    { "iso": "GR", "name": "Griekenland",         "x": 55.5, "y": 30.8, "status": "wishlist" },
-    { "iso": "US", "name": "Verenigde Staten",    "x": 20.5, "y": 30.0, "status": "wishlist" },
-    { "iso": "JP", "name": "Japan",               "x": 86.5, "y": 30.5, "status": "wishlist" },
-    { "iso": "TH", "name": "Thailand",            "x": 76.5, "y": 42.0, "status": "wishlist" }
+    { "iso": "NL", "name": "Nederland",           "status": "visited",  "cityPins": { "amsterdam": { "lon": 4.9041, "lat": 52.3676 } } },
+    { "iso": "BE", "name": "België",              "status": "visited",  "cityPins": { "brussel": { "lon": 4.3517, "lat": 50.8503 } } },
+    { "iso": "DE", "name": "Duitsland",           "status": "visited",  "cityPins": { "berlijn": { "lon": 13.4050, "lat": 52.5200 } } },
+    { "iso": "FR", "name": "Frankrijk",           "status": "visited",  "cityPins": { "parijs": { "lon": 2.3522, "lat": 48.8566 } } },
+    { "iso": "ES", "name": "Spanje",              "status": "visited",  "cityPins": { "madrid": { "lon": -3.7038, "lat": 40.4168 }, "barcelona": { "lon": 2.1734, "lat": 41.3851 } } },
+    { "iso": "PT", "name": "Portugal",            "status": "visited",  "cityPins": { "lissabon": { "lon": -9.1393, "lat": 38.7223 } } },
+    { "iso": "IT", "name": "Italië",              "status": "visited",  "cityPins": { "rome": { "lon": 12.4964, "lat": 41.9028 } } },
+    { "iso": "GB", "name": "Verenigd Koninkrijk", "status": "visited",  "cityPins": { "londen": { "lon": -0.1276, "lat": 51.5072 } } },
+    { "iso": "AT", "name": "Oostenrijk",          "status": "wishlist", "cityPins": { "wenen": { "lon": 16.3738, "lat": 48.2082 } } },
+    { "iso": "CH", "name": "Zwitserland",         "status": "wishlist", "cityPins": { "bern": { "lon": 7.4474, "lat": 46.9480 } } },
+    { "iso": "GR", "name": "Griekenland",         "status": "wishlist", "cityPins": { "athene": { "lon": 23.7275, "lat": 37.9838 } } },
+    { "iso": "US", "name": "Verenigde Staten",    "status": "wishlist", "cityPins": { "new york": { "lon": -74.0060, "lat": 40.7128 } } },
+    { "iso": "JP", "name": "Japan",               "status": "wishlist", "cityPins": { "tokio": { "lon": 139.6917, "lat": 35.6895 } } },
+    { "iso": "TH", "name": "Thailand",            "status": "wishlist", "cityPins": { "bangkok": { "lon": 100.5018, "lat": 13.7563 } } }
   ]
 }

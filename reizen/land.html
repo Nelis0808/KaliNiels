@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <!--
   ONZE REIZEN — COUNTRY VIEW PAGE
-  Zoomed-in view for one country (?iso=XX in the URL), reached by
-  double-clicking a pin on reizen.html. Shows a pin per city that
-  appears in captions.json's optional country/place caption fields
-  (see cloudflare/cloudflare-worker-photos/worker.js's new /travel
-  endpoint), and a small photo strip for whichever city pin is
-  currently selected — the real thumbnails only load if you're
-  logged in via photos.html (same session, see reizen-land.js).
-  Logic lives in assets/js/modules/reizen-land.js.
+  Full-page view for one country (?iso=XX in the URL, an ISO 3166-1
+  alpha-2 code), reached from the world map's country modal
+  ("Volledige pagina met foto's" button in reizen.html) or by
+  sharing/bookmarking this URL directly. Shows that country's own
+  high-detail outline (assets/data/countries/<ISO>.json, Natural
+  Earth data — see assets/js/modules/geo-render.js) as a
+  pannable/zoomable background (assets/js/modules/map-pan-zoom.js),
+  with a pin per city that appears in captions.json's optional
+  country/place caption fields (see
+  cloudflare/cloudflare-worker-photos/worker.js's /travel endpoint),
+  and a photo strip for whichever city pin is currently selected —
+  real thumbnails only load if you're logged in via photos.html
+  (same session, see reizen-land.js).
 
   Lives in the reizen/ subfolder, same relative-path rules as
   games/tictactoe.html (see that file's comment for details) — the
@@ -52,7 +57,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1 id="reizenLandHeading">🌍 Land</h1>
-        <p>Klik een stad om de foto's te bekijken.</p>
+        <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een stad om de foto's te bekijken.</p>
       </div>
     </section>
 
@@ -62,13 +67,24 @@
       <p id="reizenLandStatus" class="rz-status" aria-live="polite">Steden laden…</p>
       <p id="reizenLandSub" class="rz-hint"></p>
 
-      <div id="reizenLandMapFrame" class="rz-map-frame">
-        <img src="../assets/icons/reizen/world-map.svg" alt="" class="rz-map-bg" aria-hidden="true" style="opacity:0.08;">
-        <!-- City pins injected directly into this frame by assets/js/modules/reizen-land.js -->
+      <div class="rz-map-viewport-wrap">
+        <div class="rz-map-controls">
+          <button type="button" id="reizenLandZoomIn" class="rz-zoom-btn" aria-label="Inzoomen">+</button>
+          <button type="button" id="reizenLandZoomReset" class="rz-zoom-btn rz-zoom-reset" aria-label="Zoom resetten">⤢</button>
+          <button type="button" id="reizenLandZoomOut" class="rz-zoom-btn" aria-label="Uitzoomen">−</button>
+        </div>
+
+        <div id="reizenLandMapViewport" class="rz-map-viewport">
+          <div id="reizenLandMapFrame" class="rz-map-frame">
+            <!-- Country outline SVG + city pins injected here by reizen-land.js -->
+          </div>
+        </div>
       </div>
 
       <div class="rz-legend">
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-city-visited" aria-hidden="true"></span> Bezochte stad</span>
+        <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-city" aria-hidden="true"></span> Op verlanglijstje</span>
+        <span class="rz-data-credit">Kaartgegevens: Natural Earth</span>
       </div>
 
       <div id="reizenCityPanel" class="rz-city-panel hidden">

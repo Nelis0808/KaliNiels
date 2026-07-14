@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <!--
   ONZE REIZEN — WORLD MAP PAGE
-  Landing page for the travel section: a stylized world map with a
-  pin per country in assets/data/travel-countries.json. Click a pin
-  to select it, double-click (or use the "Bekijk land" button that
-  appears) to zoom into that country's city overview at
-  reizen/land.html?iso=XX. Logic lives in assets/js/modules/reizen.js
-  — this file only contains the map frame + selected-country card.
+  Landing page for the travel section: a real-geography SVG world
+  map (assets/data/world-map.json, Natural Earth data — see
+  assets/js/modules/geo-render.js) with a pin per country in
+  assets/data/travel-countries.json, pannable with drag/wheel/pinch
+  (assets/js/modules/map-pan-zoom.js). Click a pin to open a modal
+  that renders that country's own high-detail outline
+  (assets/data/countries/<ISO>.json) and shows its cities as precise
+  pins on top of it — same idea as reizen/land.html's full page,
+  just without leaving the world map. Everything here is local
+  static data — no external site, nothing that can block a scraper,
+  no network round-trip when opening a country. Logic lives in
+  assets/js/modules/reizen.js — this file only contains markup.
 
   Lives at the site root (like index.html, games-hub.html, ...) —
-  the country-specific pages live one level down in reizen/ (see
-  reizen/land.html), same split as games-hub.html vs games/*.html.
+  the country-specific full pages live one level down in reizen/
+  (see reizen/land.html), same split as games-hub.html vs games/*.html.
 -->
 <html lang="nl">
 <head>
@@ -48,32 +54,62 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🌍 Onze Reizen</h1>
-        <p>Klik een land om te selecteren, dubbelklik om in te zoomen naar de steden.</p>
+        <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een land voor de landkaart.</p>
       </div>
     </section>
 
     <section class="container" id="reizenApp">
       <p id="reizenStatus" class="rz-status" aria-live="polite">Landen laden…</p>
 
-      <div id="reizenMapFrame" class="rz-map-frame">
-        <img src="assets/icons/reizen/world-map.svg" alt="" class="rz-map-bg" aria-hidden="true">
-        <!-- Country pins injected directly into this frame by assets/js/modules/reizen.js -->
+      <div class="rz-map-viewport-wrap">
+        <div class="rz-map-controls">
+          <button type="button" id="reizenZoomIn" class="rz-zoom-btn" aria-label="Inzoomen">+</button>
+          <button type="button" id="reizenZoomReset" class="rz-zoom-btn rz-zoom-reset" aria-label="Zoom resetten">⤢</button>
+          <button type="button" id="reizenZoomOut" class="rz-zoom-btn" aria-label="Uitzoomen">−</button>
+        </div>
+
+        <div id="reizenMapViewport" class="rz-map-viewport">
+          <div id="reizenMapFrame" class="rz-map-frame">
+            <!-- World map SVG + country pins injected directly into this frame by assets/js/modules/reizen.js -->
+          </div>
+        </div>
       </div>
 
       <div class="rz-legend">
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-visited" aria-hidden="true"></span> Al geweest</span>
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-wishlist" aria-hidden="true"></span> Verlanglijstje</span>
       </div>
-
-      <div id="reizenSelectedCard" class="rz-selected-card hidden">
-        <div>
-          <h3 id="reizenSelectedName"></h3>
-          <p id="reizenSelectedMeta"></p>
-        </div>
-        <button id="reizenViewCountry" class="btn btn-primary" type="button">Bekijk land &rarr;</button>
-      </div>
     </section>
   </main>
+
+  <!-- COUNTRY MAP MODAL — opens on pin click, see openCountryModal() in reizen.js -->
+  <div id="reizenCountryModal" class="rz-country-modal hidden" role="dialog" aria-modal="true" aria-labelledby="reizenCountryModalTitle">
+    <div class="rz-country-modal-inner">
+      <button type="button" id="reizenCountryModalClose" class="rz-country-modal-close" aria-label="Sluiten">✕</button>
+
+      <div class="rz-country-modal-header">
+        <h2 id="reizenCountryModalTitle">Land</h2>
+        <p id="reizenCountryModalMeta"></p>
+      </div>
+
+      <p id="reizenCountryModalStatus" class="rz-status" aria-live="polite"></p>
+
+      <div id="reizenCountryModalViewport" class="rz-map-viewport rz-country-modal-viewport">
+        <div id="reizenCountryModalFrame" class="rz-map-frame"></div>
+      </div>
+
+      <div id="reizenModalCityPanel" class="rz-city-panel hidden">
+        <h3 id="reizenModalCityPanelTitle">Plek</h3>
+        <div id="reizenModalCityPhotos"></div>
+        <p id="reizenModalLockedNote" class="rz-locked-note hidden"></p>
+      </div>
+
+      <div class="rz-country-modal-footer">
+        <a id="reizenCountryModalFull" href="#" class="btn btn-primary">Volledige pagina met foto's &rarr;</a>
+        <span class="rz-data-credit">Kaartgegevens: Natural Earth</span>
+      </div>
+    </div>
+  </div>
 
   <div data-include="chrome-end"></div>
 

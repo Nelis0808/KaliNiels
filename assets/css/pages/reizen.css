@@ -1,12 +1,23 @@
 /* =============================================================
    PAGE: ONZE REIZEN (reizen.html + reizen/land.html)
    -------------------------------------------------------------
-   World map: a stylized SVG continent backdrop
-   (assets/icons/reizen/world-map.svg) with clickable pins placed
-   by percentage position (assets/data/travel-countries.json).
-   Double-click (or the "Bekijk land" button that appears on
-   select) navigates to reizen/land.html?iso=XX, which re-uses
-   almost all the same classes for its city-pin overview.
+   World map: the real photo world.jpg (assets/icons/reizen/world-map.jpg,
+   2842x1404) as a pannable/zoomable backdrop, with clickable pins
+   placed by percentage position (assets/data/travel-countries.json,
+   calibrated against each country's capital — see that file's
+   comment). Clicking a pin opens a modal that scrapes that
+   country's own map (assets/data/countries/<ISO>.json) and
+   shows precise city pins on top of it. reizen/land.html re-uses
+   the exact same map/pin/modal classes for its full-page version
+   (photos + login), so the whole feature feels like one continuous
+   zoom no matter which entry point you used.
+
+   THEME: pins deliberately alternate --color-primary (visited) and
+   --color-accent (wishlist/cities) rather than two shades of one
+   hue — those two tokens are always the complementary blue/pink
+   pair (see base/variables.css's two [data-color-theme] blocks),
+   so the map always reads as "blue AND pink" regardless of which
+   half of the toggle is currently active.
    ============================================================= */
 
 /* == SHARED WRAPPER == */
@@ -29,57 +40,151 @@
   margin-bottom: var(--space-5);
 }
 
-/* == MAP CANVAS ==
-   Fixed aspect-ratio box (matches the SVG's 1000x500 viewBox) so
-   percentage-positioned pins always land in the right spot,
-   however wide the container renders. */
-.rz-map-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1000 / 500;
-  border-radius: var(--radius-lg);
+/* == MAP CONTROLS (zoom +/-/reset, floats over the top-right corner) == */
+.rz-map-controls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: radial-gradient(circle at 30% 20%, var(--color-tertiary) 0%, transparent 60%),
-    radial-gradient(circle at 80% 80%, var(--color-secondary) 0%, transparent 55%),
-    var(--color-surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 
-.rz-map-bg {
+.rz-zoom-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.rz-zoom-btn:hover, .rz-zoom-btn:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.rz-zoom-reset { font-size: 0.95rem; }
+
+/* == MAP VIEWPORT ==
+   Fixed-aspect-ratio window (matches world-map.jpg's real 2842x1404
+   pixels, or a country image's natural ratio — set inline per view)
+   that clips the pannable/zoomable frame inside it. Drag to pan,
+   wheel/pinch to zoom — see assets/js/modules/map-pan-zoom.js. */
+.rz-map-viewport-wrap {
+  position: relative;
+}
+
+.rz-map-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2842 / 1404;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: radial-gradient(circle at 15% 15%, color-mix(in srgb, var(--color-tertiary) 35%, transparent) 0%, transparent 55%),
+    radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--color-accent) 30%, transparent) 0%, transparent 55%),
+    var(--color-surface);
+  box-shadow: var(--shadow);
+  touch-action: none; /* we handle pan/zoom ourselves, don't let the browser scroll/zoom the page too */
+  cursor: grab;
+}
+
+.rz-map-viewport-dragging,
+.rz-map-viewport:active {
+  cursor: grabbing;
+}
+
+.rz-map-frame {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  color: var(--color-primary);
-  opacity: 0.22;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
-:root[data-theme='dark'] .rz-map-bg {
-  opacity: 0.3;
+.rz-world-svg,
+.rz-country-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rz-country-shape {
+  fill: var(--color-surface);
+  stroke: var(--color-text-muted);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke; /* keeps borders a constant screen-width no matter how far you've zoomed */
+  transition: fill var(--transition-fast);
+}
+
+.rz-world-svg .rz-country-shape:hover {
+  fill: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+
+.rz-map-bg-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  padding: var(--space-4);
 }
 
 /* == PINS ==
-   Positioned absolutely via inline style (left/top %, set in JS
-   from the data file). Both the world map's country pins and the
-   country view's city pins share this exact class set, so the two
-   pages feel like one continuous zoom. */
+   `.rz-pin` only ever carries position (left/top %, set in JS) +
+   the constant-size counter-scale driven by --rz-inv-zoom (set on
+   .rz-map-frame by map-pan-zoom.js). `.rz-pin-scaler` carries the
+   hover/selected pop so the two transforms never fight each other. */
 .rz-pin {
   position: absolute;
-  transform: translate(-50%, -100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
+  transform: translate(-50%, -100%) scale(var(--rz-inv-zoom, 1));
+  transform-origin: bottom center;
+  display: block;
   border: none;
   background: none;
   padding: 0;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25));
+  cursor: pointer;
+  z-index: 4;
+}
+
+.rz-pin-scaler {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .3));
   transition: transform var(--transition-fast);
 }
 
-.rz-pin:hover, .rz-pin:focus-visible {
-  transform: translate(-50%, -100%) scale(1.15);
-  z-index: 5;
+.rz-pin:hover .rz-pin-scaler,
+.rz-pin:focus-visible .rz-pin-scaler {
+  transform: scale(1.18);
+}
+
+.rz-pin:focus-visible {
+  outline: none;
+}
+
+.rz-pin:focus-visible .rz-pin-dot {
+  outline: 3px solid var(--color-tertiary);
+  outline-offset: 2px;
 }
 
 .rz-pin-dot {
@@ -92,15 +197,28 @@
 }
 
 .rz-pin-visited .rz-pin-dot {
-  background: var(--color-accent);
+  background: var(--color-primary);
 }
 
 .rz-pin-wishlist .rz-pin-dot {
-  background: var(--gray-500);
-  opacity: 0.85;
+  background: var(--color-accent);
+}
+
+.rz-pin-city .rz-pin-dot {
+  background: var(--color-secondary);
+  width: 15px;
+  height: 15px;
+}
+
+.rz-pin-city.rz-pin-visited .rz-pin-dot {
+  background: var(--color-success);
 }
 
 .rz-pin-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   margin-top: var(--space-1);
   font-size: 0.7rem;
   font-weight: 700;
@@ -150,15 +268,103 @@
   flex-shrink: 0;
 }
 
-.rz-legend-dot-visited { background: var(--color-accent); }
-.rz-legend-dot-wishlist { background: var(--gray-500); }
-.rz-legend-dot-city { background: var(--color-primary); }
+.rz-legend-dot-visited { background: var(--color-primary); }
+.rz-legend-dot-wishlist { background: var(--color-accent); }
+.rz-legend-dot-city { background: var(--color-secondary); }
 .rz-legend-dot-city-visited { background: var(--color-success); }
 
-/* == SELECTED-COUNTRY CARD (world map page) ==
-   Appears under the map once a pin is picked (single click),
-   showing the name + a "Bekijk land" button. Double-clicking a pin
-   (or tapping this button) is what actually navigates. */
+/* == COUNTRY MAP MODAL (world map page — opens on pin click) ==
+   Same overlay pattern as .pg-lightbox in photos.css: fixed,
+   dimmed backdrop, centered card, Escape/backdrop-click/✕ to close. */
+.rz-country-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-lightbox);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+body.rz-modal-locked {
+  overflow: hidden;
+}
+
+.rz-country-modal-inner {
+  position: relative;
+  width: min(92vw, 900px);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+}
+
+.rz-country-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.rz-country-modal-close:hover, .rz-country-modal-close:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.rz-country-modal-header {
+  padding-right: var(--space-8);
+  margin-bottom: var(--space-3);
+}
+
+.rz-country-modal-header h2 {
+  margin-bottom: var(--space-1);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rz-country-modal-header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.rz-country-modal-viewport {
+  aspect-ratio: 4 / 3; /* overridden inline the instant the country's own bounding box is known */
+}
+
+.rz-country-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.rz-data-credit {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* == SELECTED-COUNTRY CARD (legacy-style inline summary, used by
+   reizen-land.js's "no cities yet" empty state) == */
 .rz-selected-card {
   display: flex;
   flex-wrap: wrap;
@@ -182,7 +388,7 @@
   font-size: var(--fs-sm);
 }
 
-/* == COUNTRY VIEW HEADER == */
+/* == COUNTRY VIEW HEADER (reizen/land.html) == */
 .rz-land-heading {
   text-align: center;
   margin-bottom: var(--space-2);
@@ -194,8 +400,7 @@
   margin-bottom: var(--space-6);
 }
 
-/* == CITY PHOTO STRIP (country view, below the map) ==
-   Small thumbnail row for whichever city pin is currently selected. */
+/* == CITY PHOTO STRIP (below the map on both the modal and the full page) == */
 .rz-city-panel {
   margin-top: var(--space-6);
 }
@@ -264,5 +469,24 @@
 
   .rz-pin-label {
     font-size: 0.6rem;
+  }
+
+  .rz-country-modal-inner {
+    padding: var(--space-4);
+    width: 100%;
+    max-height: 95vh;
+  }
+
+  .rz-country-modal-header {
+    padding-right: var(--space-7);
+  }
+
+  .rz-country-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rz-country-modal-footer .btn {
+    text-align: center;
   }
 }
