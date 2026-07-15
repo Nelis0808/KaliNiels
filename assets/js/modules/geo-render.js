@@ -57,7 +57,13 @@ export function makeWorldProjection(width = 2000, { lonMin = -180, lonMax = 180,
     (lon - lonMin) / (lonMax - lonMin) * width,
     (latMax - lat) / (latMax - latMin) * height,
   ];
-  return { project, width, height, viewBox: `0 0 ${width} ${height}` };
+  // Inverse of project(): SVG (x,y) in viewBox units -> [lon, lat].
+  // Used for the "hover to read off coordinates" helper on the map.
+  const invert = (x, y) => [
+    lonMin + (x / width) * (lonMax - lonMin),
+    latMax - (y / height) * (latMax - latMin),
+  ];
+  return { project, invert, width, height, viewBox: `0 0 ${width} ${height}`, aspectRatio: `${width} / ${height}` };
 }
 
 function boundsOfGeometry(geometry) {
@@ -94,7 +100,13 @@ export function makeFitProjection(geometry, { targetWidth = 1000, padding = 0.12
     (lon - bLonMin) * lonCompensation / effectiveLonSpan * width,
     (bLatMax - lat) / bLatSpan * height,
   ];
-  return { project, width, height, viewBox: `0 0 ${width} ${height}` };
+  // Inverse of project(): SVG (x,y) in viewBox units -> [lon, lat].
+  // Used for the "hover to read off coordinates" helper on the map.
+  const invert = (x, y) => [
+    bLonMin + (x / width) * effectiveLonSpan / lonCompensation,
+    bLatMax - (y / height) * bLatSpan,
+  ];
+  return { project, invert, width, height, viewBox: `0 0 ${width} ${height}`, aspectRatio: `${width} / ${height}` };
 }
 
 const worldDataPromise = fetch(new URL('../../data/world-map.json', import.meta.url)).then((r) => {

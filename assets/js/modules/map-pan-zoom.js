@@ -206,6 +206,13 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
     zoomIn: () => zoomAtCenter(1.4),
     zoomOut: () => zoomAtCenter(1 / 1.4),
     reset,
+    // Converts a pointer's viewport-relative client position into
+    // frame-local CSS-pixel coordinates, undoing the current pan/zoom
+    // transform. Used by the hover-coordinate readout.
+    toFrameLocal: (clientX, clientY) => {
+      const rect = viewport.getBoundingClientRect();
+      return [(clientX - rect.left - tx) / scale, (clientY - rect.top - ty) / scale];
+    },
     destroy: () => resizeObserver.disconnect(),
   };
 }

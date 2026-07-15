@@ -26,6 +26,7 @@ import { qs, escapeHtml, siteRootUrl } from './utils.js';
 import { initPanZoom } from './map-pan-zoom.js';
 import { loadWorldData, loadCountryData, makeWorldProjection, makeFitProjection, geometryToPathD } from './geo-render.js';
 import { loadCities, positionCities, renderCityPins, loadCityPhotos } from './reizen-cities.js';
+import { attachCoordHover } from './map-coord-hover.js';
 
 const DATA_URL = new URL('../../data/travel-countries.json', import.meta.url);
 const WORLD_SVG_WIDTH = 2000;
@@ -56,6 +57,8 @@ export function initReizen() {
   let countries = [];
   let openRequestId = 0; // guards against a slow load resolving after the modal was closed/reopened
   let activeCountry = null; // whichever country the modal is currently showing — read by modalPanZoom's onTap
+  let worldProjection = null;
+  let modalProjection = null;
 
   const worldZoom = initPanZoom(viewport, mapFrame, {
     onTap: (event) => {
@@ -69,6 +72,7 @@ export function initReizen() {
   qs('#reizenZoomIn', root)?.addEventListener('click', () => worldZoom.zoomIn());
   qs('#reizenZoomOut', root)?.addEventListener('click', () => worldZoom.zoomOut());
   qs('#reizenZoomReset', root)?.addEventListener('click', () => worldZoom.reset());
+  attachCoordHover(viewport, worldZoom, () => worldProjection);
 
   const modalPanZoom = initPanZoom(modalViewport, modalFrame, {
     onTap: (event) => {
@@ -78,11 +82,13 @@ export function initReizen() {
       if (city) selectModalCity(city);
     },
   });
+  attachCoordHover(modalViewport, modalPanZoom, () => modalProjection);
 
   function closeModal() {
     modal.classList.add('hidden');
     document.body.classList.remove('rz-modal-locked');
     activeCountry = null;
+    modalProjection = null;
     modalFrame.innerHTML = '';
     modalCityPanel.classList.add('hidden');
   }
@@ -99,6 +105,8 @@ export function initReizen() {
 
   function renderWorldMap(worldFeatures) {
     const projection = makeWorldProjection(WORLD_SVG_WIDTH);
+    worldProjection = projection;
+    viewport.style.aspectRatio = projection.aspectRatio;
     const byIso = new Map(worldFeatures.map((f) => [f.properties.iso2, f]));
 
     const pathMarkup = worldFeatures
@@ -183,6 +191,7 @@ export function initReizen() {
     modalFrame.innerHTML = '';
     modalCityPanel.classList.add('hidden');
     modalFull.href = siteRootUrl(`reizen/land.html?iso=${encodeURIComponent(country.iso)}`);
+    modalProjection = null;
     modalViewport.style.aspectRatio = '4 / 3';
     modalPanZoom.reset();
 
@@ -201,7 +210,8 @@ export function initReizen() {
     }
 
     const projection = makeFitProjection(feature.geometry, { targetWidth: 1000 });
-    modalViewport.style.aspectRatio = `${projection.width} / ${projection.height}`;
+    modalProjection = projection;
+    modalViewport.style.aspectRatio = projection.aspectRatio;
     modalFrame.insertAdjacentHTML('afterbegin', `<svg viewBox="${projection.viewBox}" class="rz-country-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kaart van ${escapeHtml(country.name)}"><path d="${geometryToPathD(feature.geometry, projection.project)}" class="rz-country-shape"></path></svg>`);
 
     if (!photosWorkerUrl || photosWorkerUrl.includes('YOUR-SUBDOMAIN')) {

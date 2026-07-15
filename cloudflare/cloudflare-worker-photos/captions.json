@@ -1,6 +1,4 @@
 {
-  "shrek.jpeg": ["Short description", "Longer description, shown when you click on the image", "Portugal", "Porto"],
-  "shrek": ["Short description", "Longer description, shown when you click on the image"],
-  "shrek.jpg": ["Short description", "Longer description, shown when you click on the image"],
-  "lissabon-uitzicht.jpg": ["Uitzicht over Lissabon", "Onze eerste avond in Lissabon, mei 2026 — met te veel custardtaartjes.", "Portugal", "Lissabon"]
+  "shrek.jpg": ["Short description", "Longer description, shown when you click on the image", "Portugal", "Lissabon"],
+  "shrek.jpg": ["Short description", "Longer description, shown when you click on the image", "Portugal", "Porto"]
 }

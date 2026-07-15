@@ -43,6 +43,7 @@ import { qs, escapeHtml, siteRootUrl } from './utils.js';
 import { initPanZoom } from './map-pan-zoom.js';
 import { loadCountryData, makeFitProjection, geometryToPathD } from './geo-render.js';
 import { loadCities, positionCities, renderCityPins, loadCityPhotos } from './reizen-cities.js';
+import { attachCoordHover } from './map-coord-hover.js';
 
 const COUNTRIES_URL = new URL('../../data/travel-countries.json', import.meta.url);
 
@@ -71,6 +72,7 @@ export function initReizenLand() {
   }
 
   let cities = [];
+  let currentProjection = null;
 
   const zoom = initPanZoom(viewport, mapFrame, {
     onTap: (event) => {
@@ -83,6 +85,7 @@ export function initReizenLand() {
   qs('#reizenLandZoomIn', root)?.addEventListener('click', () => zoom.zoomIn());
   qs('#reizenLandZoomOut', root)?.addEventListener('click', () => zoom.zoomOut());
   qs('#reizenLandZoomReset', root)?.addEventListener('click', () => zoom.reset());
+  attachCoordHover(viewport, zoom, () => currentProjection);
 
   async function selectCity(city, pinEl) {
     mapFrame.querySelector('.rz-pin-selected')?.classList.remove('rz-pin-selected');
@@ -115,8 +118,9 @@ export function initReizenLand() {
       return null;
     }
 
-    const projection = makeFitProjection(feature.geometry, { targetWidth: 1000 });
-    viewport.style.aspectRatio = `${projection.width} / ${projection.height}`;
+    const projection = makeFitProjection(feature.geometry, { targetWidth: 900 });
+    currentProjection = projection;
+    viewport.style.aspectRatio = projection.aspectRatio;
     mapFrame.insertAdjacentHTML('afterbegin', `<svg viewBox="${projection.viewBox}" class="rz-country-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kaart van ${escapeHtml(displayName)}"><path d="${geometryToPathD(feature.geometry, projection.project)}" class="rz-country-shape"></path></svg>`);
     return projection;
   }

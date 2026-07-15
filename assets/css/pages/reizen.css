@@ -86,10 +86,22 @@
   position: relative;
 }
 
+/* Country-specific page (reizen/land.html): a single country's map
+   doesn't need to be as wide as the world overview — cap it and
+   center it so it doesn't dominate the page ("way too big"). */
+.rz-map-viewport-wrap--country {
+  max-width: 640px;
+  margin-inline: auto;
+}
+
 .rz-map-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 2842 / 1404;
+  /* Fallback only — reizen.js / reizen-land.js set this inline to the
+     exact projection's width/height ratio as soon as it's known, so
+     the SVG never gets letterboxed inside a differently-shaped box
+     (which used to throw pins out of alignment with the coastlines). */
+  aspect-ratio: 360 / 141;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: radial-gradient(circle at 15% 15%, color-mix(in srgb, var(--color-tertiary) 35%, transparent) 0%, transparent 55%),
@@ -145,6 +157,28 @@
   font-size: var(--fs-sm);
   text-align: center;
   padding: var(--space-4);
+}
+
+/* == COORD HOVER BADGE ==
+   Follows the cursor while hovering a map, showing the lon/lat under
+   it — a data-entry aid for filling in travel-countries.json /
+   cityPins with precise coordinates. See map-coord-hover.js. */
+.rz-coord-badge {
+  position: absolute;
+  z-index: 5;
+  transform: translate(14px, 14px);
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.rz-coord-badge.hidden {
+  display: none;
 }
 
 /* == PINS ==
@@ -228,15 +262,16 @@
   border-radius: var(--radius-full);
   white-space: nowrap;
   box-shadow: var(--shadow-sm);
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .rz-pin:hover .rz-pin-label,
 .rz-pin:focus-visible .rz-pin-label,
 .rz-pin-selected .rz-pin-label {
   opacity: 1;
+  box-shadow: 0 0 0 2px var(--color-primary), var(--shadow-sm);
 }
 
 .rz-pin-selected .rz-pin-dot {
@@ -295,7 +330,7 @@ body.rz-modal-locked {
 
 .rz-country-modal-inner {
   position: relative;
-  width: min(92vw, 900px);
+  width: min(88vw, 620px);
   max-height: 90vh;
   overflow-y: auto;
   background: var(--color-bg);
@@ -329,6 +364,7 @@ body.rz-modal-locked {
 .rz-country-modal-header {
   padding-right: var(--space-8);
   margin-bottom: var(--space-3);
+  text-align: center;
 }
 
 .rz-country-modal-header h2 {
