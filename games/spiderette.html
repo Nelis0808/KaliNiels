@@ -13,12 +13,13 @@
   function" pattern as every other game page (see blackjack.html for
   the near-identical login-bar structure).
 
-  LOGIN IS OPTIONAL: logging in (same passphrase-based system as
-  BlackJack/the photo gallery) unlocks the "special" card face
-  variant (aces/faces/jokers) AND a shared chip balance with
-  BlackJack — winning a full game pays 1000 chips, leaving early via
-  "Terug" costs 100. As a guest you can still play, just without any
-  chips shown or tracked.
+  LOGIN IS OPTIONAL: logging in (same shared site-wide session as
+  every other gated feature — see the "👤 Profiel" dropdown in the
+  sticky header, assets/js/modules/auth.js) unlocks the "special"
+  card face variant (aces/faces/jokers) AND a shared chip balance
+  with BlackJack — winning a full game pays 1000 chips, leaving
+  early via "Terug" costs 100. As a guest you can still play, just
+  without any chips shown or tracked.
 
   Lives in the games/ subfolder, same relative-path rules as the
   other game pages (see tictactoe.html's comment for details).
@@ -67,26 +68,17 @@
     <section class="container" id="spiApp">
       <button id="spiBackBtn" type="button" class="btn btn-outline ttt-back">&larr; Terug naar Games</button>
 
-      <!-- Login bar: guest by default, optional login for the
-           "special" card art + shared chip balance — see file header. -->
+      <!-- Auth status readout only — logging in/out happens ONCE,
+           site-wide, via the "👤 Profiel" dropdown in the sticky
+           header (assets/js/modules/auth.js). -->
       <div id="spiAuthBar" class="spi-auth-bar">
         <div id="spiGuestBadge" class="spi-auth-status">
-          🕶️ Je speelt als gast.
-          <button id="spiShowLogin" class="btn btn-outline spi-btn-sm" type="button">Inloggen</button>
+          🕶️ Je speelt als gast. Log in via <strong>👤 Profiel</strong> rechtsboven voor de speciale kaarten + chips.
         </div>
 
         <div id="spiLoggedInBadge" class="spi-auth-status hidden">
           ✅ Ingelogd als <span id="spiWhoLabel"></span>.
-          <button id="spiLogoutBtn" class="btn btn-outline spi-btn-sm" type="button">Uitloggen</button>
         </div>
-
-        <form id="spiLoginForm" class="spi-login-form hidden">
-          <label for="spiPassphrase" class="spi-sr-only">Wachtwoord</label>
-          <input id="spiPassphrase" type="password" placeholder="Wachtwoord" autocomplete="current-password" required>
-          <button type="submit" class="btn btn-primary spi-btn-sm">Inloggen</button>
-          <button id="spiCancelLogin" type="button" class="btn btn-outline spi-btn-sm">Annuleren</button>
-        </form>
-        <p id="spiLoginError" class="spi-login-error" aria-live="polite"></p>
       </div>
 
       <!-- Chip balance, only shown when logged in (see spiderette.js's updateAuthUI). -->

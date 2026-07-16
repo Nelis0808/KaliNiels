@@ -1,5 +1,15 @@
 # BlackJack toevoegen — stappenplan
 
+> **Update:** het inlogformulier zit niet meer op `games/blackjack.html`
+> zelf — inloggen gebeurt nu één keer, site-breed, via de "👤 Profiel"-
+> dropdown in de sticky header (zie `assets/js/modules/auth.js`), en
+> dezelfde sessie ontgrendelt ook Onze Foto's, Onze Reizen en
+> Spiderette. De Worker-kant hieronder (secrets, `/login`-route, KV-
+> opslag) werkt nog zoals beschreven, met één belangrijke aanvulling:
+> zet deze Worker's `TOKEN_SECRET`, `PASSPHRASE_A` en `PASSPHRASE_B`
+> secrets exact gelijk aan die van de "photo-gallery" Worker, zodat
+> een token van de gedeelde login-sessie ook hier geldig is.
+
 Deze update voegt `games/blackjack.html` toe: een BlackJack-spel
 tegen de dealer, met een klikbare chip-tray (`assets/icons/chips`)
 en optioneel inloggen (zelfde wachtwoord-systeem als de fotogalerij).

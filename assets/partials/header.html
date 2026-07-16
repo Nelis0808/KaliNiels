@@ -19,6 +19,35 @@
     </nav>
 
     <div class="nav-actions">
+      <div id="navProfileDropdown" class="settings-dropdown profile-dropdown">
+        <button id="navProfileBtn" class="icon-btn settings-trigger" type="button"
+                aria-haspopup="true" aria-expanded="false" aria-controls="navProfileMenu" aria-label="Profiel — inloggen">
+          <span id="navProfileIcon" aria-hidden="true">👤</span>
+        </button>
+        <div id="navProfileMenu" class="settings-menu profile-menu" role="menu" aria-label="Profiel">
+          <div class="settings-menu-heading">Profiel</div>
+
+          <!-- LOGGED OUT: one shared passphrase login for the whole site
+               (Onze Foto's, Onze Reizen, BlackJack, Spiderette — see
+               assets/js/modules/auth.js). -->
+          <div id="profileLoggedOut" class="profile-view">
+            <p class="profile-hint">Log in om Onze Foto's, Onze Reizen en de spellen met chips te ontgrendelen.</p>
+            <form id="profileLoginForm" class="profile-login-form">
+              <label for="profilePassphrase" class="sr-only">Wachtwoord</label>
+              <input type="password" id="profilePassphrase" placeholder="Wachtwoord" autocomplete="current-password" required>
+              <button type="submit" class="btn btn-primary btn-sm">Inloggen</button>
+            </form>
+            <p id="profileLoginError" class="profile-login-error" role="alert"></p>
+          </div>
+
+          <!-- LOGGED IN -->
+          <div id="profileLoggedIn" class="profile-view hidden">
+            <p class="profile-hint">Ingelogd als <strong id="profileWhoLabel"></strong></p>
+            <button type="button" id="profileLogoutBtn" class="btn btn-outline btn-sm profile-logout-btn">Uitloggen</button>
+          </div>
+        </div>
+      </div>
+
       <div id="navSettingsDropdown" class="settings-dropdown">
         <button id="navSettingsBtn" class="icon-btn settings-trigger" type="button"
                 aria-haspopup="true" aria-expanded="false" aria-controls="navSettingsMenu" aria-label="Instellingen">⚙️</button>

@@ -6,45 +6,22 @@
   padding-bottom: var(--space-8);
 }
 
-/* == LOGIN FORM == */
-.pg-login-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-4);
+/* == LOGGED-OUT NOTE ==
+   Login itself lives in the sticky header's "👤 Profiel" dropdown
+   now (see assets/js/modules/auth.js) — this is just a pointer
+   shown on the page when there's no active session. */
+.pg-loggedout-note {
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   padding: var(--space-5);
   margin-bottom: var(--space-5);
-}
-
-.pg-login-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  flex: 1 1 240px;
-}
-
-.pg-login-field label {
-  font-weight: 700;
+  text-align: center;
   color: var(--color-text-muted);
 }
 
-.pg-login-field input {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
-  font: inherit;
-  min-height: 44px;
-}
-
-.pg-login-error {
-  flex-basis: 100%;
-  color: var(--color-error, #d33);
-  font-weight: 600;
-  min-height: 1.2em;
+.pg-loggedout-note.hidden {
+  display: none;
 }
 
 /* == LOGGED-IN BAR == */
@@ -250,11 +227,6 @@ body.pg-lightbox-locked {
 }
 
 @media (max-width: 600px) {
-  .pg-login-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .pg-loggedin-bar {
     flex-direction: column;
     align-items: stretch;

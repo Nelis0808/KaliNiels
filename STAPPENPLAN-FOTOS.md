@@ -1,5 +1,13 @@
 # Privé fotogalerij toevoegen — stappenplan
 
+> **Update:** het inlogformulier zit niet meer op `photos.html` zelf —
+> inloggen gebeurt nu één keer, site-breed, via de "👤 Profiel"-
+> dropdown in de sticky header (zie `assets/js/modules/auth.js` +
+> `profile-dropdown.js`), en dezelfde sessie ontgrendelt ook Onze
+> Reizen, BlackJack en Spiderette. De Worker-kant hieronder (secrets,
+> `/login`-route, R2-bucket) werkt nog precies zoals beschreven —
+> alleen de front-end login-UI is verplaatst.
+
 Deze update voegt `photos.html` toe: een privégalerij die standaard
 alleen **zes gekleurde slotjes** toont (placeholders, geen echte
 foto's) totdat iemand met het juiste wachtwoord inlogt. Na inloggen

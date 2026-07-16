@@ -49,18 +49,15 @@
     </section>
 
     <section class="container" id="photoGalleryApp">
-      <form id="pgLoginForm" class="pg-login-form">
-        <div class="pg-login-field">
-          <label for="pgPassphrase">Wachtwoord</label>
-          <input type="password" id="pgPassphrase" placeholder="Jouw wachtwoord" autocomplete="current-password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Inloggen</button>
-        <p id="pgLoginError" class="pg-login-error" role="alert"></p>
-      </form>
+      <!-- Login now happens ONCE, site-wide, via the "👤 Profiel"
+           dropdown in the sticky header — see assets/js/modules/auth.js
+           and profile-dropdown.js. This note just points there. -->
+      <p id="pgLoggedOutNote" class="pg-loggedout-note">
+        🔒 Deze galerij is privé. Log in via <strong>👤 Profiel</strong> rechtsboven om de echte foto's te zien.
+      </p>
 
       <div id="pgLoggedInBar" class="pg-loggedin-bar hidden">
         <p>Ingelogd als <strong id="pgLoggedInLabel"></strong></p>
-        <button type="button" id="pgLogoutBtn" class="btn btn-outline btn-sm">Uitloggen</button>
       </div>
 
       <p id="pgStatus" class="pg-status" role="status" aria-live="polite"></p>

@@ -41,17 +41,27 @@
 // clampChips(), a last-line-of-defense floor at 0, so no code path
 // (now or added later) can silently push a balance below zero.
 //
-// AUTH: identical token scheme to photo-gallery.js (passphrase ->
-// signed token -> kept in localStorage under its own key so logging
-// into BlackJack and logging into the photo gallery are completely
-// independent sessions, even though they may reuse the same
-// passphrases if you set them up that way).
+// AUTH: there is no login form on this page anymore. Logging in
+// happens ONCE, site-wide, via the "👤 Profiel" dropdown in the
+// sticky header (assets/js/modules/auth.js) — the exact same
+// session that unlocks Onze Foto's and Onze Reizen also unlocks the
+// special card art + real chip balance here. This module listens
+// for that shared session via onAuthChange().
+//
+// The chip balance itself still lives in its own "blackjack" Worker
+// + KV namespace (see cloudflare/cloudflare-worker-blackjack) — no
+// reason to move real balance state into the identity Worker. For
+// that Worker to accept the shared session's token, its
+// TOKEN_SECRET / PASSPHRASE_A / PASSPHRASE_B secrets must be set to
+// the EXACT SAME values as the "photo-gallery" Worker's (see
+// assets/js/modules/auth.js's file header for why that's safe: both
+// workers already use the identical signing scheme).
 // =================================================================
 
 import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
+import { getAuth, onAuthChange, currentPersonLabel, logout } from './auth.js';
 
-const AUTH_STORAGE_KEY = 'bjAuth';
 const GUEST_CHIPS_STARTING = 1000;
 const CHIP_VALUES = [50, 100, 250, 500, 1000, 5000];
 const DECK_COUNT = 1; // fresh single deck, reshuffled every hand — simplest for a casual 2-player-free game
@@ -138,12 +148,6 @@ export function initBlackjack() {
   const guestBadge = document.getElementById('bjGuestBadge');
   const loggedInBadge = document.getElementById('bjLoggedInBadge');
   const whoLabel = document.getElementById('bjWhoLabel');
-  const showLoginBtn = document.getElementById('bjShowLogin');
-  const cancelLoginBtn = document.getElementById('bjCancelLogin');
-  const logoutBtn = document.getElementById('bjLogoutBtn');
-  const loginForm = document.getElementById('bjLoginForm');
-  const passphraseInput = document.getElementById('bjPassphrase');
-  const loginError = document.getElementById('bjLoginError');
 
   const balanceEl = document.getElementById('bjBalance');
   const betEl = document.getElementById('bjBet');
@@ -180,92 +184,35 @@ export function initBlackjack() {
   }
 
   // -----------------------------------------------------------------
-  // AUTH (mirrors photo-gallery.js's storeAuth/loadStoredAuth/clearAuth)
+  // AUTH — reflects the shared site-wide session (assets/js/modules/
+  // auth.js). Login/logout happen in the header's "👤 Profiel"
+  // dropdown, not on this page — this just reacts when that session
+  // changes, via onAuthChange() (see the bottom of this file).
   // -----------------------------------------------------------------
-  function loadStoredAuth() {
-    try {
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed?.token || !parsed?.exp || parsed.exp * 1000 < Date.now()) return null;
-      return parsed;
-    } catch {
-      return null;
-    }
-  }
-
-  function storeAuth(nextAuth) {
-    auth = nextAuth;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
-  }
-
-  function clearAuth() {
-    auth = null;
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }
-
   function updateAuthUI() {
     if (isLoggedIn()) {
       guestBadge.classList.add('hidden');
       loggedInBadge.classList.remove('hidden');
-      loginForm.classList.add('hidden');
-      const labels = siteConfig.blackjack?.personLabels || {};
-      whoLabel.textContent = labels[auth.who] || auth.who;
+      whoLabel.textContent = currentPersonLabel();
     } else {
       guestBadge.classList.remove('hidden');
       loggedInBadge.classList.add('hidden');
     }
   }
 
-  function showLoginForm() {
-    guestBadge.classList.add('hidden');
-    loginForm.classList.remove('hidden');
-    loginError.textContent = '';
-    passphraseInput.value = '';
-    passphraseInput.focus();
-  }
-
-  function hideLoginForm() {
-    loginForm.classList.add('hidden');
-    loginError.textContent = '';
+  async function syncWithAuth(nextAuth) {
+    const wasLoggedIn = isLoggedIn();
+    auth = nextAuth;
     updateAuthUI();
-  }
 
-  async function login(passphrase) {
-    if (!workerUrl) {
-      loginError.textContent = '⚠️ Nog geen Worker gekoppeld, zie STAPPENPLAN-BLACKJACK.md.';
-      return;
-    }
-
-    loginError.textContent = '';
-    try {
-      const response = await fetch(`${workerUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passphrase }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        loginError.textContent = data.error || 'Inloggen mislukt.';
-        return;
-      }
-
-      storeAuth({ token: data.token, who: data.who, exp: data.exp });
-      passphraseInput.value = '';
-      updateAuthUI();
+    if (isLoggedIn()) {
       await loadChips();
-      renderCardsForAuthChange();
-    } catch {
-      loginError.textContent = 'Geen verbinding, probeer het later opnieuw.';
+    } else if (wasLoggedIn) {
+      // Just logged out: fall back to a fresh local guest stack.
+      balance = GUEST_CHIPS_STARTING;
+      bet = 0;
+      updateBalanceUI();
     }
-  }
-
-  function logout() {
-    clearAuth();
-    balance = GUEST_CHIPS_STARTING;
-    bet = 0;
-    updateAuthUI();
-    updateBalanceUI();
     renderCardsForAuthChange();
   }
 
@@ -279,7 +226,7 @@ export function initBlackjack() {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
       if (!response.ok) {
-        if (response.status === 401) logout(); // session expired server-side
+        if (response.status === 401) logout(); // session expired server-side — clears the SHARED session too
         return;
       }
       const data = await response.json();
@@ -580,16 +527,6 @@ export function initBlackjack() {
   // -----------------------------------------------------------------
   // WIRE UP
   // -----------------------------------------------------------------
-  showLoginBtn.addEventListener('click', showLoginForm);
-  cancelLoginBtn.addEventListener('click', hideLoginForm);
-  logoutBtn.addEventListener('click', logout);
-  loginForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const passphrase = passphraseInput.value.trim();
-    if (!passphrase) return;
-    login(passphrase);
-  });
-
   clearBetBtn.addEventListener('click', clearBet);
   dealBtn.addEventListener('click', dealHand);
   hitBtn.addEventListener('click', hit);
@@ -601,14 +538,9 @@ export function initBlackjack() {
   // ---- init ----
   renderChipTray();
   setActionButtonsEnabled(false);
+  updateBalanceUI();
 
-  const storedAuth = loadStoredAuth();
-  if (storedAuth) {
-    auth = storedAuth;
-    updateAuthUI();
-    loadChips();
-  } else {
-    updateAuthUI();
-    updateBalanceUI();
-  }
+  // React to the shared header login/logout — see the AUTH block above.
+  onAuthChange(syncWithAuth);
+  syncWithAuth(getAuth());
 }

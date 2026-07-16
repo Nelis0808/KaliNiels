@@ -496,6 +496,46 @@ body.rz-modal-locked {
   margin-bottom: var(--space-4);
 }
 
+/* == LOCK SCREEN (whole-page auth gate, see assets/js/modules/page-gate.js) ==
+   Onze Reizen is fully private now — this replaces the map/app
+   entirely until the shared "👤 Profiel" session is active. */
+.rz-lockscreen {
+  width: min(95%, 560px);
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+.rz-lockscreen.hidden {
+  display: none;
+}
+
+.rz-lockscreen-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-7) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rz-lockscreen-emoji {
+  font-size: 3rem;
+  margin: 0;
+}
+
+.rz-lockscreen-card h2 {
+  margin: 0;
+}
+
+.rz-lockscreen-who {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  min-height: 1.2em;
+}
+
 @media (max-width: 600px) {
   .rz-selected-card {
     flex-direction: column;

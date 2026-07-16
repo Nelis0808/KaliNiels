@@ -19,6 +19,15 @@
 // full-page version but without leaving the world map. Because this
 // is all local static data, opening a country is instant: no
 // network round-trip, nothing that can be blocked or rate-limited.
+//
+// PRIVATE PAGE: the ENTIRE "Onze Reizen" page (this map, every pin,
+// the city names, and of course the real photo thumbnails) is
+// hidden behind the shared "👤 Profiel" login — see
+// assets/js/modules/page-gate.js (wired up in main.js) and
+// assets/js/modules/auth.js. This module (reizen.js) itself doesn't
+// need to know or check that: page-gate.js hides the whole
+// #reizenApp container until you're logged in, so nothing in here
+// is ever visible to a logged-out visitor.
 // =================================================================
 
 import { siteConfig } from '../config.js';

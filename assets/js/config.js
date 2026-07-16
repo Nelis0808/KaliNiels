@@ -162,26 +162,22 @@ export const siteConfig = {
     },
   },
 
-  // Config for BlackJack's optional login + saved chip balance
-  // (assets/js/modules/blackjack.js). STAPPENPLAN-BLACKJACK.md for usage.
+  // Config for BlackJack's shared chip balance (assets/js/modules/
+  // blackjack.js). STAPPENPLAN-BLACKJACK.md for usage. Login itself
+  // now happens once, site-wide, via the header's "👤 Profiel"
+  // dropdown (assets/js/modules/auth.js) — this Worker only needs to
+  // recognise that shared session's token, so its TOKEN_SECRET /
+  // PASSPHRASE_A / PASSPHRASE_B secrets must match the "photo-gallery"
+  // Worker's exactly (see auth.js's file header for why). Display
+  // names come from `photos.personLabels` above, not repeated here.
   blackjack: {
     workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
-    personLabels: {
-      a: 'Niels',
-      b: 'Kalina',
-    },
   },
 
-  // Config for Spiderette's optional login (assets/js/modules/spiderette.js).
-  // Unlike BlackJack there's no balance to save here — logging in only
-  // switches to the "special" card art (aces/faces) — so this simply
-  // reuses the same BlackJack Worker's /login endpoint (same
-  // passphrases, independent session/localStorage key though).
+  // Config for Spiderette's shared chip balance + "special" card art
+  // (assets/js/modules/spiderette.js). Reuses the same BlackJack
+  // Worker as above — same note about matching secrets applies.
   spiderette: {
     workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
-    personLabels: {
-      a: 'Niels',
-      b: 'Kalina',
-    },
   },
 };

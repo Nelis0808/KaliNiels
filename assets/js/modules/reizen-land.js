@@ -21,21 +21,23 @@
 //      pixel-perfect) or a deterministic radial fallback — see
 //      reizen-cities.js.
 //
-// WHY A SEPARATE PUBLIC ENDPOINT: photos.html gates the actual photo
-// bytes behind a passphrase (see photo-gallery.js) — that's still
-// true here, thumbnails only load once logged in. But which CITIES
-// you've captioned photos in isn't remotely as sensitive as the
-// photos themselves, and showing that map-pin overview to anyone
-// (a "look what we've done" teaser) is the whole point of this
-// page. So /travel deliberately returns only city names + counts +
-// "visited" flags, never filenames or image bytes, and needs no
-// passphrase.
+// PRIVATE PAGE: unlike its previous "public map, gated photos"
+// design, the ENTIRE "Onze Reizen" section (this page included) is
+// now hidden behind the shared "👤 Profiel" login — see
+// assets/js/modules/page-gate.js (wired up in main.js) and
+// assets/js/modules/auth.js. This module doesn't need to check that
+// itself: page-gate.js hides the whole #reizenLandApp container
+// until you're logged in.
 //
-// LOGIN REUSES photo-gallery.js's exact session (same localStorage
-// key, same Worker) — if you're already logged in on photos.html,
-// you're automatically "logged in" here too, and the selected
-// city's real thumbnails load. If not, city pins/names still show,
-// with a note pointing at photos.html to unlock thumbnails.
+// The /travel endpoint this module calls (city names + counts, no
+// filenames/bytes) is still technically public at the Worker level
+// — see cloudflare-worker-photos/worker.js's own comment — but that
+// no longer matters in practice since the page around it is gated
+// client-side too.
+//
+// LOGIN REUSES the exact same shared session as every other gated
+// feature on the site (photos.html, BlackJack, Spiderette) — log in
+// once via the header, everything unlocks together.
 // =================================================================
 
 import { siteConfig } from '../config.js';

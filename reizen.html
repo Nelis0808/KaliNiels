@@ -51,14 +51,30 @@
   <div data-include="header"></div>
 
   <main id="main">
-    <section id="hero" class="hero">
-      <div class="container">
-        <h1>🌍 Onze Reizen</h1>
-        <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een land voor de landkaart.</p>
+    <!-- LOCK SCREEN — shown until logged in via the "👤 Profiel"
+         dropdown in the sticky header (assets/js/modules/auth.js +
+         page-gate.js). Onze Reizen (title, map, pins, city names AND
+         the real photos) is fully private, not just the photo bytes —
+         so even the hero title/intro below lives INSIDE the gated
+         content, not above it. -->
+    <section class="container rz-lockscreen" data-gate-lockscreen>
+      <div class="rz-lockscreen-card">
+        <p class="rz-lockscreen-emoji" aria-hidden="true">🔒</p>
+        <h2>Deze pagina is privé</h2>
+        <p>Log in via <strong>👤 Profiel</strong> rechtsboven om de reiskaart en foto's te bekijken.</p>
+        <p class="rz-lockscreen-who" data-gate-who></p>
       </div>
     </section>
 
-    <section class="container" id="reizenApp">
+    <div class="hidden" data-gate-content>
+      <section id="hero" class="hero">
+        <div class="container">
+          <h1>🌍 Onze Reizen</h1>
+          <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een land voor de landkaart.</p>
+        </div>
+      </section>
+
+      <section class="container" id="reizenApp">
       <p id="reizenStatus" class="rz-status" aria-live="polite">Landen laden…</p>
 
       <div class="rz-map-viewport-wrap">
@@ -79,7 +95,8 @@
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-visited" aria-hidden="true"></span> Al geweest</span>
         <span class="rz-legend-item"><span class="rz-legend-dot rz-legend-dot-wishlist" aria-hidden="true"></span> Verlanglijstje</span>
       </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <!-- COUNTRY MAP MODAL — opens on pin click, see openCountryModal() in reizen.js -->

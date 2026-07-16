@@ -18,6 +18,17 @@
   transform: scale(0.98);
 }
 
+/* Small size variant — used by the header's profile dropdown
+   (assets/partials/header.html) and available for any future
+   compact button; several pages (ticketmaster.css, blackjack.css,
+   spiderette.css) still keep their own page-scoped copy of this,
+   which is fine, this one just makes it available globally too. */
+.btn-sm {
+  min-height: 36px;
+  padding: 8px 20px;
+  font-size: var(--fs-sm);
+}
+
 /* Visibly-disabled state, shared by every .btn variant (primary/outline/etc).
    Same look as .bj-chip:disabled in blackjack.css, kept in one place here
    so any button anywhere in the site — not just BlackJack's — gets a

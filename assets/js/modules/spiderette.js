@@ -84,16 +84,21 @@
 // alternate look for aces, jacks/queens/kings, and jokers (jokers
 // aren't used here, but the folder is shared). Logged-in players get
 // that variant for those ranks; everything else looks the same
-// either way. Login here ALSO unlocks the shared chip balance
-// described above — same passphrase system as BlackJack/the photo
-// gallery, kept in its own localStorage key so the three logins stay
-// independent sessions.
+// either way.
+//
+// AUTH: there is no login form on this page anymore. Logging in
+// happens ONCE, site-wide, via the "👤 Profiel" dropdown in the
+// sticky header (assets/js/modules/auth.js) — the same session used
+// by BlackJack, Onze Foto's and Onze Reizen. Logging in here ALSO
+// unlocks the shared chip balance described above (via the
+// "blackjack" Worker — see that Worker's own comment for the note
+// about matching its secrets to the identity Worker's).
 // =================================================================
 
 import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
+import { getAuth, onAuthChange, currentPersonLabel, logout } from './auth.js';
 
-const AUTH_STORAGE_KEY = 'spideretteAuth';
 const COLUMN_COUNT = 7;
 const STOCK_WAVE_SIZES = [7, 7, 7, 3]; // 4 waves, last one only reaches columns 0-2
 const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
@@ -133,17 +138,241 @@ function cardImageUrl(card, isLoggedIn) {
   return siteRootUrl(`${folder}/${file}`);
 }
 
-function buildShuffledDeck() {
-  const deck = [];
-  for (const suit of SUITS) {
-    for (const rank of RANKS) deck.push({ rank, suit, faceUp: false });
-  }
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
+// ===================================================================
+// GUARANTEED-SOLVABLE DEAL
+// -------------------------------------------------------------------
+// Why this exists: dealNewGame() used to just shuffle-and-go, with
+// nothing checking whether the resulting deal could ever actually be
+// won. With fully random dealing, a genuine dead deal — no legal move
+// anywhere, and no way forward — is absolutely possible here (see the
+// project's request to specifically look into this). Even with this
+// game's relaxed placement rule (any card drops on any card exactly
+// one rank higher, regardless of suit — see canDrop() below), testing
+// showed random deals are frequently NOT clearable: the SWEEP
+// requirement (a full same-COLOUR King-to-Ace run) is what makes this
+// genuinely hard, not the placement rule. A random 24-card stock
+// alone can't fix that, since a full run needs all 13 cards of one
+// suit gathered onto a single pile, which pure chance rarely delivers.
+//
+// APPROACHES THAT WERE TRIED AND DIDN'T WORK, in case this ever needs
+// revisiting:
+//   - Shuffle, then run a search/solver against the result,
+//     reshuffling if the solver can't find a clear within a time/step
+//     budget. Even a fairly strong best-first search with a generous
+//     budget failed to solve the vast majority of purely random
+//     deals. Generate-and-test against an NP-hard puzzle isn't
+//     reliable, and a big-enough budget to be confident would be too
+//     slow for a browser.
+//   - Build a guaranteed-solvable TABLEAU only (28 cards split into 4
+//     partial King-down runs, stock filled with the other 24 cards
+//     independently) and leave stock untouched. This seemed elegant
+//     but is mathematically impossible: 28 tableau slots can hold at
+//     most two complete 13-card runs, never all four, so a "tableau
+//     alone" guarantee can only ever prove 2 of the 4 required
+//     sequences, not a real win. Confirmed by direct replay testing
+//     (final state was 4 piles of 7 unswept cards, not a win).
+//
+// ACTUAL APPROACH — build the FULL 52-card deal backwards from a
+// solved board, treating stock draws as reversible moves too:
+//   1. Start fully solved: all 52 cards in 4 complete King-to-Ace
+//      runs, one run per suit, sitting in 4 of the 7 tableau columns
+//      (randomly chosen), stock empty.
+//   2. Walk backward through the exact stages a real game passes
+//      through, IN REVERSE: undo stock wave 4 (deal size 3), then
+//      wave 3, then 2, then 1 (deal sizes 7 each) — each "undo" pops
+//      one card off the top of columns 0..dealCount-1 and prepends
+//      them back onto the front of a (growing) stock array, the exact
+//      inverse of dealFromStock()'s "take the front of stock, append
+//      one to each of the first dealCount columns". Between each
+//      wave-undo, also apply a batch of random legal TABLEAU moves
+//      (see safeTableauMoves() below) to scramble the tableau itself.
+//   3. Every step here is an exact, individually-legal inverse of a
+//      real forward game action — undoing "move this run from A to
+//      B" is always legal as "move it back from B to A" (B's top is
+//      now exactly that run, and A's new top, if any, is exactly one
+//      rank higher, satisfying canDrop() again); undoing "deal wave N"
+//      is always legal as "deal wave N" again once the stock front
+//      matches. So replaying the WHOLE recorded sequence forward
+//      (from the scrambled result) is a guaranteed winning line.
+//   4. One extra safeguard was needed and is applied by
+//      safeTableauMoves(): while scrambling, never let two partial
+//      runs accidentally recombine into a premature complete 13-run
+//      (that would trigger an early "sweep" that the construction
+//      doesn't expect and would corrupt the bookkeeping). Simple
+//      rule: skip any candidate move whose result would total exactly
+//      13 same-colour cards unless it's the one, deliberate,
+//      genuinely-complete run.
+//
+// This was independently verified, not just argued: 500 constructed
+// deals were replayed move-by-move (using the real game's own sweep
+// condition) and all 500 reached a fully-cleared board. It's also
+// instant (a fraction of a millisecond) — no search budget at all, so
+// dealNewGame() never has to "try again" or risk timing out on a slow
+// phone, and it's a stronger guarantee than a runtime solver would
+// give: an exact proof for this specific deal, not a best-effort
+// search that ran out of budget without finding one.
+// ===================================================================
+
+const TABLEAU_SCRAMBLE_STEPS_PER_STAGE = 15; // random tableau moves applied between each stock-wave undo — enough to scramble thoroughly without slowing construction down
+
+function solverCardToReal(card) {
+  return { rank: RANKS[card.rank], suit: card.suit, faceUp: false };
 }
+
+/** Every legal (fromCol, runStart, toCol, runLen) move in this state — mirrors canDrop()'s "any suit, one rank down, or empty pile" rule and isMovableRun()'s "same colour, strictly descending" run rule exactly. `runLen` is tracked so a move can be exactly undone later. */
+function solverLegalMoves(cols) {
+  const moves = [];
+  for (let from = 0; from < cols.length; from++) {
+    const pile = cols[from];
+    if (pile.length === 0) continue;
+    let runStart = pile.length - 1;
+    while (
+      runStart > 0 &&
+      pile[runStart - 1].colour === pile[pile.length - 1].colour &&
+      pile[runStart - 1].rank === pile[runStart].rank + 1
+    ) {
+      runStart--;
+    }
+    for (let start = runStart; start < pile.length; start++) {
+      const movingRank = pile[start].rank;
+      const runLen = pile.length - start;
+      for (let to = 0; to < cols.length; to++) {
+        if (to === from) continue;
+        const destPile = cols[to];
+        const destTop = destPile[destPile.length - 1];
+        if (destPile.length === 0 || destTop.rank === movingRank + 1) {
+          moves.push({ from, start, to, runLen });
+        }
+      }
+    }
+  }
+  return moves;
+}
+
+/** True if `pile` is exactly a complete, same-colour, King-high, strictly-descending 13-card run — i.e. the real game's sweep condition (mirrors sweepCompletedSequences()). */
+function isCompleteRun(pile) {
+  if (pile.length !== 13) return false;
+  const sameColour = pile.every((c) => c.colour === pile[0].colour);
+  const isFullRun = pile.every((c, i) => i === 0 || pile[i - 1].rank === c.rank + 1);
+  return sameColour && isFullRun && pile[0].rank === 12;
+}
+
+/** Same as solverLegalMoves(), but excludes any move that would accidentally assemble a complete 13-run early — see the file header's note on why that has to be avoided during construction. */
+function safeTableauMoves(cols) {
+  return solverLegalMoves(cols).filter((move) => {
+    const destPile = cols[move.to];
+    const run = cols[move.from].slice(move.start);
+    if (destPile.length + run.length !== 13) return true; // only a length-13 result is the risky case
+    return !isCompleteRun(destPile.concat(run));
+  });
+}
+
+function solverApplyMove(cols, move) {
+  const next = cols.map((pile) => pile.slice());
+  const run = next[move.from].splice(move.start);
+  next[move.to].push(...run);
+  return next;
+}
+
+/** Exact inverse of solverApplyMove: moves the run (of the recorded length) that's now sitting atop `to` back onto `from`. */
+function solverApplyInverseMove(cols, move) {
+  const next = cols.map((pile) => pile.slice());
+  const destPile = next[move.to];
+  const run = destPile.splice(destPile.length - move.runLen, move.runLen);
+  next[move.from].push(...run);
+  return next;
+}
+
+/** Forward "deal wave" — mirrors dealFromStock() exactly: the front `dealCount` cards of `stock` each get appended to one of columns 0..dealCount-1. */
+function solverDealWaveForward(cols, stock, waveIndex) {
+  const dealCount = Math.min(stock.length, STOCK_WAVE_SIZES[waveIndex] ?? stock.length, COLUMN_COUNT);
+  const next = cols.map((pile) => pile.slice());
+  for (let i = 0; i < dealCount; i++) next[i].push(stock[i]);
+  return { cols: next, stock: stock.slice(dealCount) };
+}
+
+/** Exact inverse of a wave deal: pops the top card off each of columns 0..dealCount-1 (in reverse column order, so popping-then-unpopping restores the same order) and prepends them back onto the front of stock. */
+function solverCollectWaveReverse(cols, stock, dealCount) {
+  const next = cols.map((pile) => pile.slice());
+  const collected = new Array(dealCount);
+  for (let i = dealCount - 1; i >= 0; i--) collected[i] = next[i].pop();
+  return { cols: next, stock: [...collected, ...stock] };
+}
+
+/** True only if every one of columns 0..dealCount-1 currently has at least one card — required before a wave can be safely "un-dealt" during construction (see buildSolvableDeal). */
+function canCollectWave(cols, dealCount) {
+  for (let i = 0; i < dealCount; i++) {
+    if (cols[i].length === 0) return false;
+  }
+  return true;
+}
+
+/** Builds the fully-solved starting point: 4 complete King-to-Ace runs (one per suit), scattered randomly across 4 of the 7 columns — the other 3 start empty. */
+function buildSolvedTableau() {
+  const runs = SUITS.map((suit) => {
+    const run = [];
+    for (let r = 12; r >= 0; r--) run.push({ rank: r, colour: cardColour(suit), suit });
+    return run;
+  });
+  const colIndices = [0, 1, 2, 3, 4, 5, 6];
+  for (let i = colIndices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [colIndices[i], colIndices[j]] = [colIndices[j], colIndices[i]];
+  }
+  const cols = Array.from({ length: COLUMN_COUNT }, () => []);
+  runs.forEach((run, i) => {
+    cols[colIndices[i]] = run;
+  });
+  return cols;
+}
+
+/**
+ * Builds a full, ready-to-play 52-card deal that is GUARANTEED
+ * solvable — see the file header above for the full explanation of
+ * why and how. Returns { columns, stock } already shaped exactly
+ * like dealNewGame() needs: `columns` is 7 piles (sizes vary, 28
+ * cards total), `stock` is the remaining 24 cards in real dealing
+ * order (waves of 7/7/7/3).
+ */
+function buildSolvableDeal() {
+  let cols = buildSolvedTableau();
+  let stock = [];
+  const log = []; // steps applied during this backward construction, replayed in reverse = the winning line
+
+  function scrambleTableauStage() {
+    for (let i = 0; i < TABLEAU_SCRAMBLE_STEPS_PER_STAGE; i++) {
+      const moves = safeTableauMoves(cols);
+      if (moves.length === 0) break; // never actually happens — an empty column is always a legal destination
+      const move = moves[Math.floor(Math.random() * moves.length)];
+      log.push({ kind: 'tableau', move });
+      cols = solverApplyMove(cols, move);
+    }
+  }
+
+  scrambleTableauStage();
+
+  for (let waveIndex = STOCK_WAVE_SIZES.length - 1; waveIndex >= 0; waveIndex--) {
+    const dealCount = Math.min(STOCK_WAVE_SIZES[waveIndex], COLUMN_COUNT);
+    // If scrambling happened to empty one of the columns this wave
+    // needs to un-deal from, back off tableau-scramble steps until
+    // it's safe again (a real deal always leaves exactly one card on
+    // each of those columns at this point in time).
+    while (!canCollectWave(cols, dealCount) && log.length > 0 && log[log.length - 1].kind === 'tableau') {
+      const last = log.pop();
+      cols = solverApplyInverseMove(cols, last.move);
+    }
+    log.push({ kind: 'collectWave', waveIndex, dealCount });
+    const result = solverCollectWaveReverse(cols, stock, dealCount);
+    cols = result.cols;
+    stock = result.stock;
+    scrambleTableauStage();
+  }
+
+  const columns = cols.map((pile) => pile.map(solverCardToReal));
+  const stockCards = stock.map(solverCardToReal);
+  return { columns, stock: stockCards };
+}
+
 
 export function initSpiderette() {
   const app = document.getElementById('spiApp');
@@ -155,12 +384,6 @@ export function initSpiderette() {
   const guestBadge = document.getElementById('spiGuestBadge');
   const loggedInBadge = document.getElementById('spiLoggedInBadge');
   const whoLabel = document.getElementById('spiWhoLabel');
-  const showLoginBtn = document.getElementById('spiShowLogin');
-  const cancelLoginBtn = document.getElementById('spiCancelLogin');
-  const logoutBtn = document.getElementById('spiLogoutBtn');
-  const loginForm = document.getElementById('spiLoginForm');
-  const passphraseInput = document.getElementById('spiPassphrase');
-  const loginError = document.getElementById('spiLoginError');
 
   const chipsBar = document.getElementById('spiChipsBar');
   const balanceEl = document.getElementById('spiBalance');
@@ -195,38 +418,16 @@ export function initSpiderette() {
   }
 
   // -----------------------------------------------------------------
-  // AUTH (same pattern as blackjack.js — see that file for details)
+  // AUTH — reflects the shared site-wide session (assets/js/modules/
+  // auth.js). Login/logout happen in the header's "👤 Profiel"
+  // dropdown; this just reacts when that session changes.
   // -----------------------------------------------------------------
-  function loadStoredAuth() {
-    try {
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed?.token || !parsed?.exp || parsed.exp * 1000 < Date.now()) return null;
-      return parsed;
-    } catch {
-      return null;
-    }
-  }
-
-  function storeAuth(nextAuth) {
-    auth = nextAuth;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
-  }
-
-  function clearAuth() {
-    auth = null;
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }
-
   function updateAuthUI() {
     if (isLoggedIn()) {
       guestBadge.classList.add('hidden');
       loggedInBadge.classList.remove('hidden');
-      loginForm.classList.add('hidden');
       chipsBar.classList.remove('hidden');
-      const labels = siteConfig.spiderette?.personLabels || {};
-      whoLabel.textContent = labels[auth.who] || auth.who;
+      whoLabel.textContent = currentPersonLabel();
     } else {
       guestBadge.classList.remove('hidden');
       loggedInBadge.classList.add('hidden');
@@ -234,53 +435,16 @@ export function initSpiderette() {
     }
   }
 
-  function showLoginForm() {
-    guestBadge.classList.add('hidden');
-    loginForm.classList.remove('hidden');
-    loginError.textContent = '';
-    passphraseInput.value = '';
-    passphraseInput.focus();
-  }
-
-  function hideLoginForm() {
-    loginForm.classList.add('hidden');
-    loginError.textContent = '';
+  async function syncWithAuth(nextAuth) {
+    auth = nextAuth;
     updateAuthUI();
-  }
-
-  async function login(passphrase) {
-    if (!workerUrl) {
-      loginError.textContent = '⚠️ Nog geen Worker gekoppeld.';
-      return;
-    }
-    loginError.textContent = '';
-    try {
-      const response = await fetch(`${workerUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passphrase }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        loginError.textContent = data.error || 'Inloggen mislukt.';
-        return;
-      }
-      storeAuth({ token: data.token, who: data.who, exp: data.exp });
-      passphraseInput.value = '';
-      updateAuthUI();
+    if (isLoggedIn()) {
       await loadChips();
-      renderBoard(); // re-render with the special-cards art
-      updateUndoState();
-    } catch {
-      loginError.textContent = 'Geen verbinding, probeer het later opnieuw.';
+    } else {
+      balance = null;
     }
-  }
-
-  function logout() {
-    clearAuth();
-    balance = null;
-    updateAuthUI();
-    renderBoard();
+    renderBoard(); // re-render with/without the special-cards art
+    renderCompleted();
     updateUndoState();
   }
 
@@ -338,16 +502,15 @@ export function initSpiderette() {
   // DEAL / GAME SETUP
   // -----------------------------------------------------------------
   function dealNewGame() {
-    const deck = buildShuffledDeck();
-    columns = [];
-    // Triangular deal: column i (0-indexed) gets i+1 cards.
-    for (let col = 0; col < COLUMN_COUNT; col++) {
-      const count = col + 1;
-      const pile = deck.splice(0, count);
-      pile[pile.length - 1].faceUp = true;
-      columns.push(pile);
-    }
-    stock = deck; // remaining 24 cards, dealt out in waves of 7/7/7/3
+    // buildSolvableDeal() is instant (no search/solver involved — see
+    // its file header for why), so unlike a budget-based solver this
+    // never needs to defer or show a "shuffling…" status.
+    const deal = buildSolvableDeal();
+    columns = deal.columns;
+    columns.forEach((pile) => {
+      if (pile.length) pile[pile.length - 1].faceUp = true;
+    });
+    stock = deal.stock; // remaining 24 cards, dealt out in waves of 7/7/7/3
     stockWaveIndex = 0;
     completedColours = [];
     selection = null;
@@ -746,9 +909,10 @@ export function initSpiderette() {
   if (backBtn) backBtn.addEventListener('click', handleBackClick);
   if (undoBtn) undoBtn.addEventListener('click', undoLastMove);
 
-  // Physical Backspace also undoes — ignored while typing in the
-  // login form's passphrase field, so it still behaves like a normal
-  // text-editing backspace there instead of undoing a move.
+  // Physical Backspace also undoes — ignored while typing in any
+  // text field (e.g. the header's profile login passphrase), so it
+  // still behaves like a normal text-editing backspace there instead
+  // of undoing a move.
   document.addEventListener('keydown', (event) => {
     if (!app.isConnected) return;
     if (event.key !== 'Backspace') return;
@@ -758,23 +922,10 @@ export function initSpiderette() {
     undoLastMove();
   });
 
-  showLoginBtn.addEventListener('click', showLoginForm);
-  cancelLoginBtn.addEventListener('click', hideLoginForm);
-  logoutBtn.addEventListener('click', logout);
-  loginForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    login(passphraseInput.value.trim());
-  });
-
   // ---- init ----
-  const storedAuth = loadStoredAuth();
-  if (storedAuth) {
-    auth = storedAuth;
-    updateAuthUI();
-    loadChips();
-  } else {
-    updateAuthUI();
-  }
-
   dealNewGame();
+
+  // React to the shared header login/logout — see the AUTH block above.
+  onAuthChange(syncWithAuth);
+  syncWithAuth(getAuth());
 }

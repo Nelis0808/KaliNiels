@@ -64,27 +64,17 @@
     <section class="container" id="bjApp">
       <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
 
-      <!-- Login bar: guest by default, optional login for a saved
-           balance + special cards. Same idea as photo-gallery.js's
-           login form, just inline instead of gating the whole page. -->
+      <!-- Auth status readout only — logging in/out happens ONCE,
+           site-wide, via the "👤 Profiel" dropdown in the sticky
+           header (assets/js/modules/auth.js). -->
       <div id="bjAuthBar" class="bj-auth-bar">
         <div id="bjGuestBadge" class="bj-auth-status">
-          🕶️ Je speelt als gast — saldo wordt niet opgeslagen.
-          <button id="bjShowLogin" class="btn btn-outline bj-btn-sm" type="button">Inloggen</button>
+          🕶️ Je speelt als gast — saldo wordt niet opgeslagen. Log in via <strong>👤 Profiel</strong> rechtsboven voor een opgeslagen saldo.
         </div>
 
         <div id="bjLoggedInBadge" class="bj-auth-status hidden">
           ✅ Ingelogd als <span id="bjWhoLabel"></span> — saldo wordt opgeslagen.
-          <button id="bjLogoutBtn" class="btn btn-outline bj-btn-sm" type="button">Uitloggen</button>
         </div>
-
-        <form id="bjLoginForm" class="bj-login-form hidden">
-          <label for="bjPassphrase" class="bj-sr-only">Wachtwoord</label>
-          <input id="bjPassphrase" type="password" placeholder="Wachtwoord" autocomplete="current-password" required>
-          <button type="submit" class="btn btn-primary bj-btn-sm">Inloggen</button>
-          <button id="bjCancelLogin" type="button" class="btn btn-outline bj-btn-sm">Annuleren</button>
-        </form>
-        <p id="bjLoginError" class="bj-login-error" aria-live="polite"></p>
       </div>
 
       <!-- Chip balance + bet controls -->

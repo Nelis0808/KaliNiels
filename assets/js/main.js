@@ -30,6 +30,7 @@ import { initTheme, initColorTheme } from './modules/theme.js';
 import { initMobileMenu, initScrolledShadow, initSmoothScroll, initBackToTop, initActiveNavLink } from './modules/navbar.js';
 import { initNavDropdown } from './modules/nav-dropdown.js';
 import { initSettingsDropdown } from './modules/settings-dropdown.js';
+import { initProfileDropdown } from './modules/profile-dropdown.js';
 import { initRevealOnScroll } from './modules/reveal.js';
 import { initCounters } from './modules/counters.js';
 import { initTypewriter } from './modules/typewriter.js';
@@ -44,6 +45,7 @@ import { initBoodschappenlijst } from './modules/boodschappenlijst.js';
 import { initGifts } from './modules/gifts.js';
 import { initReizen } from './modules/reizen.js';
 import { initReizenLand } from './modules/reizen-land.js';
+import { initPageGate } from './modules/page-gate.js';
 import { initGamesHub } from './modules/games-hub.js';
 import { initTicTacToe } from './modules/tictactoe.js';
 import { initConnect4 } from './modules/connect4.js';
@@ -66,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initColorTheme();
   initNavDropdown();        /* Must run before initMobileMenu*/
   initSettingsDropdown();
+  initProfileDropdown();
   initMobileMenu();
   initScrolledShadow();
   initActiveNavLink();
@@ -85,6 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPhotoGallery(); // photos.html
   initBoodschappenlijst(); // boodschappenlijst.html
   initGifts();          // gifts.html
+  initPageGate();        // reizen.html + reizen/land.html — hides the whole page until logged in
   initReizen();          // reizen.html
   initReizenLand();      // reizen/land.html
   initGamesHub();      // games-hub.html

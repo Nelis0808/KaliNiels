@@ -54,14 +54,28 @@
   <div data-include="header"></div>
 
   <main id="main">
-    <section id="hero" class="hero">
-      <div class="container">
-        <h1 id="reizenLandHeading">🌍 Land</h1>
-        <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een stad om de foto's te bekijken.</p>
+    <!-- LOCK SCREEN — see reizen.html for the full explanation. Even
+         the hero title below (which reveals the country name) lives
+         INSIDE the gated content now, not above it. -->
+    <section class="container rz-lockscreen" data-gate-lockscreen>
+      <div class="rz-lockscreen-card">
+        <p class="rz-lockscreen-emoji" aria-hidden="true">🔒</p>
+        <h2>Deze pagina is privé</h2>
+        <p>Log in via <strong>👤 Profiel</strong> rechtsboven om deze landkaart en foto's te bekijken.</p>
+        <p class="rz-lockscreen-who" data-gate-who></p>
+        <a href="../reizen.html" class="btn btn-outline rz-back">&larr; Terug naar de wereldkaart</a>
       </div>
     </section>
 
-    <section class="container" id="reizenLandApp">
+    <div class="hidden" data-gate-content>
+      <section id="hero" class="hero">
+        <div class="container">
+          <h1 id="reizenLandHeading">🌍 Land</h1>
+          <p>Sleep om te verschuiven, scroll of knijp om te zoomen. Klik een stad om de foto's te bekijken.</p>
+        </div>
+      </section>
+
+      <section class="container" id="reizenLandApp">
       <a href="../reizen.html" class="btn btn-outline rz-back">&larr; Terug naar de wereldkaart</a>
 
       <p id="reizenLandStatus" class="rz-status" aria-live="polite">Steden laden…</p>
@@ -92,7 +106,8 @@
         <div id="reizenCityPhotos"></div>
         <p id="reizenLockedNote" class="rz-locked-note hidden"></p>
       </div>
-    </section>
+      </section>
+    </div>
   </main>
 
   <div data-include="chrome-end"></div>

@@ -8,7 +8,17 @@ pin → er opent een kaart-venster met de eigen, haarscherpe kaart van
 dat land, met een pin per stad waar je foto's van hebt
 gecatalogiseerd. Vanuit dat venster kan je door naar
 `reizen/land.html`, dezelfde ervaring maar dan volledig-scherm mét
-het inlog-gated fotostrookje per stad.
+het fotostrookje per stad.
+
+**Onze Reizen is nu volledig privé.** Niet alleen de foto's, maar de
+hele pagina — de kaart zelf, de landpinnen, de plaatsnamen — is
+verborgen achter een inlogscherm totdat je bent ingelogd. Inloggen
+gebeurt niet meer per pagina, maar **één keer, site-breed**, via de
+"👤 Profiel"-dropdown in de sticky header bovenaan elke pagina (zie
+`assets/js/modules/auth.js` + `profile-dropdown.js`). Diezelfde
+sessie ontgrendelt automatisch ook Onze Foto's, BlackJack en
+Spiderette — er is nu maar één wachtwoord-scherm voor de hele site,
+niet meer één per pagina.
 
 **Dit is een volledige herbouw van de vorige versie.** Die scrapete
 d-maps.com voor de landkaarten — dat bleek onbetrouwbaar (blokkeerde
@@ -21,9 +31,21 @@ onder je voeten, en geen netwerk-round-trip nodig om een land te
 openen — dat gaat nu instant.
 
 ```
-reizen.html              → assets/data/travel-countries.json + assets/data/world-map.json (100% lokaal, geen Worker nodig)
-                          → klik een pin: assets/data/countries/<ISO>.json (lokaal) + Worker "photo-gallery" (/travel, publiek, alleen voor steden)
-reizen/land.html          → zelfde, plus (alleen als je al bent ingelogd via photos.html) dezelfde photo-gallery Worker voor de echte foto's per stad
+reizen.html                → volledig verborgen achter het inlogscherm (assets/js/modules/page-gate.js) totdat je via "👤 Profiel" bent ingelogd
+                            → daarna: assets/data/travel-countries.json + assets/data/world-map.json (100% lokaal, geen Worker nodig)
+                            → klik een pin: assets/data/countries/<ISO>.json (lokaal) + Worker "photo-gallery" (/travel, voor de steden)
+reizen/land.html            → zelfde inlogscherm, plus de echte foto's per stad via dezelfde photo-gallery Worker
+```
+
+Er is dus nog maar **één** Cloudflare Worker in dit hele systeem
+(`photo-gallery`, die had je al) — de eerdere `dmaps-proxy` Worker is
+volledig verwijderd, dat bestaat niet meer. BlackJack en Spiderette
+gebruiken voor hun *chips* nog wel hun eigen "blackjack" Worker, maar
+delen nu dezelfde login-sessie als deze — zie
+`assets/js/modules/auth.js`'s bestandskop voor de precieze uitleg
+(kort gezegd: zet de "blackjack" Worker's `TOKEN_SECRET`,
+`PASSPHRASE_A` en `PASSPHRASE_B` secrets exact gelijk aan die van de
+"photo-gallery" Worker, dan werkt de gedeelde sessie ook daar).
 ```
 
 Er is dus nu nog maar **één** Cloudflare Worker in dit hele systeem
@@ -170,8 +192,9 @@ Ga naar `https://nelis0808.github.io/KaliNiels/reizen.html`:
 - Klik een land → er opent **direct** een venster met de landkaart
   (geen netwerk-wachttijd — het is een lokaal bestand) en, als er
   gecatalogiseerde foto's zijn, stad-pins erop.
-- Klik een stad-pin: zonder inloggen zie je een linkje naar
-  `photos.html`; ingelogd zie je de echte foto's van die stad.
+- Klik een stad-pin voor de echte foto's van die stad (de hele pagina
+  is al gated achter de "👤 Profiel"-login, dus als je hier komt ben
+  je al ingelogd).
 - "Volledige pagina met foto's" in dat venster brengt je naar
   `reizen/land.html?iso=XX`, dezelfde ervaring volledig-scherm.
 
@@ -228,7 +251,7 @@ deze data.
 | Pin staat niet precies op de hoofdstad | Je gebruikt de automatische centroid-pin (geen `pin`-veld gezet) | Stap 2 — voeg `"pin": {"lon":...,"lat":...}` toe met de echte coördinaten |
 | "⚠️ Nog geen Worker gekoppeld" bij de steden | `workerUrl` in `assets/js/config.js` (bij `photos`) staat nog op de placeholder | Zie `STAPPENPLAN-FOTOS.md` stap 4 |
 | Geen steden te zien bij een land | Geen foto's met "Land" dat matcht, of het land-veld spelt anders dan `name` in `travel-countries.json` | Check `captions.json` |
-| Stad-pin klikbaar maar geen foto's | Niet ingelogd, of "Plaats" wijkt net iets af van de pin-naam | Log in via `photos.html`; check spelling |
+| Stad-pin klikbaar maar geen foto's | "Plaats" wijkt net iets af van de pin-naam | Check spelling in `captions.json` tegen de pin-naam |
 | `404`/CORS-foutmelding van `/travel` | Oude versie van `worker.js` nog actief | Stap 1 hierboven |
 | Slepen op de kaart voelt "vast" op mobiel | Pagina zelf scrollt mee | Zou niet moeten — de kaart zet `touch-action: none`; laat het weten als dit toch gebeurt op jouw toestel |
 | Twee pins overlappen elkaar (bijv. Nederland/België) | Ze liggen simpelweg dicht bij elkaar op een uitgezoomde wereldkaart — net als in Google Maps | Zoom in (scroll/knijp, of dubbelklik/dubbeltik precies tussen de twee pins) tot ze uit elkaar vallen |

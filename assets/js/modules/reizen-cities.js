@@ -22,25 +22,14 @@
 //                           manual data.
 //   3. loadCityPhotos()  — fetch + decrypt-free-load the actual
 //                           thumbnails for one city from the Worker,
-//                           gated behind the same login as
-//                           photos.html (see photo-gallery.js).
+//                           gated behind the SAME site-wide session
+//                           as photos.html (see assets/js/modules/
+//                           auth.js — one login in the sticky
+//                           header, not a separate one per page).
 // =================================================================
 
-import { escapeHtml, siteRootUrl } from './utils.js';
-
-const AUTH_STORAGE_KEY = 'photoGalleryAuth'; // same key photo-gallery.js uses — shared session
-
-export function getStoredPhotoAuth() {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
-    const auth = JSON.parse(raw);
-    if (!auth?.token || !auth?.exp || auth.exp * 1000 < Date.now()) return null;
-    return auth;
-  } catch {
-    return null;
-  }
-}
+import { escapeHtml } from './utils.js';
+import { getAuth } from './auth.js';
 
 export async function loadCities(workerUrl, countryQuery) {
   const response = await fetch(`${workerUrl}/travel?country=${encodeURIComponent(countryQuery)}`);
@@ -124,9 +113,9 @@ export async function loadCityPhotos({ workerUrl, city, countryLower, iso, targe
   targetEl.innerHTML = '';
   lockedNoteEl.classList.add('hidden');
 
-  const auth = getStoredPhotoAuth();
+  const auth = getAuth();
   if (!auth) {
-    lockedNoteEl.innerHTML = `Log in via <a href="${siteRootUrl('photos.html')}">Onze Foto's</a> om de echte foto's van ${escapeHtml(city.name)} hier te zien.`;
+    lockedNoteEl.innerHTML = `Log in via <strong>👤 Profiel</strong> (rechtsboven) om de echte foto's van ${escapeHtml(city.name)} hier te zien.`;
     lockedNoteEl.classList.remove('hidden');
     return;
   }

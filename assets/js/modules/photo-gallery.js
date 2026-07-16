@@ -4,13 +4,17 @@
 // Talks ONLY to the photo-gallery Cloudflare Worker (see
 // /cloudflare-worker-photos + PHOTO-GALLERY.md) — never directly
 // to any storage. The real photos live in a private R2 bucket that
-// only that worker can read; this module never sees them until the
-// worker has verified a passphrase and handed back a signed token.
+// only that worker can read; this module never sees them until a
+// valid session token has been handed back by the worker.
 //
-// SESSION: on successful login, the token is kept in localStorage
-// (~30 days, per the "stay logged in" choice) so you don't have to
-// re-enter your passphrase on every visit from the same device/
-// browser. Logging out, or the token expiring, clears it.
+// LOGIN: there is no login form on this page anymore. Logging in
+// happens ONCE, site-wide, via the "👤 Profiel" dropdown in the
+// sticky header (assets/js/modules/auth.js +
+// assets/js/modules/profile-dropdown.js) — the exact same session
+// also unlocks the real photo thumbnails on Onze Reizen
+// (reizen-cities.js) and the extra features on BlackJack/Spiderette.
+// This module just listens for that shared session via
+// onAuthChange() and shows/hides the gallery accordingly.
 //
 // CAPTIONS: each photo can carry two captions — `caption` (short,
 // always shown under the thumbnail) and `captionLong` (shown in the
@@ -25,59 +29,29 @@
 
 import { siteConfig } from '../config.js';
 import { qs } from './utils.js';
-
-const AUTH_STORAGE_KEY = 'photoGalleryAuth';
+import { getAuth, onAuthChange, currentPersonLabel } from './auth.js';
 
 export function initPhotoGallery() {
   const root = document.getElementById('photoGalleryApp');
   if (!root) return; // not on this page
 
   const workerUrl = siteConfig.photos?.workerUrl || '';
-  const personLabels = siteConfig.photos?.personLabels || {};
 
-  const loginForm       = qs('#pgLoginForm', root);
-  const passphraseInput = qs('#pgPassphrase', root);
-  const loginError      = qs('#pgLoginError', root);
-  const loggedInBar     = qs('#pgLoggedInBar', root);
-  const loggedInLabel   = qs('#pgLoggedInLabel', root);
-  const logoutBtn       = qs('#pgLogoutBtn', root);
-  const placeholderGrid = qs('#pgPlaceholder', root);
-  const resultsGrid     = qs('#pgResults', root);
-  const statusEl        = qs('#pgStatus', root);
+  const loggedOutNote     = qs('#pgLoggedOutNote', root);
+  const loggedInBar       = qs('#pgLoggedInBar', root);
+  const loggedInLabel     = qs('#pgLoggedInLabel', root);
+  const placeholderGrid   = qs('#pgPlaceholder', root);
+  const resultsGrid       = qs('#pgResults', root);
+  const statusEl          = qs('#pgStatus', root);
 
   const lightbox        = qs('#pgLightbox', root);
   const lightboxImage   = qs('#pgLightboxImage', lightbox);
   const lightboxCaption = qs('#pgLightboxCaption', lightbox);
   const lightboxClose   = qs('#pgLightboxClose', lightbox);
 
-  // ---- Local session helpers -----------------------------------
-  function getStoredAuth() {
-    try {
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (!raw) return null;
-      const auth = JSON.parse(raw);
-      // Quick client-side expiry check, purely for UX (so we don't
-      // even try a request we know is stale). The worker re-verifies
-      // the signature + expiry server-side on every call regardless —
-      // this local check can't be used to forge access.
-      if (!auth?.token || !auth?.exp || auth.exp * 1000 < Date.now()) return null;
-      return auth;
-    } catch {
-      return null;
-    }
-  }
-
-  function storeAuth(auth) {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
-  }
-
-  function clearAuth() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }
-
   // ---- View toggling ----------------------------------------------
   function showLoggedOut(message) {
-    loginForm.classList.remove('hidden');
+    loggedOutNote.classList.remove('hidden');
     loggedInBar.classList.add('hidden');
     placeholderGrid.classList.remove('hidden');
     resultsGrid.classList.add('hidden');
@@ -85,13 +59,12 @@ export function initPhotoGallery() {
     statusEl.textContent = message || '';
   }
 
-  function showLoggedIn(who) {
-    loginForm.classList.add('hidden');
+  function showLoggedIn() {
+    loggedOutNote.classList.add('hidden');
     loggedInBar.classList.remove('hidden');
     placeholderGrid.classList.add('hidden');
     resultsGrid.classList.remove('hidden');
-    loggedInLabel.textContent = personLabels[who] || (who === 'a' ? 'Persoon A' : 'Persoon B');
-    loginError.textContent = '';
+    loggedInLabel.textContent = currentPersonLabel();
   }
 
   function workerConfigured() {
@@ -99,36 +72,6 @@ export function initPhotoGallery() {
   }
 
   // ---- Networking ---------------------------------------------------
-  async function login(passphrase) {
-    if (!workerConfigured()) {
-      loginError.textContent = '⚠️ No worker configurated, see PHOTO-GALLERY.md for help.';
-      return;
-    }
-
-    loginError.textContent = '';
-    try {
-      const response = await fetch(`${workerUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passphrase }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        loginError.textContent = data.error || 'Login failed.';
-        return;
-      }
-
-      storeAuth({ token: data.token, who: data.who, exp: data.exp });
-      passphraseInput.value = '';
-      showLoggedIn(data.who);
-      await loadPhotos(data.token);
-    } catch (error) {
-      console.error('Login error:', error);
-      loginError.textContent = 'No connecteion mode, try again later.';
-    }
-  }
-
   async function loadPhotos(token) {
     statusEl.textContent = 'Loading photo\u2019s';
     resultsGrid.innerHTML = '';
@@ -139,8 +82,7 @@ export function initPhotoGallery() {
       });
 
       if (response.status === 401) {
-        clearAuth();
-        showLoggedOut('Session expired, log in again.');
+        showLoggedOut('Sessie verlopen, log opnieuw in via je profiel.');
         return;
       }
 
@@ -254,27 +196,20 @@ export function initPhotoGallery() {
     if (event.key === 'Escape' && !lightbox.classList.contains('hidden')) closeLightbox();
   });
 
-  // ---- Wiring ------------------------------------------------------
-
-  loginForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const passphrase = passphraseInput.value.trim();
-    if (!passphrase) return;
-    login(passphrase);
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    clearAuth();
-    showLoggedOut('Uitgelogd.');
-  });
-
-  // ---- Initial state -------------------------------------------------
-
-  const storedAuth = getStoredAuth();
-  if (storedAuth) {
-    showLoggedIn(storedAuth.who);
-    loadPhotos(storedAuth.token);
-  } else {
-    showLoggedOut();
+  // ---- React to the shared header login/logout -----------------------
+  function syncWithAuth(auth) {
+    if (!workerConfigured()) {
+      statusEl.textContent = '⚠️ No worker configurated, see PHOTO-GALLERY.md for help.';
+      return;
+    }
+    if (auth) {
+      showLoggedIn();
+      loadPhotos(auth.token);
+    } else {
+      showLoggedOut();
+    }
   }
+
+  onAuthChange(syncWithAuth);
+  syncWithAuth(getAuth());
 }

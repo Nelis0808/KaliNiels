@@ -141,3 +141,67 @@
     transition: none;
   }
 }
+
+/* =============================================================
+   PROFILE DROPDOWN "👤" (top-right, every page)
+   -------------------------------------------------------------
+   The single site-wide login — see assets/js/modules/auth.js +
+   profile-dropdown.js. Structurally identical to .settings-dropdown
+   above (same open/close JS pattern), this block only adds the
+   bits specific to the login form / logged-in state.
+   ============================================================= */
+
+.profile-menu {
+  min-width: 260px;
+}
+
+.profile-view.hidden {
+  display: none;
+}
+
+.profile-hint {
+  padding: 0 var(--space-4) var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.profile-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-2);
+}
+
+.profile-login-form input[type='password'] {
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+}
+
+.profile-login-form input[type='password']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.profile-login-error {
+  padding: 0 var(--space-4) var(--space-2);
+  min-height: 1.2em;
+  font-size: var(--fs-sm);
+  color: var(--color-error, #d64545);
+}
+
+.profile-logout-btn {
+  margin: 0 var(--space-4) var(--space-2);
+}
+
+@media (max-width: 480px) {
+  .profile-menu {
+    min-width: 240px;
+  }
+}
