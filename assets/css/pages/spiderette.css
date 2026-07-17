@@ -13,23 +13,6 @@
   text-align: center;
 }
 
-/* == AUTH BAR ==
-   Status readout only now — login/logout lives in the sticky
-   header's "👤 Profiel" dropdown. */
-.spi-auth-bar {
-  margin-bottom: var(--space-5);
-}
-
-.spi-auth-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  font-size: var(--fs-sm);
-  color: var(--color-text-muted);
-}
-
 /* == CHIP BALANCE ==
    Smaller, single-value cousin of blackjack.css's .bj-balance — no
    separate bet display here, Spiderette has no betting, just a

@@ -68,24 +68,15 @@
     <section class="container" id="spiApp">
       <button id="spiBackBtn" type="button" class="btn btn-outline ttt-back">&larr; Terug naar Games</button>
 
-      <!-- Auth status readout only — logging in/out happens ONCE,
-           site-wide, via the "👤 Profiel" dropdown in the sticky
-           header (assets/js/modules/auth.js). -->
-      <div id="spiAuthBar" class="spi-auth-bar">
-        <div id="spiGuestBadge" class="spi-auth-status">
-          🕶️ Je speelt als gast. Log in via <strong>👤 Profiel</strong> rechtsboven voor de speciale kaarten + chips.
-        </div>
-
-        <div id="spiLoggedInBadge" class="spi-auth-status hidden">
-          ✅ Ingelogd als <span id="spiWhoLabel"></span>.
-        </div>
-      </div>
-
-      <!-- Chip balance, only shown when logged in (see spiderette.js's updateAuthUI). -->
+      <!-- Chip balance, only shown when logged in (see spiderette.js's
+           updateAuthUI). Logging in/out happens ONCE, site-wide, via
+           the "👤 Profiel" dropdown in the sticky header
+           (assets/js/modules/auth.js). -->
       <div id="spiChipsBar" class="spi-chips-bar hidden" aria-live="polite">
         <span class="spi-chips-label">Chips</span>
         <span id="spiBalance" class="spi-chips-value">0</span>
       </div>
+
 
       <p id="spiStatus" class="ttt-status" aria-live="polite"></p>
 

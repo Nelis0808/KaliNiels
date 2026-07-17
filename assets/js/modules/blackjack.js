@@ -60,7 +60,7 @@
 
 import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
-import { getAuth, onAuthChange, currentPersonLabel, logout } from './auth.js';
+import { getAuth, onAuthChange, logout } from './auth.js';
 
 const GUEST_CHIPS_STARTING = 1000;
 const CHIP_VALUES = [50, 100, 250, 500, 1000, 5000];
@@ -85,9 +85,6 @@ function rankValue(rank) {
 /** Resolves a card to its image filename, folder-relative (see the special-case comment above). */
 function cardImageFile(card) {
   const { rank, suit } = card;
-
-  if (rank === 'ace' && suit === 'spades') return 'ace_of_spades2.png';
-  if (rank === 'jack' || rank === 'queen' || rank === 'king') return `${rank}_of_${suit}2.png`;
   return `${rank}_of_${suit}.png`;
 }
 
@@ -145,9 +142,7 @@ export function initBlackjack() {
   const workerUrl = siteConfig.blackjack?.workerUrl || '';
 
   // ---- DOM refs ----
-  const guestBadge = document.getElementById('bjGuestBadge');
-  const loggedInBadge = document.getElementById('bjLoggedInBadge');
-  const whoLabel = document.getElementById('bjWhoLabel');
+  const authStatus = document.getElementById('bjAuthStatus');
 
   const balanceEl = document.getElementById('bjBalance');
   const betEl = document.getElementById('bjBet');
@@ -190,14 +185,7 @@ export function initBlackjack() {
   // changes, via onAuthChange() (see the bottom of this file).
   // -----------------------------------------------------------------
   function updateAuthUI() {
-    if (isLoggedIn()) {
-      guestBadge.classList.add('hidden');
-      loggedInBadge.classList.remove('hidden');
-      whoLabel.textContent = currentPersonLabel();
-    } else {
-      guestBadge.classList.remove('hidden');
-      loggedInBadge.classList.add('hidden');
-    }
+    authStatus.classList.toggle('hidden', isLoggedIn());
   }
 
   async function syncWithAuth(nextAuth) {

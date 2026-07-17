@@ -11,6 +11,9 @@
    now (see assets/js/modules/auth.js) — this is just a pointer
    shown on the page when there's no active session. */
 .pg-loggedout-note {
+  max-width: 560px;
+  margin-left: auto;
+  margin-right: auto;
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);

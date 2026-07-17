@@ -67,15 +67,9 @@
       <!-- Auth status readout only — logging in/out happens ONCE,
            site-wide, via the "👤 Profiel" dropdown in the sticky
            header (assets/js/modules/auth.js). -->
-      <div id="bjAuthBar" class="bj-auth-bar">
-        <div id="bjGuestBadge" class="bj-auth-status">
-          🕶️ Je speelt als gast — saldo wordt niet opgeslagen. Log in via <strong>👤 Profiel</strong> rechtsboven voor een opgeslagen saldo.
-        </div>
-
-        <div id="bjLoggedInBadge" class="bj-auth-status hidden">
-          ✅ Ingelogd als <span id="bjWhoLabel"></span> — saldo wordt opgeslagen.
-        </div>
-      </div>
+      <p id="bjAuthStatus" class="bj-auth-status">
+        🕶️ Je speelt als gast — saldo wordt niet opgeslagen. Log in via <strong>👤 Profiel</strong> rechtsboven voor een opgeslagen saldo.
+      </p>
 
       <!-- Chip balance + bet controls -->
       <div class="bj-chips-bar" aria-live="polite">
