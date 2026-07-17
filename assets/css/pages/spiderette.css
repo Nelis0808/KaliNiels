@@ -159,7 +159,7 @@
 }
 
 .spi-card-selected {
-  transform: translateY(-10px);
+  transform: translateY(-5px);
 }
 
 .spi-card-selected .spi-card-img {
