@@ -77,6 +77,7 @@ export function initBoodschappenlijst() {
       .map(
         (item) => `
           <li class="sl-item ${item.checked ? 'sl-item-checked' : ''}" data-id="${escapeHtml(item.id)}">
+            <span class="sl-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(item.text)} verslepen om te herordenen — of pijltje omhoog/omlaag"></span>
             <label class="sl-item-label">
               <input type="checkbox" class="sl-checkbox" ${item.checked ? 'checked' : ''} aria-label="${escapeHtml(item.text)} afvinken">
               <span class="sl-item-text">${escapeHtml(item.text)}</span>
@@ -151,6 +152,21 @@ export function initBoodschappenlijst() {
     saveList();
   }
 
+  /** Moves the item with `id` to `targetIndex` in the list, then persists the new order. */
+  function reorderItem(id, targetIndex) {
+    const fromIndex = items.findIndex((item) => item.id === id);
+    if (fromIndex === -1) return;
+    const clampedTarget = Math.max(0, Math.min(targetIndex, items.length - 1));
+    if (clampedTarget === fromIndex) return;
+
+    const reordered = [...items];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(clampedTarget, 0, moved);
+    items = reordered;
+    render();
+    saveList();
+  }
+
   // ---- Wiring ------------------------------------------------------
 
   addForm.addEventListener('submit', (event) => {
@@ -181,6 +197,107 @@ export function initBoodschappenlijst() {
       const id = event.target.closest('.sl-item')?.dataset.id;
       if (id) toggleItem(id);
     }
+  });
+
+  // ---- Drag to reorder ----------------------------------------------
+  // Pointer Events (not native HTML5 drag-and-drop, which touch
+  // browsers don't reliably support) so the same code handles mouse
+  // AND touch. Only the small grip handle (.sl-drag-handle) starts a
+  // drag — the rest of the row stays dedicated to check/delete, so a
+  // normal tap never accidentally triggers a reorder.
+  //
+  // While dragging, the item currently under the pointer is
+  // physically moved in the DOM (no ghost element/animation) — as
+  // soon as the pointer crosses another row's vertical midpoint, the
+  // dragged row swaps to that position. Simple and reliable rather
+  // than pixel-smooth, which is plenty for a short household list.
+  let draggingLi = null;
+  let dragPointerId = null;
+
+  function itemElements() {
+    return Array.from(listEl.querySelectorAll('.sl-item'));
+  }
+
+  function moveDraggedRowTo(clientY) {
+    const siblings = itemElements().filter((el) => el !== draggingLi);
+    for (const sibling of siblings) {
+      const rect = sibling.getBoundingClientRect();
+      const middle = rect.top + rect.height / 2;
+      if (clientY < middle) {
+        if (sibling.previousElementSibling !== draggingLi) {
+          listEl.insertBefore(draggingLi, sibling);
+        }
+        return;
+      }
+    }
+    // Pointer is below every other row — send it to the end.
+    if (listEl.lastElementChild !== draggingLi) {
+      listEl.appendChild(draggingLi);
+    }
+  }
+
+  function endDrag() {
+    if (!draggingLi) return;
+    draggingLi.classList.remove('sl-item-dragging');
+    listEl.classList.remove('sl-list-reordering');
+
+    // The DOM order is already correct (we moved the row live during
+    // the drag) — read it back into `items` and persist that order.
+    const newOrderIds = itemElements().map((el) => el.dataset.id);
+    items = newOrderIds
+      .map((id) => items.find((item) => item.id === id))
+      .filter(Boolean);
+    saveList();
+
+    draggingLi = null;
+    dragPointerId = null;
+  }
+
+  listEl.addEventListener('pointerdown', (event) => {
+    const handle = event.target.closest('.sl-drag-handle');
+    if (!handle) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    draggingLi = handle.closest('.sl-item');
+    if (!draggingLi) return;
+    dragPointerId = event.pointerId;
+    draggingLi.classList.add('sl-item-dragging');
+    listEl.classList.add('sl-list-reordering');
+    handle.setPointerCapture(event.pointerId);
+    event.preventDefault(); // stop touch-scroll/text-selection while dragging
+  });
+
+  listEl.addEventListener('pointermove', (event) => {
+    if (!draggingLi || event.pointerId !== dragPointerId) return;
+    moveDraggedRowTo(event.clientY);
+  });
+
+  listEl.addEventListener('pointerup', (event) => {
+    if (event.pointerId !== dragPointerId) return;
+    endDrag();
+  });
+
+  listEl.addEventListener('pointercancel', (event) => {
+    if (event.pointerId !== dragPointerId) return;
+    endDrag();
+  });
+
+  // ---- Keyboard fallback (drag handles aren't reachable by mouse-less
+  // input) — focus a handle, then ArrowUp/ArrowDown moves that item. ----
+  listEl.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    const handle = event.target.closest('.sl-drag-handle');
+    if (!handle) return;
+    event.preventDefault();
+
+    const id = handle.closest('.sl-item')?.dataset.id;
+    if (!id) return;
+    const currentIndex = items.findIndex((item) => item.id === id);
+    if (currentIndex === -1) return;
+
+    reorderItem(id, currentIndex + (event.key === 'ArrowUp' ? -1 : 1));
+    // render() just rebuilt the list, so refocus the (new) handle for this item.
+    listEl.querySelector(`.sl-item[data-id="${id}"] .sl-drag-handle`)?.focus();
   });
 
   // ---- Polling (picks up changes made on the other person's device) ----

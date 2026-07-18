@@ -43,6 +43,39 @@ export function initReizen() {
 
   let countries = [];
   let worldProjection = null;
+  const isoNameMap = new Map(); // iso2 -> country name, from world-map.json
+
+  // ---- Bottom-left "which country is this?" hover label -----------------
+  const hoverLabel = document.createElement('div');
+  hoverLabel.className = 'rz-hover-label hidden';
+  viewport.appendChild(hoverLabel);
+
+  function showHoverName(name) {
+    if (!name) { hoverLabel.classList.add('hidden'); return; }
+    hoverLabel.textContent = name;
+    hoverLabel.classList.remove('hidden');
+  }
+
+  viewport.addEventListener('pointerover', (event) => {
+    const shape = event.target.closest?.('.rz-country-shape');
+    if (shape) {
+      showHoverName(isoNameMap.get(shape.dataset.iso2));
+      return;
+    }
+    const pin = event.target.closest?.('.rz-pin');
+    if (pin) {
+      const country = countries.find((c) => c.iso === pin.dataset.iso);
+      showHoverName(country?.name);
+    }
+  });
+
+  viewport.addEventListener('pointerout', (event) => {
+    // Only hide if we're not moving to another shape/pin (avoids flicker
+    // when crossing straight from one country's border into another's).
+    const stillOnShape = event.relatedTarget?.closest?.('.rz-country-shape');
+    const stillOnPin = event.relatedTarget?.closest?.('.rz-pin');
+    if (!stillOnShape && !stillOnPin) hoverLabel.classList.add('hidden');
+  });
 
   function goToCountry(country) {
     window.location.href = siteRootUrl(`reizen/land.html?iso=${encodeURIComponent(country.iso)}`);
@@ -69,6 +102,7 @@ export function initReizen() {
     worldProjection = projection;
     viewport.style.aspectRatio = projection.aspectRatio;
     const byIso = new Map(worldFeatures.map((f) => [f.properties.iso2, f]));
+    worldFeatures.forEach((f) => isoNameMap.set(f.properties.iso2, f.properties.name));
 
     const pathMarkup = worldFeatures
       .map((f) => `<path d="${geometryToPathD(f.geometry, projection.project)}" class="rz-country-shape" data-iso2="${f.properties.iso2}"></path>`)

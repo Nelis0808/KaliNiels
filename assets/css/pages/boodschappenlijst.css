@@ -48,6 +48,63 @@
   box-shadow: var(--shadow);
 }
 
+/* == DRAG HANDLE (drag up/down to reorder — see boodschappenlijst.js) ==
+   A small 2x3 dot grid, the universal "grip" affordance. Only this
+   handle starts a drag — the rest of the row stays dedicated to
+   check/delete, exactly like a native app list. */
+.sl-drag-handle {
+  flex-shrink: 0;
+  width: 18px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none; /* we handle the drag ourselves — don't let touch scroll the page mid-drag */
+  border-radius: var(--radius-sm);
+}
+
+.sl-drag-handle::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  box-shadow:
+    0 -7px 0 var(--color-text-muted),
+    0 7px 0 var(--color-text-muted),
+    7px -7px 0 var(--color-text-muted),
+    7px 0 0 var(--color-text-muted),
+    7px 7px 0 var(--color-text-muted);
+}
+
+.sl-drag-handle:hover,
+.sl-drag-handle:focus-visible {
+  cursor: grabbing;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+.sl-drag-handle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* The row currently being dragged — lifted above its neighbours with
+   a stronger shadow so it visually reads as "in your hand". */
+.sl-item-dragging {
+  position: relative;
+  z-index: 2;
+  box-shadow: var(--shadow-lg);
+  cursor: grabbing;
+}
+
+/* While any row is being dragged, disable the normal hover shadow on
+   every other row — it flickers distractingly as the dragged row
+   moves past them. */
+.sl-list-reordering .sl-item:not(.sl-item-dragging):hover {
+  box-shadow: var(--shadow-sm);
+}
+
 .sl-item-label {
   display: flex;
   align-items: center;

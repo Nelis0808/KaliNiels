@@ -1,5 +1,5 @@
 // =================================================================
-// BLACKJACK — AUTH + CHIP BALANCE (Cloudflare Worker)
+// SHARED CHIP BALANCE — AUTH + CHIPS (Cloudflare Worker)
 // -----------------------------------------------------------------
 // Same login pattern as the private photo gallery
 // (cloudflare/cloudflare-worker-photos/worker.js): two passphrases,
@@ -7,15 +7,31 @@
 // worker does NOT touch the photo gallery's secrets or storage —
 // it's a fourth, separate Worker with its own KV namespace.
 //
-// WHAT IT'S FOR: BlackJack (assets/js/modules/blackjack.js) is
-// playable by anyone, logged in or not. But your CHIP BALANCE only
-// exists, and only persists, if you're logged in — anonymous play
-// uses a fixed local stack that resets on refresh (see the module
-// for details). This worker is what makes the logged-in balance
-// durable across visits/devices, and is the thing that lets YOU
-// manually set someone's balance from the Cloudflare dashboard
-// (Workers & Pages → KV → your namespace → edit the "a" or "b" key)
-// without touching any code.
+// WHAT IT'S FOR: this worker is a single, GAME-AGNOSTIC chip balance
+// shared by every chip-based game on the site — currently BlackJack
+// (assets/js/modules/blackjack.js) and Spiderette
+// (assets/js/modules/spiderette.js), both configured in
+// assets/js/config.js to point at this exact same worker URL (see
+// that file's `blackjack`/`spiderette` entries). The /chips endpoint
+// below stores one balance per PERSON, never per game — there's no
+// concept of "blackjack chips" vs "spiderette chips" anywhere in this
+// file, just one number per logged-in person that every connected
+// game reads from and writes back to. That's what makes winning chips
+// in one game immediately spendable in another, and it's also what
+// any FUTURE chip-based game should plug into: add a `workerUrl`
+// entry pointing here in config.js, reuse this same GET/PUT /chips
+// contract, and its chips are automatically in sync with every other
+// game on the site — no new worker or KV namespace needed.
+//
+// Each game is still free to be playable by anyone, logged in or
+// not — but the chip balance only exists, and only persists, for
+// logged-in players; how a given game module handles anonymous play
+// (e.g. a fixed local-only stack, or just hiding the balance) is that
+// module's own choice and has no bearing on this worker. This worker
+// is what makes the logged-in balance durable across visits/devices,
+// and is the thing that lets YOU manually set someone's balance from
+// the Cloudflare dashboard (Workers & Pages → KV → your namespace →
+// edit the "a" or "b" key) without touching any code.
 //
 // Storage: one Cloudflare KV namespace, bound as `CHIPS_KV`, with
 // one key per person:

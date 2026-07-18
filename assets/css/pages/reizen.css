@@ -43,16 +43,22 @@
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
   margin-bottom: var(--space-5);
+  /* p{max-width:65ch} (typography.css) shrinks this box below the
+     container's width — without margin-inline:auto the now-narrower
+     box just sits flush left, so text-align:center only centers the
+     text WITHIN that narrow box instead of centering the box itself. */
+  margin-inline: auto;
 }
 
-/* == MAP CONTROLS (zoom +/-/reset, floats over the top-right corner) == */
+/* == MAP CONTROLS (zoom +/-/reset) ==
+   Used to float absolutely over the map's top-right corner, covering
+   part of the image. Now sits as a normal horizontal toolbar ABOVE
+   the map instead — .rz-map-viewport-wrap below is a column flexbox
+   with the controls (first in the markup) stacked above the map
+   viewport, so the buttons never overlap the picture. */
 .rz-map-controls {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  z-index: 6;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2px;
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -88,7 +94,10 @@
    that clips the pannable/zoomable frame inside it. Drag to pan,
    wheel/pinch to zoom — see assets/js/modules/map-pan-zoom.js. */
 .rz-map-viewport-wrap {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* Country-specific page (reizen/land.html): a single country's map
@@ -96,7 +105,9 @@
    still and center it, so the whole page (map + back button + city
    list) fits on one screen without much scrolling. */
 .rz-map-viewport-wrap--country {
-  max-width: 420px;
+  /* 210px * 1.25 = 262.5px, then made 25% smaller again per request:
+     262.5px * 0.75 = 196.875px. */
+  max-width: 196.875px;
   margin-inline: auto;
 }
 
@@ -175,13 +186,15 @@
 }
 
 /* == COORD HOVER BADGE ==
-   Follows the cursor while hovering a map, showing the lon/lat under
-   it — a data-entry aid for filling in travel-countries.json /
-   cityPins with precise coordinates. See map-coord-hover.js. */
+   Pinned to the bottom-right corner of the map viewport while
+   hovering, showing the lon/lat under the cursor — a data-entry aid
+   for filling in travel-countries.json / cityPins with precise
+   coordinates. See map-coord-hover.js. */
 .rz-coord-badge {
   position: absolute;
   z-index: 5;
-  transform: translate(14px, 14px);
+  right: var(--space-3);
+  bottom: var(--space-3);
   background: rgba(0, 0, 0, 0.78);
   color: #fff;
   font-family: var(--font-mono, monospace);
@@ -193,6 +206,32 @@
 }
 
 .rz-coord-badge.hidden {
+  display: none;
+}
+
+/* == COUNTRY HOVER NAME (reizen.html world map only) ==
+   Pinned to the bottom-left corner of the map viewport, shows the
+   name of whichever country shape or pin is currently under the
+   cursor — see reizen.js. */
+.rz-hover-label {
+  position: absolute;
+  z-index: 5;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  max-width: calc(100% - var(--space-3) * 2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rz-hover-label.hidden {
   display: none;
 }
 
@@ -225,6 +264,16 @@
 .rz-pin:hover .rz-pin-scaler,
 .rz-pin:focus-visible .rz-pin-scaler {
   transform: scale(1.18);
+}
+
+/* Bring the whole pin (and therefore its label) above every other
+   sibling pin/shape while it's active — same z-index ties otherwise
+   resolve by DOM order, which could bury a hovered pin's label under
+   a later-drawn neighbour. */
+.rz-pin:hover,
+.rz-pin:focus-visible,
+.rz-pin-selected {
+  z-index: 40;
 }
 
 .rz-pin:focus-visible {
@@ -280,6 +329,9 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+  /* Always render above every other map element — other pins, the
+     zoom controls, the coord badge, everything. */
+  z-index: 50;
 }
 
 .rz-pin:hover .rz-pin-label,
@@ -384,8 +436,17 @@
 }
 
 .rz-city-photos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* Was `display: grid` with `repeat(auto-fill, minmax(160px, 1fr))`
+     + `justify-content: center` — but that `center` never actually
+     did anything: auto-fill's `1fr` tracks always expand to fill
+     100% of the container's width regardless of how many photos
+     there are, so a row with just 1-2 photos stretched them across
+     the full width / left-packed them with dead space trailing,
+     never truly centered. Flex-wrap centers a short row of
+     fixed-size tiles for real, which is what "center these as much
+     as possible" means when there are only a few photos. */
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-4);
   margin-top: var(--space-4);
@@ -394,6 +455,8 @@
 
 .rz-city-photo {
   margin: 0;
+  flex: 1 1 160px;
+  max-width: 220px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -563,6 +626,8 @@ body.rz-photo-lightbox-locked {
   color: var(--color-text-muted);
   min-height: 1.5em;
   margin-bottom: var(--space-4);
+  /* Same fix as .rz-hint above — see that comment. */
+  margin-inline: auto;
 }
 
 /* == LOCK SCREEN (whole-page auth gate, see assets/js/modules/page-gate.js) ==

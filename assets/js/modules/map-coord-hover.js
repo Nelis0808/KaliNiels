@@ -37,11 +37,8 @@ export function attachCoordHover(viewport, panZoom, getProjection) {
 
     badge.textContent = `lon: ${lon.toFixed(4)}  lat: ${lat.toFixed(4)}`;
     badge.classList.remove('hidden');
-
-    const localX = event.clientX - rect.left;
-    const localY = event.clientY - rect.top;
-    badge.style.left = `${localX}px`;
-    badge.style.top = `${localY}px`;
+    // Position is fixed to the bottom-right corner via CSS (.rz-coord-badge)
+    // — it no longer follows the cursor, so nothing to set here.
   });
 
   viewport.addEventListener('pointerleave', hide);

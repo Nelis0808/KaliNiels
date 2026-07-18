@@ -25,6 +25,14 @@ id = "YOUR-KV-NAMESPACE-ID"
 #   wrangler secret put TOKEN_SECRET
 # (or set them via the dashboard: Settings > Variables and Secrets > Add > Encrypt.)
 #
-# Reuse the SAME passphrases as the photo gallery worker if you want
-# one login to feel consistent across pages, or pick different ones
-# — the two workers don't know about each other either way.
+# IMPORTANT — this worker no longer handles login itself (see
+# assets/js/modules/auth.js's file header): the site's single shared
+# login now happens through the "photo-gallery" worker's /login route,
+# and this worker just verifies the token that produced. That means
+# TOKEN_SECRET here MUST be set to the EXACT SAME value as the
+# "photo-gallery" worker's TOKEN_SECRET, or every /chips request will
+# 401 (or, if left unset entirely, 500 — see the "missing secrets"
+# check near the top of worker.js). PASSPHRASE_A / PASSPHRASE_B here
+# are vestigial — this worker's own /login route is unused by the
+# site now — but the missing-secrets check still requires them to be
+# set to *something* non-empty; their actual value doesn't matter.

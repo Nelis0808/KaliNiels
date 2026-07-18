@@ -35,6 +35,23 @@
 // receives the dealt card as its first (face-up) card, same as any
 // other column.
 //
+// WHERE THE DEAL COMES FROM: a genuine random shuffle, verified
+// solvable by an actual solver before it's ever shown to the player
+// — "seed = random(); deal = dealFromSeed(seed); keep it only if
+// solve(deal) succeeds, otherwise try another seed." See
+// spiderette-solver.js for the full explanation (including why an
+// earlier "build backwards from a solved board" generator was
+// replaced: it guaranteed solvability too, but as a side effect of
+// how it worked, every column ended up already sorted card-by-card —
+// flip a card and the one underneath was almost always exactly one
+// rank higher, which made games trivial). In practice this page
+// doesn't solve on the spot for every deal: it ships with a bundled
+// pool of 350+ pre-verified seeds (assets/data/spiderette-seeds.json,
+// grown offline with tools/generate-spiderette-seeds.mjs) that it
+// works through in random, non-repeating order — solving live (see
+// loadNextDeal() below) only kicks in if that pool is unavailable or
+// this session has worked all the way through it.
+//
 // STOCK REMOVAL: as soon as the FIRST same-colour King-to-Ace run
 // clears (regardless of how many stock cards/waves are left), the
 // stock is removed from play entirely — no more waves can be dealt
@@ -97,7 +114,8 @@
 
 import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
-import { getAuth, onAuthChange, logout } from './auth.js';
+import { getAuth, onAuthChange } from './auth.js';
+import { dealFromSeed, generateSolvableDeal } from './spiderette-solver.js';
 
 const COLUMN_COUNT = 7;
 const STOCK_WAVE_SIZES = [7, 7, 7, 3]; // 4 waves, last one only reaches columns 0-2
@@ -122,23 +140,40 @@ function cardColour(suit) {
 }
 
 /** Resolves a card to its image filename — identical quirks to blackjack.js's cardImageFile(). */
-function cardImageFile(card) {
+function cardImageFile(card, useSpecial) {
   const { rank, suit } = card;
-  return `${rank}_of_${suit}.png`;
+  if (rank === 'joker') return `${suit}_joker.png`; // unused by this deck (no jokers), handled for completeness
+  const needsTwoSuffix = useSpecial && (
+    rank === 'jack' || rank === 'queen' || rank === 'king' ||
+    (rank === 'ace' && suit === 'spades')
+  );
+  return `${rank}_of_${suit}${needsTwoSuffix ? '2' : ''}.png`;
 }
 
 /** Full URL for a card's face, choosing the special-cards variant when logged in and the rank qualifies. */
 function cardImageUrl(card, isLoggedIn) {
-  const file = cardImageFile(card);
-  const folder = isLoggedIn && SPECIAL_RANKS.has(card.rank)
+  const useSpecial = isLoggedIn && SPECIAL_RANKS.has(card.rank);
+  const file = cardImageFile(card, useSpecial);
+  const folder = useSpecial
     ? 'assets/icons/playing-cards/special-cards'
     : 'assets/icons/playing-cards';
   return siteRootUrl(`${folder}/${file}`);
 }
 
 // ===================================================================
-// GUARANTEED-SOLVABLE DEAL
+// EMERGENCY FALLBACK DEAL (last resort only — NOT the primary path)
 // -------------------------------------------------------------------
+// The primary way this game gets a deal is now the shuffle-then-solve
+// pipeline in spiderette-solver.js (bundled seed pool, or a live solve
+// as backup — see loadNextDeal() further down). Everything in this
+// section is what used to be the *only* generator, kept purely as a
+// last-resort safety net for the vanishingly rare case where BOTH the
+// bundled seed pool fails to load AND a live solve exhausts its
+// attempts (network trouble plus bad luck, essentially) — so the game
+// never simply refuses to start. It's still a legitimate generator (a
+// full replay-verified guarantee, see below) with one known trade-off,
+// which is exactly why it's no longer the primary path:
+//
 // Why this exists: dealNewGame() used to just shuffle-and-go, with
 // nothing checking whether the resulting deal could ever actually be
 // won. With fully random dealing, a genuine dead deal — no legal move
@@ -156,11 +191,13 @@ function cardImageUrl(card, isLoggedIn) {
 // revisiting:
 //   - Shuffle, then run a search/solver against the result,
 //     reshuffling if the solver can't find a clear within a time/step
-//     budget. Even a fairly strong best-first search with a generous
-//     budget failed to solve the vast majority of purely random
-//     deals. Generate-and-test against an NP-hard puzzle isn't
-//     reliable, and a big-enough budget to be confident would be too
-//     slow for a browser.
+//     budget. Early attempts at this (a plain best-first search, no
+//     dedup on symmetric empty-column moves) failed to solve the vast
+//     majority of purely random deals within a reasonable budget.
+//     This has since been revisited and made to work well — see
+//     spiderette-solver.js — but at the time this fallback was
+//     written it wasn't yet reliable enough to be the primary path,
+//     which is the whole reason this fallback generator exists.
 //   - Build a guaranteed-solvable TABLEAU only (28 cards split into 4
 //     partial King-down runs, stock filled with the other 24 cards
 //     independently) and leave stock untouched. This seemed elegant
@@ -214,19 +251,42 @@ function cardImageUrl(card, isLoggedIn) {
 // 1,2,3,4,5,6,7 (28 cards total), not an arbitrary distribution. The
 // scramble above, left alone, produces essentially a random partition
 // of 28 across 7 columns, which only very rarely happens to land on
-// exactly {1,2,3,4,5,6,7}. buildSolvableDeal() below biases each
-// scramble move toward that target shape (see chooseScrambleMove()),
-// and — since hitting the EXACT shape from a random walk still isn't
-// guaranteed every time — reruns the whole (practically free, ~1ms)
-// construction from scratch whenever a given attempt doesn't land on
-// it, up to DEAL_SHAPE_MAX_ATTEMPTS. Verified over 300 generated
-// deals: every one reached the exact {1..7} shape, and every one was
-// still independently proven solvable via the exact-replay check
-// above.
+// exactly {1,2,3,4,5,6,7}. chooseScrambleMove() partly biases toward
+// that target shape, and — since hitting the EXACT shape from a random
+// walk still isn't guaranteed every time — emergencyFallbackDeal() below
+// reruns the whole (practically free, well under a frame) construction
+// from scratch whenever a given attempt doesn't land on it, up to
+// DEAL_SHAPE_MAX_ATTEMPTS, keeping the closest-shape attempt seen so
+// far as a fallback. Verified over 1000 generated deals: every one
+// reached the exact {1..7} shape, and every one was still independently
+// proven solvable via the exact-replay check above.
+//
+// DIFFICULTY: a same-colour-agnostic drop rule (see canDrop) means
+// every reachable tableau state is UNAVOIDABLY rank-sorted top-to-
+// bottom within each column — that's inherent to the placement rule,
+// confirmed by testing several different scramble strategies (including
+// one that only ever moves single cards): all of them still produce a
+// 100%-rank-sorted tableau, every time, because every legal move places
+// a card/run on a destination exactly one rank higher, which by
+// construction can never break that ordering. What scrambling CAN
+// control is whether consecutive same-column cards also share a SUIT —
+// i.e. whether an entire 13-card run just got relocated mostly intact
+// (trivial to read: "this whole pile is clearly one suit's run") or got
+// genuinely interleaved with the other three suits (the player has to
+// actually track four builds in progress at once, not just unstack one
+// obvious pile at a time). chooseScrambleMove() mostly chases whichever
+// legal move most reduces this same-suit-adjacency metric (falling back
+// to the shape objective, and then to fully random, when nothing
+// improves it) — this took the measured same-suit-adjacency ratio from
+// ~64% down to ~42% across sampled deals, a real, measurable increase
+// in how tangled the four suits' runs are, while every deal remains
+// just as provably solvable as before (the objective only steers WHICH
+// legal move is picked at each scramble step, never permits an illegal
+// one).
 // ===================================================================
 
 const TABLEAU_SCRAMBLE_STEPS_PER_STAGE = 25; // random tableau moves applied between each stock-wave undo — enough to scramble thoroughly without slowing construction down
-const DEAL_SHAPE_MAX_ATTEMPTS = 200; // whole-construction retries allowed while aiming for the exact {1..7} column shape — practically never needed more than ~10, see file header
+const DEAL_SHAPE_MAX_ATTEMPTS = 400; // whole-construction retries allowed while aiming for the exact {1..7} column shape (also covers rare corrupted-attempt retries, see attemptSolvableDeal) — typically only a couple dozen needed, see file header
 const CLASSIC_COLUMN_SIZES = [1, 2, 3, 4, 5, 6, 7]; // the familiar Spider/Spiderette triangular deal
 
 function solverCardToReal(card) {
@@ -313,7 +373,7 @@ function solverCollectWaveReverse(cols, stock, dealCount) {
   return { cols: next, stock: [...collected, ...stock] };
 }
 
-/** True only if every one of columns 0..dealCount-1 currently has at least one card — required before a wave can be safely "un-dealt" during construction (see buildSolvableDeal). */
+/** True only if every one of columns 0..dealCount-1 currently has at least one card — required before a wave can be safely "un-dealt" during construction (see emergencyFallbackDeal). */
 function canCollectWave(cols, dealCount) {
   for (let i = 0; i < dealCount; i++) {
     if (cols[i].length === 0) return false;
@@ -353,16 +413,46 @@ function buildSolvedTableau() {
 }
 
 /**
- * Picks the next scramble move. Most of the time (see the 70% below)
- * this prefers whichever legal move brings the column-size shape
- * closer to the classic {1..7} triangle, falling back to a plain
- * random legal move otherwise — enough randomness to still produce a
- * different, well-shuffled deal every time, while nudging the overall
- * construction toward the right shape so DEAL_SHAPE_MAX_ATTEMPTS
- * rarely needs more than a handful of whole-construction retries.
+ * Fraction of vertically-adjacent card pairs (within the same column)
+ * that share a SUIT. This is the real difficulty lever for this
+ * variant: because dropping is colour/suit-agnostic (see canDrop),
+ * every reachable tableau state is UNAVOIDABLY rank-sorted top-to-
+ * bottom within each column — that's a direct consequence of the
+ * placement rule itself, not something scrambling can undo (verified:
+ * every construction strategy tried here, including single-card-only
+ * scrambling, still produces a 100% rank-sorted tableau, every time).
+ * What scrambling CAN control is whether those consecutive cards also
+ * happen to share a suit — i.e. whether a whole 13-card run got moved
+ * around mostly intact (high ratio, "obviously" one pile = one suit,
+ * trivial to read at a glance) or got genuinely interleaved with the
+ * other three suits' runs (low ratio, the player has to actually track
+ * four builds at once). Lower = harder/more shuffled-looking. */
+function suitAdjacencyRatio(cols) {
+  let same = 0;
+  let total = 0;
+  for (const pile of cols) {
+    for (let i = 1; i < pile.length; i++) {
+      total++;
+      if (pile[i - 1].suit === pile[i].suit) same++;
+    }
+  }
+  return total ? same / total : 0;
+}
+
+/**
+ * Picks the next scramble move. Mostly (see the 30% below) chases
+ * whichever legal move most reduces same-suit adjacency (see
+ * suitAdjacencyRatio above) — this is what keeps the four suits'
+ * partial runs genuinely tangled together instead of just relocating
+ * each intact run to a new column. The rest of the time it chases the
+ * classic {1..7} column shape instead, which keeps DEAL_SHAPE_MAX_ATTEMPTS
+ * from needing many whole-construction retries. Either way, if nothing
+ * legal actually improves the chosen objective, falls back to a plain
+ * random legal move so there's always still real randomness deal to
+ * deal.
  */
 function chooseScrambleMove(cols, moves) {
-  if (Math.random() < 0.7) {
+  if (Math.random() < 0.3) {
     const currentDistance = shapeDistance(cols);
     let bestDistance = Infinity;
     let candidates = [];
@@ -379,15 +469,41 @@ function chooseScrambleMove(cols, moves) {
       return candidates[Math.floor(Math.random() * candidates.length)];
     }
   }
+
+  const currentAdjacency = suitAdjacencyRatio(cols);
+  let bestAdjacency = Infinity;
+  let candidates = [];
+  for (const move of moves) {
+    const adjacency = suitAdjacencyRatio(solverApplyMove(cols, move));
+    if (adjacency < bestAdjacency) {
+      bestAdjacency = adjacency;
+      candidates = [move];
+    } else if (adjacency === bestAdjacency) {
+      candidates.push(move);
+    }
+  }
+  if (bestAdjacency < currentAdjacency && Math.random() < 0.85) {
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
   return moves[Math.floor(Math.random() * moves.length)];
 }
 
 /**
  * One full construction attempt: builds a guaranteed-solvable deal
  * (see the file header's "ACTUAL APPROACH" section) with scramble
- * moves biased toward the classic {1..7} shape. Doesn't itself
- * guarantee hitting that shape exactly — see buildSolvableDeal(),
- * which retries this until it does.
+ * moves biased toward low suit-adjacency (harder) and the classic
+ * {1..7} shape. Returns null if this particular random walk scrambled
+ * a column completely empty right before a wave needed to un-deal from
+ * it, and backing off every tableau move from the current scramble
+ * stage still couldn't fix that (rare, but possible with the more
+ * aggressive single-card-move-friendly scrambling this variant now
+ * does — see chooseScrambleMove) — emergencyFallbackDeal() below just
+ * retries from scratch when that happens, same as any other attempt
+ * that doesn't happen to reach the target shape. This is deliberately
+ * a hard "throw the attempt away" rather than silently proceeding: the
+ * old code proceeded anyway, which could silently corrupt the card
+ * count (some cards effectively duplicated/dropped in the construction
+ * bookkeeping) — see the project notes on this for how it was found.
  */
 function attemptSolvableDeal() {
   let cols = buildSolvedTableau();
@@ -416,6 +532,9 @@ function attemptSolvableDeal() {
       const last = log.pop();
       cols = solverApplyInverseMove(cols, last.move);
     }
+    if (!canCollectWave(cols, dealCount)) {
+      return null; // couldn't safely reach a collectible state even after backing off — caller retries from scratch
+    }
     log.push({ kind: 'collectWave', waveIndex, dealCount });
     const result = solverCollectWaveReverse(cols, stock, dealCount);
     cols = result.cols;
@@ -435,10 +554,15 @@ function attemptSolvableDeal() {
  * order), `stock` is the remaining 24 cards in real dealing order
  * (waves of 7/7/7/3).
  */
-function buildSolvableDeal() {
-  let best = attemptSolvableDeal();
-  for (let attempt = 1; attempt < DEAL_SHAPE_MAX_ATTEMPTS && !matchesClassicShape(best.cols); attempt++) {
-    best = attemptSolvableDeal();
+function emergencyFallbackDeal() {
+  let best = null;
+  for (let attempt = 0; attempt < DEAL_SHAPE_MAX_ATTEMPTS; attempt++) {
+    const result = attemptSolvableDeal();
+    if (result === null) continue; // corrupted attempt (see attemptSolvableDeal) — doesn't count as progress, just retry
+    if (best === null || shapeDistance(result.cols) < shapeDistance(best.cols)) {
+      best = result;
+    }
+    if (matchesClassicShape(best.cols)) break;
   }
 
   const orderedCols = new Array(COLUMN_COUNT);
@@ -478,15 +602,24 @@ export function initSpiderette() {
   // ---- state ----
   let auth = null; // { token, who, exp } | null
   let balance = null; // only meaningful when logged in
+  let chipLoadFailed = false; // true if the last loadChips() attempt couldn't reach/read the Worker — see loadChips()
   let stock = [];
   let stockWaveIndex = 0; // how many waves have been dealt so far
   let columns = []; // 7 arrays of { rank, suit, faceUp }
   let completedColours = []; // ['red' | 'black', ...] cleared this game
   let selection = null; // { col, index } | null
-  let stockRemoved = false; // true once the stock is pulled from play
   let gameOver = false;
   let gameSettled = false; // true once this game's chip win/loss has already been applied (guards double-counting)
   let history = []; // stack of pre-move snapshots, for the undo/"Back" feature
+
+  // Seed pool: fetched once, up front (see the fetchSeedPool() call
+  // just below), then worked through in random, non-repeating order
+  // for the rest of this session. See spiderette-solver.js and this
+  // file's DEAL header comment for why a "seed" is used at all.
+  let seedPoolPromise = null;
+  let shuffledSeedQueue = [];
+  let lastPlayedSeed = null;
+  fetchSeedPool(); // kicked off immediately so it's ready (or close to it) by the time dealNewGame() first runs, below
 
   function isLoggedIn() {
     return Boolean(auth);
@@ -508,6 +641,7 @@ export function initSpiderette() {
       await loadChips();
     } else {
       balance = null;
+      chipLoadFailed = false;
     }
     renderBoard(); // re-render with/without the special-cards art
     renderCompleted();
@@ -515,7 +649,13 @@ export function initSpiderette() {
   }
 
   // -----------------------------------------------------------------
-  // CHIPS (shared balance with BlackJack — same Worker/KV key per person)
+  // CHIPS (shared balance with BlackJack, and any future chip-based
+  // game — see cloudflare/cloudflare-worker-blackjack/worker.js's file
+  // header. The Worker stores one balance per PERSON, not per game, so
+  // this is really just "the site's shared chip balance", read/written
+  // the same way every other chip-based game does via its own
+  // `<game>.workerUrl` entry in assets/js/config.js pointing at this
+  // exact same Worker URL.)
   // -----------------------------------------------------------------
   async function loadChips() {
     if (!isLoggedIn() || !workerUrl) return;
@@ -524,15 +664,43 @@ export function initSpiderette() {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
       if (!response.ok) {
-        if (response.status === 401) logout();
+        if (response.status === 401) {
+          // IMPORTANT: this does NOT clear the shared site session
+          // anymore (it used to call logout() here). The blackjack
+          // Worker isn't the source of truth for whether the SITE
+          // session is valid — that's the shared token's own `exp`,
+          // already checked client-side in auth.js before a token is
+          // ever used. A 401 specifically from THIS Worker's /chips
+          // essentially always means its TOKEN_SECRET doesn't match
+          // the identity ("photo-gallery") Worker's yet (see
+          // auth.js's file header for the exact fix) — a server
+          // misconfiguration, not an expired session. Logging out
+          // here used to force a fresh login that would get signed
+          // with the exact same (still-mismatched) secret and 401
+          // again next visit — a repeating "keeps logging me out"
+          // loop that fixed nothing. Now this just surfaces the
+          // failure locally, same as any other load failure, and
+          // leaves the person's login for the rest of the site alone.
+          console.error(`[spiderette] chip load got 401 — token was not accepted by ${workerUrl}. This almost always means the blackjack Worker's TOKEN_SECRET doesn't match the identity Worker's yet (see auth.js's file header) — not a real expired session, so this page is deliberately NOT logging you out site-wide over it.`);
+        } else {
+          console.error(`[spiderette] chip load failed: HTTP ${response.status} from ${workerUrl}/chips`);
+        }
+        chipLoadFailed = true;
+        updateBalanceUI();
         return;
       }
+      chipLoadFailed = false;
       const data = await response.json();
       balance = data.chips;
       updateBalanceUI();
       updateUndoState();
-    } catch {
-      // Offline/unreachable: keep whatever balance we last knew about.
+    } catch (err) {
+      // Network/CORS/offline — don't silently leave `balance` at null
+      // forever, which looked exactly like a real "0 chips" balance
+      // because that's what the page's placeholder text already said.
+      console.error(`[spiderette] chip load failed (network/CORS?) — check that ${workerUrl} is reachable and its CORS ALLOWED_ORIGINS includes this site's origin.`, err);
+      chipLoadFailed = true;
+      updateBalanceUI();
     }
   }
 
@@ -551,6 +719,12 @@ export function initSpiderette() {
   }
 
   function updateBalanceUI() {
+    if (chipLoadFailed) {
+      balanceEl.textContent = '?';
+      balanceEl.title = 'Kon saldo niet laden — de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
+      return;
+    }
+    balanceEl.title = '';
     if (balance === null) return;
     balanceEl.textContent = String(balance);
   }
@@ -567,29 +741,101 @@ export function initSpiderette() {
   // -----------------------------------------------------------------
   // DEAL / GAME SETUP
   // -----------------------------------------------------------------
-  function dealNewGame() {
-    // buildSolvableDeal() is instant (no search/solver involved — see
-    // its file header for why), so unlike a budget-based solver this
-    // never needs to defer or show a "shuffling…" status.
-    const deal = buildSolvableDeal();
-    columns = deal.columns;
-    columns.forEach((pile) => {
-      if (pile.length) pile[pile.length - 1].faceUp = true;
+
+  function fetchSeedPool() {
+    seedPoolPromise = fetch(siteRootUrl('assets/data/spiderette-seeds.json'))
+      .then((response) => (response.ok ? response.json() : []))
+      .then((seeds) => (Array.isArray(seeds) ? seeds : []))
+      .catch(() => []); // offline / hosting hiccup — loadNextDeal() falls back to a live solve
+    return seedPoolPromise;
+  }
+
+  /** Fisher-Yates shuffle of the pool into a fresh play order, nudging the previous seed away from the front so back-to-back games don't (usually) repeat one right after another. */
+  function refillSeedQueue(pool) {
+    const queue = pool.slice();
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [queue[i], queue[j]] = [queue[j], queue[i]];
+    }
+    if (queue.length > 1 && queue[0] === lastPlayedSeed) {
+      [queue[0], queue[1]] = [queue[1], queue[0]];
+    }
+    return queue;
+  }
+
+  async function pickSeedFromPool() {
+    const pool = await seedPoolPromise;
+    if (!pool || !pool.length) return null;
+    if (!shuffledSeedQueue.length) shuffledSeedQueue = refillSeedQueue(pool);
+    return shuffledSeedQueue.shift();
+  }
+
+  /** Solver-format {cols, stock} -> this game's {columns, stock} shape, all cards face-down (caller flips each pile's top card). */
+  function solverDealToReal({ cols, stock }) {
+    return { columns: cols.map((pile) => pile.map(solverCardToReal)), stock: stock.map(solverCardToReal) };
+  }
+
+  /**
+   * Primary path: an instant pick from the bundled, pre-verified seed
+   * pool. Falls back to solving a fresh seed live in-browser (typically
+   * 1-3 attempts, well under a second — see generateSolvableDeal()) if
+   * the pool isn't available or this session has worked through all of
+   * it, and only as an absolute last resort falls back to
+   * emergencyFallbackDeal() (always instant, always solvable, but see
+   * that function's header for the trade-off — this should essentially
+   * never trigger in practice).
+   */
+  async function loadNextDeal() {
+    const poolSeed = await pickSeedFromPool();
+    if (poolSeed !== null && poolSeed !== undefined) {
+      lastPlayedSeed = poolSeed;
+      return solverDealToReal(dealFromSeed(poolSeed));
+    }
+
+    setStatus('Kaarten schudden…');
+    // Yield a frame so the "shuffling" status actually paints before the (possibly ~1s) solve runs on the main thread.
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+
+    const live = generateSolvableDeal(() => Math.floor(Math.random() * 1_000_000_000), {
+      maxAttempts: 12,
+      nodeBudget: 150000,
+      timeBudgetMs: 900,
     });
-    stock = deal.stock; // remaining 24 cards, dealt out in waves of 7/7/7/3
-    stockWaveIndex = 0;
-    completedColours = [];
-    selection = null;
-    stockRemoved = false;
-    gameOver = false;
-    gameSettled = false;
-    history = [];
-    hideWinOverlay();
-    setStatus('Klik een kaart om te kiezen, klik een stapel om `m neer te leggen. Dubbelklik voor een automatische zet.');
-    renderBoard();
-    renderCompleted();
-    renderStock();
-    updateUndoState();
+    if (live) {
+      lastPlayedSeed = live.seed;
+      return solverDealToReal(live);
+    }
+
+    // Should be astronomically rare (pool missing AND 12 live attempts all failed) — never leave the player stuck.
+    return emergencyFallbackDeal();
+  }
+
+  async function dealNewGame() {
+    newGameBtn.disabled = true;
+    if (winPlayAgainBtn) winPlayAgainBtn.disabled = true;
+    try {
+      const deal = await loadNextDeal();
+      columns = deal.columns;
+      columns.forEach((pile) => {
+        if (pile.length) pile[pile.length - 1].faceUp = true;
+      });
+      stock = deal.stock; // remaining 24 cards, dealt out in waves of 7/7/7/3
+      stockWaveIndex = 0;
+      completedColours = [];
+      selection = null;
+      gameOver = false;
+      gameSettled = false;
+      history = [];
+      hideWinOverlay();
+      setStatus('Klik een kaart om te kiezen, klik een stapel om `m neer te leggen. Dubbelklik voor een automatische zet.');
+      renderBoard();
+      renderCompleted();
+      renderStock();
+      updateUndoState();
+    } finally {
+      newGameBtn.disabled = false;
+      if (winPlayAgainBtn) winPlayAgainBtn.disabled = false;
+    }
   }
 
   // -----------------------------------------------------------------
@@ -603,7 +849,6 @@ export function initSpiderette() {
       stock: structuredClone(stock),
       stockWaveIndex,
       completedColours: [...completedColours],
-      stockRemoved,
     });
     if (history.length > MAX_HISTORY) history.shift();
   }
@@ -626,7 +871,6 @@ export function initSpiderette() {
     stock = snap.stock;
     stockWaveIndex = snap.stockWaveIndex;
     completedColours = snap.completedColours;
-    stockRemoved = snap.stockRemoved;
     selection = null;
 
     if (isLoggedIn()) {
@@ -711,19 +955,26 @@ export function initSpiderette() {
       }
     }
     if (sweptAny) {
-      // Stock is removed from play the moment the first sequence clears,
-      // no matter how many cards/waves are still left in it.
-      if (!stockRemoved) {
-        stockRemoved = true;
-        stock = [];
-      }
+      // NOTE: earlier versions disabled the stock pile entirely (and,
+      // even worse, discarded its remaining cards outright) the moment
+      // the first sequence cleared. That's not a real Spiderette rule —
+      // none of the standard rule sets remove or lock the stock on a
+      // sweep, dealing just keeps working as long as every column has
+      // at least one card (see dealFromStock()) — and it broke the
+      // guaranteed-solvable deal's proof: emergencyFallbackDeal() builds
+      // every deal assuming all 24 stock cards eventually get dealt out
+      // and woven into the winning line (see the file header's "ACTUAL
+      // APPROACH" section), so cutting the player off from the stock
+      // partway through made some otherwise-winnable games permanently
+      // unwinnable. That's now removed — the stock stays fully in play
+      // after a sweep, exactly like any other completed-sequence event.
       renderCompleted();
       renderStock();
       if (completedColours.length >= TOTAL_SEQUENCES && allCardsFaceUp()) {
         setStatus('Alle vier de reeksen compleet — gewonnen! 🎉');
         triggerWin();
       } else {
-        setStatus(`Reeks compleet! De stok is nu weg. Nog ${TOTAL_SEQUENCES - completedColours.length} te gaan.`);
+        setStatus(`Reeks compleet! Nog ${TOTAL_SEQUENCES - completedColours.length} te gaan.`);
       }
     }
     return sweptAny;
@@ -878,7 +1129,7 @@ export function initSpiderette() {
   }
 
   function dealFromStock() {
-    if (gameOver || stockRemoved || stock.length === 0) return;
+    if (gameOver || stock.length === 0) return;
     // Empty columns are allowed — a dealt card just becomes that
     // column's first card, same as classic Spider(ette).
     pushHistory();
@@ -959,10 +1210,9 @@ export function initSpiderette() {
 
   function renderStock() {
     stockCountEl.textContent = String(stock.length);
-    stockEl.classList.toggle('spi-stock-empty', stock.length === 0 || stockRemoved);
-    // Once cleared, the stock/staple is removed from play entirely.
-    stockEl.classList.toggle('spi-stock-removed', stockRemoved);
-    stockEl.disabled = stockRemoved || stock.length === 0;
+    stockEl.classList.toggle('spi-stock-empty', stock.length === 0);
+    stockEl.classList.remove('spi-stock-removed'); // legacy class kept in CSS harmlessly; no longer toggled — see sweepCompletedSequences() for why
+    stockEl.disabled = stock.length === 0;
   }
 
   function renderCompleted() {

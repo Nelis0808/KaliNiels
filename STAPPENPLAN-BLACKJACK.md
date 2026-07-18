@@ -9,6 +9,19 @@
 > zet deze Worker's `TOKEN_SECRET`, `PASSPHRASE_A` en `PASSPHRASE_B`
 > secrets exact gelijk aan die van de "photo-gallery" Worker, zodat
 > een token van de gedeelde login-sessie ook hier geldig is.
+>
+> **Update 2:** het chipsaldo zelf is ook gedeeld, niet alleen de
+> login-sessie. Spiderette (`assets/js/modules/spiderette.js`) gebruikt
+> precies dezelfde Worker/KV-key per persoon als BlackJack (zie
+> `assets/js/config.js`'s `blackjack`/`spiderette`-entries, die naar
+> dezelfde `workerUrl` wijzen) — er bestaat geen apart "BlackJack-saldo"
+> en "Spiderette-saldo", chips gewonnen in het ene spel zijn direct
+> beschikbaar in het andere. Een toekomstig chip-spel toevoegen werkt
+> hetzelfde: voeg in `config.js` een nieuwe entry toe die naar deze
+> exact zelfde `workerUrl` wijst, en implementeer dezelfde
+> `GET`/`PUT /chips`-aanroepen (zie hoe `spiderette.js` dat doet) — dan
+> is dat spel automatisch onderdeel van hetzelfde gedeelde saldo, zonder
+> nieuwe Worker of KV-namespace.
 
 Deze update voegt `games/blackjack.html` toe: een BlackJack-spel
 tegen de dealer, met een klikbare chip-tray (`assets/icons/chips`)

@@ -94,6 +94,31 @@
       </div>
       </section>
     </div>
+
+    <!-- Synchronous, runs immediately (before main.js's module script,
+         which is deferred by default) — reads the same shared auth
+         session as assets/js/modules/auth.js and toggles the
+         lockscreen/content right away. Without this, the lockscreen
+         (visible by default in the markup above) briefly flashes on
+         every navigation to/from reizen/land.html even when you're
+         already logged in, until page-gate.js gets around to hiding
+         it. page-gate.js still runs as normal afterwards and stays
+         the source of truth for any later login/logout. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('siteAuth');
+          var auth = raw ? JSON.parse(raw) : null;
+          var authed = !!(auth && auth.token && auth.exp && auth.exp * 1000 > Date.now());
+          var lockscreen = document.querySelector('[data-gate-lockscreen]');
+          var content = document.querySelector('[data-gate-content]');
+          if (lockscreen && content) {
+            lockscreen.classList.toggle('hidden', authed);
+            content.classList.toggle('hidden', !authed);
+          }
+        } catch (e) { /* leave default (logged-out) markup as-is */ }
+      })();
+    </script>
   </main>
 
   <div data-include="chrome-end"></div>

@@ -108,6 +108,24 @@
       </div>
       </section>
     </div>
+
+    <!-- Same flash-prevention script as reizen.html — see the comment
+         there for why this is needed. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('siteAuth');
+          var auth = raw ? JSON.parse(raw) : null;
+          var authed = !!(auth && auth.token && auth.exp && auth.exp * 1000 > Date.now());
+          var lockscreen = document.querySelector('[data-gate-lockscreen]');
+          var content = document.querySelector('[data-gate-content]');
+          if (lockscreen && content) {
+            lockscreen.classList.toggle('hidden', authed);
+            content.classList.toggle('hidden', !authed);
+          }
+        } catch (e) { /* leave default (logged-out) markup as-is */ }
+      })();
+    </script>
   </main>
 
   <!-- CITY PHOTO LIGHTBOX — click any city photo to open it full-size

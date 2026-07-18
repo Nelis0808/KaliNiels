@@ -164,8 +164,22 @@ export function initSnake() {
     const next1 = { x: p1.x + move1.dx, y: p1.y + move1.dy };
     const next2 = { x: p2.x + move2.dx, y: p2.y + move2.dy };
 
-    const p1HitsWall = !inBounds(next1.x, next1.y) || walls.has(key(next1.x, next1.y));
-    const p2HitsWall = !inBounds(next2.x, next2.y) || walls.has(key(next2.x, next2.y));
+    // A player's OWN current head cell is already in `walls` (added
+    // back when they first arrived there), but the OTHER player's
+    // current head cell is NOT — `walls` only gains a cell once that
+    // player subsequently moves away from it (see the `p1.x = next1.x`
+    // block below, which is exactly what marks the vacated cell as
+    // trail). Without this explicit check, moving directly onto the
+    // opponent's current head — the "almost head to head, following
+    // directly behind" case — went undetected: the target cell simply
+    // wasn't trail *yet*, even though a real snake's head is very much
+    // an obstacle. Bounds/self-trail/other-trail collisions still come
+    // from `walls` as before; this just also treats "the other head,
+    // right now" as occupied.
+    const p1CurrentCell = key(p1.x, p1.y);
+    const p2CurrentCell = key(p2.x, p2.y);
+    const p1HitsWall = !inBounds(next1.x, next1.y) || walls.has(key(next1.x, next1.y)) || key(next1.x, next1.y) === p2CurrentCell;
+    const p2HitsWall = !inBounds(next2.x, next2.y) || walls.has(key(next2.x, next2.y)) || key(next2.x, next2.y) === p1CurrentCell;
     // Head-on into the exact same cell always counts as a crash for both.
     const headOnCollision = next1.x === next2.x && next1.y === next2.y;
 

@@ -162,21 +162,35 @@ export const siteConfig = {
     },
   },
 
-  // Config for BlackJack's shared chip balance (assets/js/modules/
-  // blackjack.js). STAPPENPLAN-BLACKJACK.md for usage. Login itself
-  // now happens once, site-wide, via the header's "👤 Profiel"
-  // dropdown (assets/js/modules/auth.js) — this Worker only needs to
-  // recognise that shared session's token, so its TOKEN_SECRET /
-  // PASSPHRASE_A / PASSPHRASE_B secrets must match the "photo-gallery"
-  // Worker's exactly (see auth.js's file header for why). Display
-  // names come from `photos.personLabels` above, not repeated here.
+  // Config for the shared chip balance used by BlackJack
+  // (assets/js/modules/blackjack.js) and Spiderette
+  // (assets/js/modules/spiderette.js). STAPPENPLAN-BLACKJACK.md for
+  // usage. Login itself happens once, site-wide, via the header's
+  // "👤 Profiel" dropdown (assets/js/modules/auth.js) — this Worker
+  // only needs to recognise that shared session's token, so its
+  // TOKEN_SECRET / PASSPHRASE_A / PASSPHRASE_B secrets must match the
+  // "photo-gallery" Worker's exactly (see auth.js's file header for
+  // why). Display names come from `photos.personLabels` above, not
+  // repeated here.
+  //
+  // IMPORTANT — this worker is deliberately GAME-AGNOSTIC: its /chips
+  // endpoint stores one balance per PERSON ("a"/"b"), not per game (see
+  // cloudflare/cloudflare-worker-blackjack/worker.js's file header). Any
+  // game's module can read/spend/win the exact same shared balance just
+  // by pointing its own `workerUrl` entry at this same URL — that's all
+  // `blackjack` and `spiderette` below are doing. Adding a new chip-based
+  // game later should follow the same pattern: add `<newGame>: {
+  // workerUrl: 'https://blackjack.niels-luijten7.workers.dev' }` here
+  // (same URL, no other setup needed) rather than inventing a new
+  // worker/KV namespace for it — that's what keeps every game's chips
+  // automatically in sync with each other.
   blackjack: {
     workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
   },
 
-  // Config for Spiderette's shared chip balance + "special" card art
-  // (assets/js/modules/spiderette.js). Reuses the same BlackJack
-  // Worker as above — same note about matching secrets applies.
+  // Spiderette's shared chip balance (assets/js/modules/spiderette.js)
+  // + "special" card art config. Reuses the exact same Worker as
+  // `blackjack` above by design — see the note there.
   spiderette: {
     workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
   },

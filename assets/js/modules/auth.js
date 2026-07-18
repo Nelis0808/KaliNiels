@@ -39,7 +39,18 @@
 // / README for the full note.
 //
 // SESSION LENGTH: same ~30 days as before, controlled server-side by
-// the photo-gallery Worker's /login response (`exp`).
+// the photo-gallery Worker's /login response (`exp`), and enforced
+// client-side too — readStoredAuth() below already discards a stored
+// token once its `exp` has passed, without any network call. That's
+// also why BlackJack/Spiderette's chip loader does NOT call logout()
+// here on a 401 from the blackjack Worker's /chips: that Worker isn't
+// the source of truth for whether the shared session is valid, only
+// for that one Worker's own token check, and a 401 there essentially
+// always means its TOKEN_SECRET doesn't match this Worker's (a
+// misconfiguration, not an expired session) — logging the whole site
+// out over it just forces a fresh login that gets signed with the
+// exact same still-mismatched secret and 401s again, a repeating
+// "keeps logging me out" loop that never actually fixes anything.
 // =================================================================
 
 import { siteConfig } from '../config.js';

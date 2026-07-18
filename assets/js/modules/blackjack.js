@@ -60,7 +60,7 @@
 
 import { siteRootUrl } from './utils.js';
 import { siteConfig } from '../config.js';
-import { getAuth, onAuthChange, logout } from './auth.js';
+import { getAuth, onAuthChange } from './auth.js';
 
 const GUEST_CHIPS_STARTING = 1000;
 const CHIP_VALUES = [50, 100, 250, 500, 1000, 5000];
@@ -83,15 +83,26 @@ function rankValue(rank) {
 }
 
 /** Resolves a card to its image filename, folder-relative (see the special-case comment above). */
-function cardImageFile(card) {
+function cardImageFile(card, useSpecial) {
   const { rank, suit } = card;
-  return `${rank}_of_${suit}.png`;
+  if (rank === 'joker') return `${suit}_joker.png`; // suit is 'red'/'black' for jokers, unused by this deck but handled for completeness
+  // special-cards/ names every jack/queen/king (all suits) and ONLY
+  // the ace of spades with a trailing "2" — every other file (2-10,
+  // and the other three aces) keeps the exact same name in both
+  // folders. This suffix only ever applies in the special-cards
+  // folder, i.e. only when useSpecial is true.
+  const needsTwoSuffix = useSpecial && (
+    rank === 'jack' || rank === 'queen' || rank === 'king' ||
+    (rank === 'ace' && suit === 'spades')
+  );
+  return `${rank}_of_${suit}${needsTwoSuffix ? '2' : ''}.png`;
 }
 
 /** Full URL for a card's face image, choosing the special-cards variant when logged in and the rank qualifies. */
 function cardImageUrl(card, isLoggedIn) {
-  const file = cardImageFile(card);
-  const folder = isLoggedIn && SPECIAL_RANKS.has(card.rank)
+  const useSpecial = isLoggedIn && SPECIAL_RANKS.has(card.rank);
+  const file = cardImageFile(card, useSpecial);
+  const folder = useSpecial
     ? 'assets/icons/playing-cards/special-cards'
     : 'assets/icons/playing-cards';
   return siteRootUrl(`${folder}/${file}`);
@@ -166,6 +177,7 @@ export function initBlackjack() {
   // ---- state ----
   let auth = null; // { token, who, exp } | null
   let balance = GUEST_CHIPS_STARTING;
+  let chipLoadFailed = false; // true if the last loadChips() attempt couldn't reach/read the Worker — see loadChips()
   let bet = 0;
   let deck = [];
   let playerHand = [];
@@ -198,6 +210,7 @@ export function initBlackjack() {
     } else if (wasLoggedIn) {
       // Just logged out: fall back to a fresh local guest stack.
       balance = GUEST_CHIPS_STARTING;
+      chipLoadFailed = false;
       bet = 0;
       updateBalanceUI();
     }
@@ -205,7 +218,12 @@ export function initBlackjack() {
   }
 
   // -----------------------------------------------------------------
-  // CHIP BALANCE (server-backed when logged in, local-only as guest)
+  // CHIP BALANCE (server-backed when logged in, local-only as guest).
+  // This is the SITE-WIDE shared balance, not a BlackJack-only one —
+  // Spiderette (assets/js/modules/spiderette.js) reads/writes the
+  // exact same balance via the exact same Worker, and any future
+  // chip-based game should too — see
+  // cloudflare/cloudflare-worker-blackjack/worker.js's file header.
   // -----------------------------------------------------------------
   async function loadChips() {
     if (!isLoggedIn() || !workerUrl) return;
@@ -214,9 +232,32 @@ export function initBlackjack() {
         headers: { Authorization: `Bearer ${auth.token}` },
       });
       if (!response.ok) {
-        if (response.status === 401) logout(); // session expired server-side — clears the SHARED session too
+        if (response.status === 401) {
+          // IMPORTANT: this does NOT clear the shared site session
+          // anymore (it used to call logout() here). The blackjack
+          // Worker isn't the source of truth for whether the SITE
+          // session is valid — that's the shared token's own `exp`,
+          // already checked client-side in auth.js before a token is
+          // ever used. A 401 specifically from THIS Worker's /chips
+          // essentially always means its TOKEN_SECRET doesn't match
+          // the identity ("photo-gallery") Worker's yet (see
+          // auth.js's file header for the exact fix) — a server
+          // misconfiguration, not an expired session. Logging out
+          // here used to force a fresh login that would get signed
+          // with the exact same (still-mismatched) secret and 401
+          // again next visit — a repeating "keeps logging me out"
+          // loop that fixed nothing. Now this just surfaces the
+          // failure locally, same as any other load failure, and
+          // leaves the person's login for the rest of the site alone.
+          console.error(`[blackjack] chip load got 401 — token was not accepted by ${workerUrl}. This almost always means the blackjack Worker's TOKEN_SECRET doesn't match the identity Worker's yet (see auth.js's file header) — not a real expired session, so this page is deliberately NOT logging you out site-wide over it.`);
+        } else {
+          console.error(`[blackjack] chip load failed: HTTP ${response.status} from ${workerUrl}/chips`);
+        }
+        chipLoadFailed = true;
+        updateBalanceUI();
         return;
       }
+      chipLoadFailed = false;
       const data = await response.json();
       balance = clampChips(data.chips);
       // The bet from a previous session can never legitimately exceed
@@ -224,8 +265,14 @@ export function initBlackjack() {
       // were manually lowered in the KV dashboard while a bet was mid-air.
       bet = Math.min(bet, balance);
       updateBalanceUI();
-    } catch {
-      // Offline/unreachable: keep whatever balance we last knew about.
+    } catch (err) {
+      // Network/CORS/offline — don't silently pretend the balance we
+      // never actually loaded is fine; the previous behaviour here
+      // left `balance` at its hardcoded GUEST_CHIPS_STARTING default
+      // forever, which looked exactly like a real (but wrong) balance.
+      console.error(`[blackjack] chip load failed (network/CORS?) — check that ${workerUrl} is reachable and its CORS ALLOWED_ORIGINS includes this site's origin.`, err);
+      chipLoadFailed = true;
+      updateBalanceUI();
     }
   }
 
@@ -244,10 +291,16 @@ export function initBlackjack() {
   }
 
   function updateBalanceUI() {
-    balanceEl.textContent = String(balance);
+    if (chipLoadFailed) {
+      balanceEl.textContent = '?';
+      balanceEl.title = 'Kon saldo niet laden — de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
+    } else {
+      balanceEl.textContent = String(balance);
+      balanceEl.title = '';
+    }
     betEl.textContent = String(bet);
     updateChipTrayState();
-    dealBtn.disabled = bet <= 0 || bet > balance || handInProgress;
+    dealBtn.disabled = bet <= 0 || bet > balance || handInProgress || chipLoadFailed;
   }
 
   // -----------------------------------------------------------------

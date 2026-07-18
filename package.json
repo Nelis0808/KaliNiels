@@ -5,6 +5,7 @@
   "description": "Personal date-ideas site, static HTML/CSS/JS, no build step required.",
   "scripts": {
     "start": "npx --yes http-server -c-1 -o",
-    "dev": "npx --yes live-server --no-browser"
+    "dev": "npx --yes live-server --no-browser",
+    "generate-spiderette-seeds": "node tools/generate-spiderette-seeds.mjs"
   }
 }
