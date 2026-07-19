@@ -61,28 +61,27 @@
 // same-colour King-to-Ace sequences have been cleared (the entire
 // deck swept off the board).
 //
-// CHIPS: winning a full game pays out +1000 chips; abandoning a game
-// early via the "Terug" button (see below) — i.e. leaving before it's
-// won — costs -100 chips, same "quitter's penalty" idea as a real
-// table game. Chips only exist/persist when logged in (same
-// passphrase system as BlackJack); as a guest, chips just aren't
-// shown at all — there's nothing meaningful to track without a
-// saved balance, and guests were never blocked from just closing
-// the tab anyway. Uses the SAME Cloudflare Worker + KV balance as
-// BlackJack (see blackjack.js) — one shared "chips" pool per person,
-// spent/won across both games. Never lets a balance drop below 0.
+// CHIPS: winning a full game pays out +1000 chips. Leaving early via
+// the "Terug" button is free — no penalty for walking away mid-game.
+// Chips only exist/persist when logged in (same passphrase system as
+// BlackJack); as a guest, chips just aren't shown at all — there's
+// nothing meaningful to track without a saved balance, and guests
+// were never blocked from just closing the tab anyway. Uses the SAME
+// Cloudflare Worker + KV balance as BlackJack (see blackjack.js) —
+// one shared "chips" pool per person, spent/won across both games.
+// Never lets a balance drop below 0.
 //
 // UNDO ("Back" button + physical Backspace): every tableau move (a
 // card/run placement OR a stock deal) pushes a full snapshot of the
 // game state onto an in-memory history stack BEFORE it mutates
 // anything. Undo pops the most recent snapshot and restores it
-// wholesale, costing -50 chips each time — same "only matters while
-// logged in" rule as the quit penalty above: guests have no balance
-// to spend, so undo is simply free for them, consistent with how
-// every other chip effect in this file already behaves. Blocked
-// once the game is won (gameOver) or the history stack is empty, and
-// insufficient chips (balance < 50 while logged in) also blocks it —
-// same affordability-guard pattern as BlackJack's canAffordDouble().
+// wholesale, costing -50 chips each time — only matters while logged
+// in, since guests have no balance to spend, so undo is simply free
+// for them, consistent with how every other chip effect in this file
+// already behaves. Blocked once the game is won (gameOver) or the
+// history stack is empty, and insufficient chips (balance < 50 while
+// logged in) also blocks it — same affordability-guard pattern as
+// BlackJack's canAffordDouble().
 //
 // DOUBLE-CLICK: double-clicking a movable card/run auto-moves it to
 // the best legal destination. It first looks for a destination pile
@@ -125,7 +124,6 @@ const RANKS = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'que
 const SPECIAL_RANKS = new Set(['ace', 'jack', 'queen', 'king', 'joker']);
 const TOTAL_SEQUENCES = 4; // whole deck = 4 King-to-Ace runs
 const WIN_PAYOUT = 1000;
-const QUIT_PENALTY = 100;
 const UNDO_COST = 50;
 const MAX_HISTORY = 100; // generous cap — a full game never comes close to this many moves
 
@@ -609,7 +607,7 @@ export function initSpiderette() {
   let completedColours = []; // ['red' | 'black', ...] cleared this game
   let selection = null; // { col, index } | null
   let gameOver = false;
-  let gameSettled = false; // true once this game's chip win/loss has already been applied (guards double-counting)
+  let gameSettled = false; // true once this game's win payout has already been applied (guards double-counting)
   let history = []; // stack of pre-move snapshots, for the undo/"Back" feature
 
   // Seed pool: fetched once, up front (see the fetchSeedPool() call
@@ -827,7 +825,7 @@ export function initSpiderette() {
       gameSettled = false;
       history = [];
       hideWinOverlay();
-      setStatus('Klik een kaart om te kiezen, klik een stapel om `m neer te leggen. Dubbelklik voor een automatische zet.');
+      setStatus('Klik om een kaart te kiezen/leggen. Dubbelklik voor een automatische zet.');
       renderBoard();
       renderCompleted();
       renderStock();
@@ -1005,19 +1003,12 @@ export function initSpiderette() {
     if (winOverlay) winOverlay.classList.add('hidden');
   }
 
-  /** "Terug" button: leaving a game that isn't won yet costs a small chip
-   *  penalty (same idea as walking away from a real table mid-hand) —
-   *  never applied if the game was already won, already settled, or if
-   *  there's no game in progress yet (e.g. clicking it on a fresh deal
-   *  before touching anything still counts as abandoning, deliberately —
-   *  keeps the rule simple and unambiguous). Guests have no balance, so
-   *  nothing happens for them beyond navigating away. */
+  /** "Terug" button: just navigates back to the games hub — leaving a
+   *  game in progress used to cost a small chip penalty (QUIT_PENALTY,
+   *  same idea as walking away from a real table mid-hand), but that's
+   *  been removed by request: leaving is always free now, regardless
+   *  of whether a game is mid-play, already won, or untouched. */
   function handleBackClick() {
-    const gameInProgress = columns.length > 0 && !gameOver;
-    if (gameInProgress && !gameSettled && isLoggedIn()) {
-      gameSettled = true;
-      applyChipDelta(-QUIT_PENALTY);
-    }
     window.location.href = siteRootUrl('games-hub.html');
   }
 
@@ -1122,7 +1113,7 @@ export function initSpiderette() {
     selection = null;
     const won = sweepCompletedSequences();
     if (!won && !gameOver) {
-      setStatus('Klik een kaart om te kiezen, klik een stapel om ‘m neer te leggen. Dubbelklik voor een automatische zet.');
+      setStatus('Klik om een kaart te kiezen/leggen. Dubbelklik voor een automatische zet.');
     }
     renderBoard();
     updateUndoState();

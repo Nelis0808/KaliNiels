@@ -168,7 +168,7 @@ export function initReizen() {
         statusEl.textContent = 'Nog geen landen toegevoegd aan assets/data/travel-countries.json.';
         return;
       }
-      statusEl.textContent = `${countries.length} landen op de kaart — sleep om te verschuiven, scroll/knijp om te zoomen, klik een pin om naar dat land te gaan.`;
+      statusEl.textContent = `${countries.length} landen op de kaart. Klik een pin om naar dat land te gaan.`;
       renderWorldMap(worldData.features);
     })
     .catch((error) => {

@@ -20,16 +20,17 @@ import { escapeHtml, siteRootUrl } from './utils.js';
 const games = [
   {
     title: 'Boter, Kaas & Eieren',
-    description: 'Het klassieke tic-tac-toe. Speel zo vaak als je wilt, terug-en-weer.',
+    description: 'Het klassieke tic-tac-toe. Met eigen icoontjes.',
     href: 'games/tictactoe.html',
     emoji: '❌⭕',
     status: 'available',
   },
   {
     title: 'Vier op een Rij',
-    description: 'Wie krijgt er als eerste vier schijven op een rij?',
+    description: 'Het klassieke vier op een rij. Met eigen icoontjes.',
     href: 'games/connect4.html',
-    emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
+    emoji: `${get_emoji('connect4/player-blue.png', 'connect4/player-blue.svg')}
+            ${get_emoji('connect4/player-pink.png', 'connect4/player-pink.svg')}`,
     status: 'available',
   },
   {
@@ -41,42 +42,42 @@ const games = [
   },
   {
     title: 'Wallz',
-    description: 'Race naar de overkant en zet muren neer om de ander te vertragen. Wie het eerst de overkant haalt wint.',
+    description: 'Beweeg en soboteer om als eerst naar de overkant te komen.',
     href: 'games/wallz.html',
     emoji: `<img src="${siteRootUrl('assets/icons/connect4/player-blue.svg')}" alt="" class="emoji-icon"><img src="${siteRootUrl('assets/icons/connect4/player-pink.svg')}" alt="" class="emoji-icon">`,
     status: 'available',
   },
   {
-    title: 'Wordle',
-    description: 'Raad het Engelse woord. Kies zelf hoeveel letters (4 t/m 10).',
+    title: 'Wordle Engels',
+    description: 'Raad het Engelse woord.',
     href: 'games/wordle.html',
     emoji: '🟩🟨',
     status: 'available',
   },
   {
-    title: 'Galgje',
-    description: 'Raad het woord voordat het poppetje af is.',
+    title: 'Galgje Engels',
+    description: 'Raad het woord voordat...',
     href: 'games/hangman.html',
     emoji: '✏️',
     status: 'available',
   },
   {
-    title: 'Galgje — Eigen Woord',
-    description: 'Speler 1 verzint een woord, Speler 2 raadt het. Zelf instelbaar aantal fouten.',
+    title: 'Galgje met eigen woord',
+    description: 'Speler 1 verzint, speler 2 raadt.',
     href: 'games/hangman-custom.html',
     emoji: '🙈',
     status: 'available',
   },
   {
     title: 'BlackJack',
-    description: 'Kom zo dicht mogelijk bij 21. Speel gratis als gast, of log in voor een opgeslagen chipsaldo.',
+    description: 'Kom zo dicht mogelijk bij 21.',
     href: 'games/blackjack.html',
     emoji: '🃏',
     status: 'available',
   },
   {
     title: 'Spiderette',
-    description: 'Los alle vier de reeksen op. Kaarten mogen op elke kleur, maar alleen een complete reeks van dezelfde kleur telt.',
+    description: 'Los alle vier de reeksen op.',
     href: 'games/spiderette.html',
     emoji: '🕷️',
     status: 'available',
@@ -94,6 +95,21 @@ const games = [
     status: 'coming-soon',
   },
 ];
+
+function get_emoji(local_path, local_backup = '') {
+  const path    = 'assets/icons/' + local_path
+  const primary = siteRootUrl(path);
+
+  if (!local_backup) {
+    return `<img src="${primary}" alt="" class="emoji-icon">`;
+  }
+
+  const backup   = 'assets/icons/' + local_backup
+  const fallback = siteRootUrl(backup);
+
+  return `<img src="${primary}" alt="" class="emoji-icon"
+      onerror="this.onerror=null;this.src='${fallback}'">`;
+}
 
 function renderCard(game) {
   const isAvailable = game.status === 'available' && game.href;

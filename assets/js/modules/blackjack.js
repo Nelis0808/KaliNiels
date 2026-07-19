@@ -270,7 +270,7 @@ export function initBlackjack() {
       // never actually loaded is fine; the previous behaviour here
       // left `balance` at its hardcoded GUEST_CHIPS_STARTING default
       // forever, which looked exactly like a real (but wrong) balance.
-      console.error(`[blackjack] chip load failed (network/CORS?) — check that ${workerUrl} is reachable and its CORS ALLOWED_ORIGINS includes this site's origin.`, err);
+      console.error(`[blackjack] chip load failed (network/CORS?), check that ${workerUrl} is reachable and its CORS ALLOWED_ORIGINS includes this site's origin.`, err);
       chipLoadFailed = true;
       updateBalanceUI();
     }
@@ -293,7 +293,7 @@ export function initBlackjack() {
   function updateBalanceUI() {
     if (chipLoadFailed) {
       balanceEl.textContent = '?';
-      balanceEl.title = 'Kon saldo niet laden — de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
+      balanceEl.title = 'Kon saldo niet laden, de weergegeven waarde klopt mogelijk niet. Zie de browserconsole voor details.';
     } else {
       balanceEl.textContent = String(balance);
       balanceEl.title = '';

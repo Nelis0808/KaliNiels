@@ -55,7 +55,7 @@
    used by more than one page but not universal to every page.
    ============================================================= */
 .hero {
-  padding: var(--space-9) 0;
+  padding: var(--space-7) 0;
   background:
     radial-gradient(circle at top left,     var(--color-primary) 0, transparent 55%),
     radial-gradient(circle at bottom right, var(--color-secondary) 0, transparent 55%),

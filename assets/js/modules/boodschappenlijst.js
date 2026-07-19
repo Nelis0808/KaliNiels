@@ -77,7 +77,7 @@ export function initBoodschappenlijst() {
       .map(
         (item) => `
           <li class="sl-item ${item.checked ? 'sl-item-checked' : ''}" data-id="${escapeHtml(item.id)}">
-            <span class="sl-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(item.text)} verslepen om te herordenen — of pijltje omhoog/omlaag"></span>
+            <span class="sl-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(item.text)} verslepen om te herordenen, of pijltje omhoog/omlaag"></span>
             <label class="sl-item-label">
               <input type="checkbox" class="sl-checkbox" ${item.checked ? 'checked' : ''} aria-label="${escapeHtml(item.text)} afvinken">
               <span class="sl-item-text">${escapeHtml(item.text)}</span>
