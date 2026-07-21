@@ -79,6 +79,55 @@ function jsonResponse(data, status, headers) {
   });
 }
 
+// ---- Daily call limit -----------------------------------------------
+// Protects this Worker's own request budget and its KV usage from
+// being drained by scraping/abuse of its URL — the site's Workers are
+// reachable directly (bypassing the static site) by anyone who finds
+// their URLs.
+//
+// Uses ONE Workers KV namespace, bound as `RATE_LIMIT_KV`, shared
+// across all of this site's Workers (each Worker uses its own key
+// prefix so they don't collide). One counter per UTC calendar day;
+// TTL cleans old counters up automatically. This is "good enough"
+// rate limiting for a small personal site — KV writes aren't
+// perfectly atomic under heavy concurrent traffic, so under a real
+// burst a handful of requests past the cap might still slip through,
+// but that's an acceptable trade-off here.
+const RATE_LIMIT_PREFIX = 'blackjack';
+const DAILY_LIMIT = 5000;
+
+function currentUtcDateKey() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+/** Returns { allowed, count, limit }. Increments the counter as a side effect when allowed. */
+async function checkAndIncrementDailyLimit(env, prefix, limit) {
+  if (!env.RATE_LIMIT_KV) {
+    console.error('RATE_LIMIT_KV binding missing — daily limit not enforced');
+    return { allowed: true, count: 0, limit };
+  }
+
+  const key = `${prefix}:${currentUtcDateKey()}`;
+  const current = Number.parseInt((await env.RATE_LIMIT_KV.get(key)) || '0', 10);
+
+  if (current >= limit) {
+    return { allowed: false, count: current, limit };
+  }
+
+  await env.RATE_LIMIT_KV.put(key, String(current + 1), { expirationTtl: 172800 });
+  return { allowed: true, count: current + 1, limit };
+}
+
+function rateLimitedResponse(headers, limit) {
+  return new Response(
+    JSON.stringify({ error: `Dagelijkse limiet van ${limit} aanvragen bereikt. Probeer het morgen weer.` }),
+    {
+      status: 429,
+      headers: { ...headers, 'Content-Type': 'application/json', 'Retry-After': '3600' },
+    }
+  );
+}
+
 // ---- base64url + HMAC token helpers -------------------------------
 // Identical scheme to cloudflare-worker-photos/worker.js — a tiny
 // stateless JWT-alike. Deliberately duplicated rather than shared,
@@ -177,6 +226,11 @@ export default {
 
     if (!env.TOKEN_SECRET || !env.PASSPHRASE_A || !env.PASSPHRASE_B) {
       return jsonResponse({ error: 'Server misconfigured: missing secrets' }, 500, headers);
+    }
+
+    const limitCheck = await checkAndIncrementDailyLimit(env, RATE_LIMIT_PREFIX, DAILY_LIMIT);
+    if (!limitCheck.allowed) {
+      return rateLimitedResponse(headers, limitCheck.limit);
     }
 
     // ---- POST /login ----

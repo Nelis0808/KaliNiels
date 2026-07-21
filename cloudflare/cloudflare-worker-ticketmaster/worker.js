@@ -73,6 +73,59 @@ function jsonError(message, status, headers) {
   });
 }
 
+// ---- Daily call limit -----------------------------------------------
+// Protects your Ticketmaster quota (and this Worker's own free-tier
+// request budget) from being drained by scraping/abuse of this proxy's
+// URL, since — unlike a raw API key — anyone who finds this URL can
+// call it directly, bypassing the site entirely.
+//
+// Uses ONE Workers KV namespace, bound as `RATE_LIMIT_KV`, shared
+// across all of this site's Workers (each Worker uses its own key
+// prefix so they don't collide). One counter per UTC calendar day;
+// TTL cleans old counters up automatically. This is "good enough"
+// rate limiting for a small personal site — KV writes aren't
+// perfectly atomic under heavy concurrent traffic, so under a real
+// burst a handful of requests past the cap might still slip through,
+// but that's an acceptable trade-off here.
+const RATE_LIMIT_PREFIX = 'ticketmaster';
+const DAILY_LIMIT = 10000;
+
+function currentUtcDateKey() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+/** Returns { allowed, count, limit }. Increments the counter as a side effect when allowed. */
+async function checkAndIncrementDailyLimit(env, prefix, limit) {
+  if (!env.RATE_LIMIT_KV) {
+    // Fail open with a console warning rather than taking the whole
+    // site down if the KV binding hasn't been set up yet.
+    console.error('RATE_LIMIT_KV binding missing — daily limit not enforced');
+    return { allowed: true, count: 0, limit };
+  }
+
+  const key = `${prefix}:${currentUtcDateKey()}`;
+  const current = Number.parseInt((await env.RATE_LIMIT_KV.get(key)) || '0', 10);
+
+  if (current >= limit) {
+    return { allowed: false, count: current, limit };
+  }
+
+  // Just under 2 days — comfortably covers the rest of "today" in any
+  // timezone plus a safety margin, then KV expires the key on its own.
+  await env.RATE_LIMIT_KV.put(key, String(current + 1), { expirationTtl: 172800 });
+  return { allowed: true, count: current + 1, limit };
+}
+
+function rateLimitedResponse(headers, limit) {
+  return new Response(
+    JSON.stringify({ error: `Dagelijkse limiet van ${limit} aanvragen bereikt. Probeer het morgen weer.` }),
+    {
+      status: 429,
+      headers: { ...headers, 'Content-Type': 'application/json', 'Retry-After': '3600' },
+    }
+  );
+}
+
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '';
@@ -89,6 +142,14 @@ export default {
 
     if (!env.TICKETMASTER_API_KEY) {
       return jsonError('Server misconfigured: missing TICKETMASTER_API_KEY secret', 500, headers);
+    }
+
+    // Enforce the daily cap before doing any real work. Checked before
+    // the edge-cache lookup below so the limit reflects total traffic
+    // to this Worker, not just calls that actually reach Ticketmaster.
+    const limitCheck = await checkAndIncrementDailyLimit(env, RATE_LIMIT_PREFIX, DAILY_LIMIT);
+    if (!limitCheck.allowed) {
+      return rateLimitedResponse(headers, limitCheck.limit);
     }
 
     const url = new URL(request.url);
