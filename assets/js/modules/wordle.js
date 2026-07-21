@@ -23,13 +23,31 @@
 // Both modules flatten each length's letter-groups into one array
 // right after loading (see flattenWordData below), so the rest of
 // the game logic just deals with plain arrays, same as before.
+//
+// LANGUAGE: two word lists exist side by side — the original English
+// one (word-list.json) and a Dutch one (word-list-nl.json, same
+// shape, no accented letters so it works with the plain A-Z on-screen
+// keyboard). Which one a round uses defaults to the browser's
+// language (navigator.language) the first time the page is opened,
+// then can be flipped with the EN/NL pill next to the length picker
+// — that manual choice is remembered in localStorage from then on,
+// same pattern as the length picker itself (see LANG_STORAGE_KEY).
 // =================================================================
 
-const DATA_URL = new URL('../../data/word-list.json', import.meta.url);
+const DATA_URLS = {
+  en: new URL('../../data/word-list.json', import.meta.url),
+  nl: new URL('../../data/word-list-nl.json', import.meta.url),
+};
 const MIN_LEN = 4;
 const MAX_LEN = 10;
 const LENGTH_STORAGE_KEY = 'wordleLength';
+const LANG_STORAGE_KEY = 'wordleLang';
 const ENTER_FLASH_MS = 500;
+
+function detectDefaultLang() {
+  const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+  return browserLang.startsWith('nl') ? 'nl' : 'en';
+}
 
 const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -37,7 +55,7 @@ const KEYBOARD_ROWS = [
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
 ];
 
-let wordsByLength = null; // loaded once, cached — flat arrays keyed by length
+const wordsCache = {}; // loaded once per language, cached — { en: {...}, nl: {...} }
 
 /** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
 function flattenWordData(raw) {
@@ -48,13 +66,13 @@ function flattenWordData(raw) {
   return flat;
 }
 
-async function loadWords() {
-  if (wordsByLength) return wordsByLength;
-  const response = await fetch(DATA_URL);
+async function loadWords(lang) {
+  if (wordsCache[lang]) return wordsCache[lang];
+  const response = await fetch(DATA_URLS[lang]);
   if (!response.ok) throw new Error(`Kon woordenlijst niet laden (HTTP ${response.status})`);
   const raw = await response.json();
-  wordsByLength = flattenWordData(raw);
-  return wordsByLength;
+  wordsCache[lang] = flattenWordData(raw);
+  return wordsCache[lang];
 }
 
 function pickWord(words) {
@@ -91,18 +109,21 @@ export function initWordle() {
   if (!root) return; // not on the wordle page
 
   const lengthPicker = document.getElementById('wordleLengthPicker');
+  const langPicker = document.getElementById('wordleLangPicker');
   const grid = document.getElementById('wordleGrid');
   const keyboard = document.getElementById('wordleKeyboard');
   const statusEl = document.getElementById('wordleStatus');
   const newWordBtn = document.getElementById('wordleNewWord');
 
   let wordLength = clampLength(Number(localStorage.getItem(LENGTH_STORAGE_KEY)) || 5);
+  let lang = localStorage.getItem(LANG_STORAGE_KEY) || detectDefaultLang();
   let maxGuesses = wordLength + 1;
   let answer = '';
   let currentGuess = '';
   let guessRow = 0;
   let gameOver = false;
   let validGuesses = new Set();
+  let wordsByLength = null; // current language's flat arrays, keyed by length
 
   function clampLength(len) {
     return Math.min(MAX_LEN, Math.max(MIN_LEN, len));
@@ -110,6 +131,39 @@ export function initWordle() {
 
   function updateStatus(text) {
     statusEl.textContent = text;
+  }
+
+  function renderLangPicker() {
+    if (!langPicker) return;
+    langPicker.innerHTML = '';
+    [
+      { code: 'en', label: 'EN' },
+      { code: 'nl', label: 'NL' },
+    ].forEach(({ code, label }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wordle-length-pill' + (code === lang ? ' wordle-length-pill-active' : '');
+      btn.textContent = label;
+      btn.setAttribute('aria-pressed', String(code === lang));
+      btn.addEventListener('click', () => {
+        btn.blur();
+        if (code === lang) return;
+        lang = code;
+        localStorage.setItem(LANG_STORAGE_KEY, code);
+        renderLangPicker();
+        updateStatus('Woordenlijst laden…');
+        loadWords(lang)
+          .then((words) => {
+            wordsByLength = words;
+            startNewGame();
+          })
+          .catch((error) => {
+            updateStatus('Kon de woordenlijst niet laden. Probeer de pagina te herladen.');
+            console.error(error);
+          });
+      });
+      langPicker.appendChild(btn);
+    });
   }
 
   function renderLengthPicker() {
@@ -381,9 +435,11 @@ export function initWordle() {
     updateStatus(`Raad het woord van ${wordLength} letters. Je hebt ${maxGuesses} pogingen.`);
   }
 
-  loadWords()
-    .then(() => {
+  loadWords(lang)
+    .then((words) => {
+      wordsByLength = words;
       renderLengthPicker();
+      renderLangPicker();
       startNewGame();
       newWordBtn.addEventListener('click', () => {
         startNewGame();

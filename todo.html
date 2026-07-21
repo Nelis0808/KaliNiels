@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!--
+  TODO LIST PAGE
+  Two synced columns (Kalina left, Niels right — same convention as
+  gifts.html), each a checkable/renamable/drag-reorderable list with
+  a priority tag (red/orange/yellow/white) and a running index
+  number per item. Logic lives in assets/js/modules/todo.js.
+
+  SYNC: like boodschappenlijst.html, backed by a small Cloudflare
+  Worker (cloudflare/cloudflare-worker-todo) so a change either of
+  you makes shows up for the other one a few seconds later — see
+  STAPPENPLAN-TODO-SNACKS.md for how to deploy that Worker.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Onze TODO-lijst, met prioriteit per item, voor Kalina en Niels.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>TODO Lijst</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/gifts.css">
+  <link rel="stylesheet" href="assets/css/pages/boodschappenlijst.css">
+  <link rel="stylesheet" href="assets/css/pages/todo.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>✅ TODO Lijst</h1>
+        <p>Met prioriteit per item — rood is het dringendst.</p>
+      </div>
+    </section>
+
+    <section class="container" id="todoApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="todoConfigWarning" class="gf-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-TODO-SNACKS.md</strong>
+        om deze pagina werkend te krijgen.
+      </div>
+
+      <p id="todoStatus" class="sl-status hidden" aria-live="polite"></p>
+
+      <div class="gf-columns">
+        <!-- LEFT: Kalina (person "b") -->
+        <section class="gf-column" aria-labelledby="todoColKalinaHeading">
+          <h2 id="todoColKalinaHeading" class="gf-column-heading">📝 Voor <span data-todo-person-label="b">Kalina</span></h2>
+
+          <ul id="todoListB" class="sl-list todo-list" aria-label="TODO lijst van Kalina"></ul>
+          <div id="todoEmptyB" class="empty-state hidden">Lijstje is leeg, voeg hieronder iets toe.</div>
+
+          <form id="todoAddFormB" class="sl-add-form todo-add-form" data-person="b">
+            <input type="text" class="todo-add-input" placeholder="Bijvoorbeeld auto laten wassen..." maxlength="200" aria-label="Nieuwe taak voor Kalina">
+            <div class="todo-priority-picker" role="group" aria-label="Kies de prioriteit"></div>
+            <button type="submit" class="btn btn-primary">Toevoegen</button>
+          </form>
+          <p class="todo-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+
+        <!-- RIGHT: Niels (person "a") -->
+        <section class="gf-column" aria-labelledby="todoColNielsHeading">
+          <h2 id="todoColNielsHeading" class="gf-column-heading">📝 Voor <span data-todo-person-label="a">Niels</span></h2>
+
+          <ul id="todoListA" class="sl-list todo-list" aria-label="TODO lijst van Niels"></ul>
+          <div id="todoEmptyA" class="empty-state hidden">Lijstje is leeg, voeg hieronder iets toe.</div>
+
+          <form id="todoAddFormA" class="sl-add-form todo-add-form" data-person="a">
+            <input type="text" class="todo-add-input" placeholder="Bijvoorbeeld auto laten wassen..." maxlength="200" aria-label="Nieuwe taak voor Niels">
+            <div class="todo-priority-picker" role="group" aria-label="Kies de prioriteit"></div>
+            <button type="submit" class="btn btn-primary">Toevoegen</button>
+          </form>
+          <p class="todo-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

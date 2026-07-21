@@ -1,0 +1,109 @@
+/* =============================================================
+   PAGE: todo.html
+   -------------------------------------------------------------
+   Loaded ALONGSIDE boodschappenlijst.css (see todo.html's <link>
+   tags) — the shared list/row/drag-handle/rename/delete styles
+   (.sl-list, .sl-item, .sl-drag-handle, .sl-item-actions, .sl-rename,
+   .sl-delete, .sl-rename-input, ...) come from there unchanged. This
+   file only adds the things unique to the TODO list: priority tints,
+   the index number, and the priority picker in the add-form.
+   ============================================================= */
+
+:root {
+  --todo-high:   #FF6347; /* red    — matches --color-danger */
+  --todo-medium: #FFA500; /* orange */
+  --todo-low:    #FFD700; /* yellow — matches --color-warning */
+  --todo-none:   #FFFFFF; /* white / no priority */
+}
+
+/* == PRIORITY TINT (left border + faint background wash) == */
+.todo-item {
+  border-left: 5px solid transparent;
+}
+
+.todo-item-high {
+  border-left-color: var(--todo-high);
+  background: color-mix(in srgb, var(--todo-high) 10%, var(--color-surface));
+}
+
+.todo-item-medium {
+  border-left-color: var(--todo-medium);
+  background: color-mix(in srgb, var(--todo-medium) 10%, var(--color-surface));
+}
+
+.todo-item-low {
+  border-left-color: var(--todo-low);
+  background: color-mix(in srgb, var(--todo-low) 12%, var(--color-surface));
+}
+
+.todo-item-none {
+  border-left-color: color-mix(in srgb, var(--todo-none) 40%, var(--color-border));
+}
+
+/* == INDEX NUMBER ("1.", "2.", ...) == */
+.todo-index {
+  flex-shrink: 0;
+  min-width: 1.6em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+/* == PRIORITY SWATCH (per-row button, cycles hoog->gemiddeld->laag->geen) == */
+.todo-priority-swatch {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  font-size: 1rem;
+  line-height: 1;
+  transition: background var(--transition-fast);
+}
+
+.todo-priority-swatch:hover,
+.todo-priority-swatch:focus-visible {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+/* == ADD FORM: priority picker == */
+.todo-add-form {
+  flex-wrap: wrap;
+}
+
+.todo-priority-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+  order: 2; /* sits on its own row, between the text input and the submit button */
+}
+
+.todo-add-form .todo-add-input { order: 1; }
+.todo-add-form button[type='submit'] { order: 3; }
+
+.todo-priority-pill {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.todo-priority-pill:hover {
+  border-color: var(--color-primary);
+}
+
+.todo-priority-pill-active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
+}
+
+@media (max-width: 480px) {
+  .todo-priority-pill {
+    flex: 1;
+    text-align: center;
+  }
+}

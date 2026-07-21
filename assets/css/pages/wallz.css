@@ -26,6 +26,26 @@
    the resulting elements.
    ============================================================= */
 
+/* FIXED PLAYER COLORS, shared scope: these used to live only inside
+   .wallz-board's own rule, but .wallz-walls-chip / .ttt-score sit
+   BEFORE .wallz-board in the DOM (siblings, not descendants) — CSS
+   custom properties only inherit downward, so every var(--wallz-p1)
+   / var(--wallz-p2) reference outside the board (walls chips, score
+   numbers, the active-turn ring) was silently failing to resolve and
+   falling back to the generic theme color. Declaring them here, on
+   the whole #wallzApp section, makes them available everywhere they
+   are used — including inside .wallz-board, which is a descendant. */
+#wallzApp {
+  --wallz-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
+  --wallz-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+}
+
+/* Score numbers otherwise share games.css's generic .ttt-score-value
+   color for every game — here each player's score is tinted to match
+   their own piece color instead. */
+#wallzScoreP1 { color: var(--wallz-p1); }
+#wallzScoreP2 { color: var(--wallz-p2); }
+
 .wallz-walls-left {
   display: flex;
   justify-content: center;
@@ -110,8 +130,8 @@
 
 .wallz-board {
   --wallz-gap: 10px;
-  --wallz-p1: #7B68EE; /* matches assets/icons/connect4/player-blue.svg */
-  --wallz-p2: #FF6B9D; /* matches assets/icons/connect4/player-pink.svg */
+  /* --wallz-p1 / --wallz-p2 now declared on #wallzApp above, still
+     inherited fine here since .wallz-board is its descendant. */
 
   position: relative;
   display: grid;
@@ -122,7 +142,8 @@
     1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap)
     1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr var(--wallz-gap) 1fr;
   width: 100%;
-  max-width: 620px;
+  /* 0.8x the original 620px max board size */
+  max-width: 496px;
   aspect-ratio: 1 / 1;
   margin-inline: auto;
   padding: var(--space-3);
@@ -161,6 +182,18 @@
   height: 76%;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35));
+}
+
+/* Third fallback tier: if both the custom photo AND the SVG fail to
+   load, buildAvatar() in wallz.js swaps the <img> for a plain emoji
+   span with this class, which can't fail to render. */
+.wallz-head-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  line-height: 1;
+  filter: none;
 }
 
 /* Both players sharing one cell: two smaller overlapping avatars

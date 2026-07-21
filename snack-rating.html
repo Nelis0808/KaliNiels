@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<!--
+  SNACK RATING PAGE
+  Two synced columns (Kalina left, Niels right — same convention as
+  gifts.html/todo.html). Rate snacks: link (optional), photo
+  (optional), 0-5 stars, description — all editable after the fact.
+  Logic lives in assets/js/modules/snack-rating.js.
+
+  SYNC: like boodschappenlijst.html/todo.html, backed by a small
+  Cloudflare Worker (cloudflare/cloudflare-worker-snacks) — see
+  STAPPENPLAN-TODO-SNACKS.md for how to deploy it. Photos are
+  downscaled + compressed client-side before being sent to the
+  Worker, to keep the shared list small and fast to sync.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Onze snack-beoordelingen: link, foto, sterren en een beschrijving, voor Kalina en Niels.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Snack Ratings</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/gifts.css">
+  <link rel="stylesheet" href="assets/css/pages/boodschappenlijst.css">
+  <link rel="stylesheet" href="assets/css/pages/snack-rating.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🍿 Snack Ratings</h1>
+        <p>Link, een foto als je wil, sterren van 0 tot 5, en een beschrijving.</p>
+      </div>
+    </section>
+
+    <section class="container" id="snackApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="snackConfigWarning" class="gf-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-TODO-SNACKS.md</strong>
+        om deze pagina werkend te krijgen.
+      </div>
+
+      <p id="snackStatus" class="sl-status hidden" aria-live="polite"></p>
+
+      <div class="gf-columns">
+        <!-- LEFT: Kalina (person "b") -->
+        <section class="gf-column" aria-labelledby="snackColKalinaHeading">
+          <h2 id="snackColKalinaHeading" class="gf-column-heading">🍫 Van <span data-snack-person-label="b">Kalina</span></h2>
+
+          <ul id="snackListB" class="snack-list" aria-label="Snack ratings van Kalina"></ul>
+          <div id="snackEmptyB" class="empty-state hidden">Nog geen snacks beoordeeld, voeg hieronder de eerste toe.</div>
+
+          <form id="snackAddFormB" class="snack-add-form" data-person="b">
+            <input type="text" class="snack-add-name" placeholder="Naam van de snack..." maxlength="200" aria-label="Naam van de snack">
+            <input type="url" class="snack-add-url" placeholder="Link naar de snack (optioneel)…" maxlength="2000" aria-label="Link naar de snack (optioneel)">
+            <textarea class="snack-add-desc" placeholder="Beschrijving (optioneel)…" maxlength="1000" rows="2" aria-label="Beschrijving"></textarea>
+
+            <div class="snack-add-star-row">
+              <span class="snack-add-star-label">Beoordeling:</span>
+              <div class="snack-star-picker" data-rating="0" role="radiogroup" aria-label="Beoordeling van 0 tot 5 sterren"></div>
+            </div>
+
+            <label class="gf-add-photo-label snack-add-photo-label">
+              📷 Foto (optioneel)
+              <span class="gf-add-photo-filename snack-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
+              <input type="file" class="gf-add-photo snack-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Foto van de snack">
+            </label>
+
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline snack-edit-cancel hidden">Annuleren</button>
+            </div>
+          </form>
+          <p class="snack-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+
+        <!-- RIGHT: Niels (person "a") -->
+        <section class="gf-column" aria-labelledby="snackColNielsHeading">
+          <h2 id="snackColNielsHeading" class="gf-column-heading">🍫 Van <span data-snack-person-label="a">Niels</span></h2>
+
+          <ul id="snackListA" class="snack-list" aria-label="Snack ratings van Niels"></ul>
+          <div id="snackEmptyA" class="empty-state hidden">Nog geen snacks beoordeeld, voeg hieronder de eerste toe.</div>
+
+          <form id="snackAddFormA" class="snack-add-form" data-person="a">
+            <input type="text" class="snack-add-name" placeholder="Naam van de snack..." maxlength="200" aria-label="Naam van de snack">
+            <input type="url" class="snack-add-url" placeholder="Link naar de snack (optioneel)…" maxlength="2000" aria-label="Link naar de snack (optioneel)">
+            <textarea class="snack-add-desc" placeholder="Beschrijving (optioneel)…" maxlength="1000" rows="2" aria-label="Beschrijving"></textarea>
+
+            <div class="snack-add-star-row">
+              <span class="snack-add-star-label">Beoordeling:</span>
+              <div class="snack-star-picker" data-rating="0" role="radiogroup" aria-label="Beoordeling van 0 tot 5 sterren"></div>
+            </div>
+
+            <label class="gf-add-photo-label snack-add-photo-label">
+              📷 Foto (optioneel)
+              <span class="gf-add-photo-filename snack-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
+              <input type="file" class="gf-add-photo snack-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Foto van de snack">
+            </label>
+
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline snack-edit-cancel hidden">Annuleren</button>
+            </div>
+          </form>
+          <p class="snack-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

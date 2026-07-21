@@ -1,0 +1,981 @@
+{
+  "4": {
+    "A": [
+      "ADER",
+      "AUTO"
+    ],
+    "B": [
+      "BAAS",
+      "BABY",
+      "BALK",
+      "BAND",
+      "BANG",
+      "BANK",
+      "BEEK",
+      "BEEN",
+      "BERG",
+      "BLIJ",
+      "BOEK",
+      "BOOG",
+      "BOOM",
+      "BOON",
+      "BOOR",
+      "BOOS",
+      "BOOT",
+      "BORD",
+      "BRIL",
+      "BRUG"
+    ],
+    "C": [
+      "CAFE",
+      "CLUB"
+    ],
+    "D": [
+      "DARM",
+      "DEUR",
+      "DOEK",
+      "DOEL",
+      "DOOS",
+      "DORP",
+      "DRUK",
+      "DRUM",
+      "DUIM",
+      "DUIN"
+    ],
+    "E": [
+      "EEND",
+      "ERWT",
+      "EZEL"
+    ],
+    "F": [
+      "FILE",
+      "FLES"
+    ],
+    "G": [
+      "GANG",
+      "GANS",
+      "GAST",
+      "GEEL",
+      "GEIT",
+      "GELD",
+      "GLAS",
+      "GOLF",
+      "GOUD",
+      "GRAP",
+      "GRAS",
+      "GROT"
+    ],
+    "H": [
+      "HAAI",
+      "HAAN",
+      "HAAR",
+      "HAAT",
+      "HAND",
+      "HARD",
+      "HART",
+      "HELM",
+      "HOED",
+      "HOEK",
+      "HOND",
+      "HOOG",
+      "HOUT",
+      "HUID",
+      "HUIS"
+    ],
+    "I": [
+      "IDEE"
+    ],
+    "J": [
+      "JAAR",
+      "JURK",
+      "JURY"
+    ],
+    "K": [
+      "KAAS",
+      "KAST",
+      "KERK",
+      "KIND",
+      "KLAS",
+      "KLEI",
+      "KLIP",
+      "KLOK",
+      "KNIE",
+      "KNOP",
+      "KOOL",
+      "KOOR",
+      "KORT",
+      "KOUD",
+      "KRAB",
+      "KUST",
+      "KWAL"
+    ],
+    "L": [
+      "LAAG",
+      "LAAT",
+      "LACH",
+      "LAMP",
+      "LAND",
+      "LANG",
+      "LANS",
+      "LEER",
+      "LEUK",
+      "LIED",
+      "LIFT",
+      "LIJM",
+      "LIJN",
+      "LONG",
+      "LOON"
+    ],
+    "M": [
+      "MAAG",
+      "MAAN",
+      "MEER",
+      "MEES",
+      "MELK",
+      "MIER",
+      "MIJN",
+      "MOED",
+      "MOND",
+      "MOOI",
+      "MUIS",
+      "MUNT",
+      "MUTS",
+      "MUUR"
+    ],
+    "N": [
+      "NEEF",
+      "NEUS",
+      "NIER",
+      "NOOT"
+    ],
+    "O": [
+      "OLIE",
+      "OVEN"
+    ],
+    "P": [
+      "PARK",
+      "PECH",
+      "PEER",
+      "PIJL",
+      "PLAN",
+      "PLAS",
+      "PUNT"
+    ],
+    "R": [
+      "RAAM",
+      "RAND",
+      "REIS",
+      "RIEM",
+      "RING",
+      "RITS",
+      "ROOD",
+      "ROOK",
+      "ROTS",
+      "ROZE"
+    ],
+    "S": [
+      "SAAI",
+      "SAUS",
+      "SEIN",
+      "SINT",
+      "SLAK",
+      "SLOT",
+      "SNEL",
+      "SOEP",
+      "SPIN",
+      "STAD",
+      "STER",
+      "STOF",
+      "STOP"
+    ],
+    "T": [
+      "TAAK",
+      "TAAL",
+      "TAND",
+      "TEAM",
+      "TEEN",
+      "TIJD",
+      "TONG",
+      "TOUW",
+      "TRAM",
+      "TRAP",
+      "TRUI",
+      "TUIN"
+    ],
+    "V": [
+      "VELD",
+      "VERF",
+      "VOET",
+      "VOOR",
+      "VORK",
+      "VUIL",
+      "VUUR"
+    ],
+    "W": [
+      "WARM",
+      "WEEK",
+      "WESP",
+      "WIEL",
+      "WIND",
+      "WOLK",
+      "WORM",
+      "WOUD"
+    ],
+    "Z": [
+      "ZAAG",
+      "ZAND",
+      "ZEEP",
+      "ZOON",
+      "ZWAK"
+    ]
+  },
+  "5": {
+    "A": [
+      "AARDE",
+      "ANGST",
+      "APPEL",
+      "ATLAS",
+      "AVOND"
+    ],
+    "B": [
+      "BEELD",
+      "BEKER",
+      "BETON",
+      "BEURS",
+      "BLAUW",
+      "BLOED",
+      "BLOEM",
+      "BOVEN",
+      "BREUK",
+      "BROEK",
+      "BROER",
+      "BROOD",
+      "BRUIN"
+    ],
+    "D": [
+      "DEKEN",
+      "DRAAD",
+      "DROOG",
+      "DROOM",
+      "DRUIF"
+    ],
+    "F": [
+      "FEEST",
+      "FIETS",
+      "FLUIT"
+    ],
+    "G": [
+      "GELUK",
+      "GETAL",
+      "GRENS",
+      "GRIJS",
+      "GROEN",
+      "GROND",
+      "GROOT"
+    ],
+    "H": [
+      "HAGEL",
+      "HAMER",
+      "HAVEN",
+      "HEMEL",
+      "HOOFD",
+      "HOTEL",
+      "HUMOR"
+    ],
+    "I": [
+      "IJZER"
+    ],
+    "K": [
+      "KAARS",
+      "KAART",
+      "KABEL",
+      "KAMER",
+      "KERST",
+      "KETEL",
+      "KEUZE",
+      "KEVER",
+      "KLANT",
+      "KLEIN",
+      "KLEUR",
+      "KNOOP",
+      "KOPER",
+      "KOUDE",
+      "KRAAI",
+      "KROEG",
+      "KUBUS",
+      "KWAST"
+    ],
+    "L": [
+      "LAARS",
+      "LAKEN",
+      "LEGER",
+      "LENTE",
+      "LEPEL",
+      "LEVER",
+      "LICHT",
+      "LINKS",
+      "LUCHT"
+    ],
+    "M": [
+      "MAAND",
+      "MARKT",
+      "MASSA",
+      "MOTOR"
+    ],
+    "N": [
+      "NAALD",
+      "NACHT",
+      "NAGEL",
+      "NICHT"
+    ],
+    "O": [
+      "ONDER",
+      "OPTIE"
+    ],
+    "P": [
+      "PAARD",
+      "PAARS",
+      "PASEN",
+      "PASTA",
+      "PIANO",
+      "PIZZA",
+      "PLANK",
+      "PLANT",
+      "PLEIN",
+      "POORT",
+      "PRIJS",
+      "PRINS",
+      "PRUIK"
+    ],
+    "R": [
+      "RADIO",
+      "RAKET",
+      "REGEL",
+      "REGEN",
+      "REGIO",
+      "RIBBE",
+      "RIJST",
+      "RITME",
+      "ROBOT",
+      "ROMAN",
+      "ROUTE"
+    ],
+    "S": [
+      "SCHIP",
+      "SHIRT",
+      "SJAAL",
+      "SPEER",
+      "SPIER",
+      "SPONS",
+      "STAAL",
+      "STEEN",
+      "STERK",
+      "STOEL",
+      "STOOM",
+      "STORM",
+      "STUUR"
+    ],
+    "T": [
+      "TABEL",
+      "TAFEL",
+      "TANTE",
+      "TOCHT",
+      "TOREN",
+      "TRAAN",
+      "TREIN",
+      "TROTS"
+    ],
+    "V": [
+      "VADER",
+      "VIOOL",
+      "VISUM",
+      "VLEES",
+      "VLOER",
+      "VOGEL",
+      "VREDE",
+      "VROEG"
+    ],
+    "W": [
+      "WACHT",
+      "WAGEN",
+      "WAPEN",
+      "WATER",
+      "WINST",
+      "WOEDE",
+      "WOORD"
+    ],
+    "Z": [
+      "ZACHT",
+      "ZENUW",
+      "ZIJDE",
+      "ZOMER",
+      "ZWAAN",
+      "ZWAAR",
+      "ZWART"
+    ]
+  },
+  "6": {
+    "A": [
+      "AANVAL",
+      "ACHTER",
+      "ADVIES",
+      "ASFALT"
+    ],
+    "B": [
+      "BADJAS",
+      "BAGAGE",
+      "BAKKER",
+      "BALKON",
+      "BALLON",
+      "BANAAN",
+      "BILJET",
+      "BINNEN",
+      "BUITEN"
+    ],
+    "C": [
+      "CAMERA",
+      "CEMENT",
+      "CIJFER",
+      "CIRCUS",
+      "CIRKEL"
+    ],
+    "D": [
+      "DELING",
+      "DIEPTE",
+      "DOKTER",
+      "DOUANE"
+    ],
+    "E": [
+      "EILAND",
+      "EMOTIE",
+      "EXPORT"
+    ],
+    "G": [
+      "GARAGE",
+      "GEBOUW",
+      "GEDULD",
+      "GEVOEL",
+      "GEWEER",
+      "GITAAR",
+      "GORDEL"
+    ],
+    "H": [
+      "HANDEL",
+      "HEELAL",
+      "HENDEL",
+      "HERFST",
+      "HOOGTE"
+    ],
+    "I": [
+      "IMPORT",
+      "INHOUD"
+    ],
+    "J": [
+      "JUNGLE"
+    ],
+    "K": [
+      "KAPPER",
+      "KATOEN",
+      "KEEPER",
+      "KEIZER",
+      "KELDER",
+      "KERMIS",
+      "KEUKEN",
+      "KOFFER",
+      "KOMEET",
+      "KOMPAS",
+      "KONIJN",
+      "KONING",
+      "KRACHT",
+      "KREEFT",
+      "KUIKEN",
+      "KUSSEN"
+    ],
+    "L": [
+      "LADDER",
+      "LELIJK",
+      "LENING",
+      "LERAAR",
+      "LETTER",
+      "LIEFDE",
+      "LIMOEN"
+    ],
+    "M": [
+      "MASKER",
+      "MENING",
+      "MIDDAG",
+      "MIDDEN",
+      "MINUUT",
+      "MOEDER",
+      "MOSKEE",
+      "MOSSEL",
+      "MUSEUM"
+    ],
+    "N": [
+      "NUMMER"
+    ],
+    "O": [
+      "OCEAAN",
+      "OESTER",
+      "OMTREK",
+      "OORBEL",
+      "OORLOG",
+      "ORANJE",
+      "ORKEST"
+    ],
+    "P": [
+      "PALEIS",
+      "PAPIER",
+      "PARADE",
+      "PEUTER",
+      "PILOOT",
+      "PYJAMA"
+    ],
+    "R": [
+      "RECHTS",
+      "RECORD",
+      "RIVIER",
+      "RUGZAK",
+      "RUIMTE"
+    ],
+    "S": [
+      "SCHAAP",
+      "SCHAAR",
+      "SCHELP",
+      "SCHERM",
+      "SCHILD",
+      "SCHOEN",
+      "SCHOOL",
+      "SCHOON",
+      "SCHULD",
+      "SCHUUR",
+      "SKELET",
+      "SLAGER",
+      "SNEEUW",
+      "SPELER",
+      "STRAAL",
+      "STRAAT",
+      "STRAND",
+      "STRIJD",
+      "STROOM"
+    ],
+    "T": [
+      "TEMPEL",
+      "TERRAS",
+      "TICKET",
+      "TIENER",
+      "TOEVAL",
+      "TOILET",
+      "TOMAAT",
+      "TROFEE",
+      "TUNNEL"
+    ],
+    "V": [
+      "VALLEI",
+      "VARKEN",
+      "VIJAND",
+      "VINGER",
+      "VOLUME",
+      "VRIEND"
+    ],
+    "W": [
+      "WAKKER",
+      "WALVIS",
+      "WARMTE",
+      "WERELD",
+      "WERVEL",
+      "WIMPER",
+      "WINKEL",
+      "WINTER",
+      "WORTEL"
+    ],
+    "Z": [
+      "ZANGER",
+      "ZILVER",
+      "ZOLDER",
+      "ZWAARD"
+    ]
+  },
+  "7": {
+    "A": [
+      "AANDEEL",
+      "AARDBEI",
+      "AFSTAND",
+      "ALFABET",
+      "ANTENNE",
+      "ARMBAND"
+    ],
+    "B": [
+      "BEDRIJF",
+      "BENZINE",
+      "BESLUIT",
+      "BOOMPJE",
+      "BORSTEL",
+      "BREEDTE",
+      "BUURMAN"
+    ],
+    "C": [
+      "CAMPING",
+      "CITROEN",
+      "COLLEGA",
+      "CONCERT"
+    ],
+    "D": [
+      "DIAGRAM",
+      "DOCHTER",
+      "DOLFIJN"
+    ],
+    "E": [
+      "ENERGIE",
+      "EVENAAR"
+    ],
+    "F": [
+      "FABRIEK",
+      "FAMILIE",
+      "FONTEIN",
+      "FORMULE",
+      "FORNUIS"
+    ],
+    "G": [
+      "GEDICHT",
+      "GETUIGE",
+      "GEVECHT",
+      "GEWICHT",
+      "GORDIJN",
+      "GRAFIEK",
+      "GRANAAT"
+    ],
+    "H": [
+      "HORLOGE"
+    ],
+    "K": [
+      "KAARTJE",
+      "KANTOOR",
+      "KASTEEL",
+      "KETTING",
+      "KOSTUUM"
+    ],
+    "L": [
+      "LINIAAL"
+    ],
+    "M": [
+      "MACHINE",
+      "MATROOS",
+      "MEESTER",
+      "MELKWEG",
+      "MELODIE",
+      "METEOOR"
+    ],
+    "N": [
+      "NOODLOT"
+    ],
+    "O": [
+      "OCHTEND",
+      "ONGELUK",
+      "OPTOCHT"
+    ],
+    "P": [
+      "PAPRIKA",
+      "PARAPLU",
+      "PISTOOL",
+      "PLAFOND",
+      "PLANEET",
+      "PLASTIC",
+      "POLITIE",
+      "POTLOOD",
+      "PRINSES",
+      "PRINTER",
+      "PROCENT",
+      "PRODUCT",
+      "PROJECT"
+    ],
+    "R": [
+      "RECHTER",
+      "RESPECT",
+      "ROLTRAP"
+    ],
+    "S": [
+      "SALARIS",
+      "SANDAAL",
+      "SAVANNE",
+      "SCHEIDS",
+      "SCHRIFT",
+      "SCHROEF",
+      "SECONDE",
+      "SHAMPOO",
+      "SLEUTEL",
+      "SOLDAAT",
+      "SPEAKER",
+      "SPIEGEL",
+      "SPIEREN",
+      "SPIJKER",
+      "STADION",
+      "STATION",
+      "STEKKER",
+      "STUDENT"
+    ],
+    "T": [
+      "THEATER",
+      "TOENDRA",
+      "TOERIST",
+      "TRIBUNE",
+      "TROMPET",
+      "TUINHEK"
+    ],
+    "U": [
+      "UNIFORM"
+    ],
+    "V": [
+      "VERANDA",
+      "VERDRAG",
+      "VERHAAL",
+      "VERKEER",
+      "VERLIES",
+      "VLIEGER",
+      "VLINDER",
+      "VREUGDE"
+    ],
+    "Z": [
+      "ZEEHOND",
+      "ZWEMBAD"
+    ]
+  },
+  "8": {
+    "A": [
+      "ADVOCAAT",
+      "AFSPRAAK",
+      "APOTHEEK",
+      "AVONTUUR"
+    ],
+    "B": [
+      "BADKAMER",
+      "BAKSTEEN",
+      "BATTERIJ",
+      "BEJAARDE",
+      "BEZOEKER",
+      "BIOSCOOP"
+    ],
+    "C": [
+      "CARNAVAL",
+      "COMPUTER"
+    ],
+    "D": [
+      "DICHTBIJ",
+      "DOELPUNT",
+      "DRIEHOEK"
+    ],
+    "E": [
+      "ELLEBOOG"
+    ],
+    "F": [
+      "FESTIVAL",
+      "FRAMBOOS"
+    ],
+    "G": [
+      "GEBERGTE",
+      "GEDACHTE",
+      "GEMEENTE",
+      "GENERAAL",
+      "GLIMLACH",
+      "GRONDWET"
+    ],
+    "H": [
+      "HANDDOEK",
+      "HERSENEN"
+    ],
+    "J": [
+      "JALOEZIE"
+    ],
+    "K": [
+      "KALENDER",
+      "KAMPIOEN",
+      "KAPITEIN",
+      "KLOOSTER",
+      "KNOFLOOK",
+      "KOELKAST",
+      "KONINGIN"
+    ],
+    "L": [
+      "LANGZAAM",
+      "LEERLING"
+    ],
+    "M": [
+      "MEDAILLE",
+      "MINISTER",
+      "MONUMENT"
+    ],
+    "O": [
+      "OEFENING",
+      "OPDRACHT"
+    ],
+    "P": [
+      "PASPOORT",
+      "PRETPARK",
+      "PROBLEEM"
+    ],
+    "R": [
+      "REIZIGER",
+      "REKENING"
+    ],
+    "S": [
+      "SCHAAMTE",
+      "SCHILDER",
+      "SCHOUDER",
+      "SNELHEID",
+      "SPAARPOT",
+      "SPELLING",
+      "SPINAZIE",
+      "SYNAGOGE"
+    ],
+    "T": [
+      "TANDARTS",
+      "TEKENAAR",
+      "TEKENING",
+      "TELEFOON",
+      "TOERNOOI",
+      "TRAINING"
+    ],
+    "V": [
+      "VAKANTIE",
+      "VERDRIET",
+      "VERSCHIL",
+      "VIERKANT",
+      "VRIENDIN"
+    ],
+    "W": [
+      "WIJSHEID",
+      "WOESTIJN"
+    ]
+  },
+  "9": {
+    "A": [
+      "AARDAPPEL",
+      "ALLIANTIE",
+      "AMBULANCE",
+      "ARCHITECT",
+      "ASTEROIDE",
+      "ASTRONAUT"
+    ],
+    "B": [
+      "BELASTING",
+      "BRANDTRAP",
+      "BRANDWEER",
+      "BUURVROUW"
+    ],
+    "C": [
+      "CHAUFFEUR",
+      "COMPONIST",
+      "CONTINENT"
+    ],
+    "E": [
+      "EXPEDITIE"
+    ],
+    "G": [
+      "GRONDSTOF"
+    ],
+    "M": [
+      "MATERIAAL"
+    ],
+    "N": [
+      "NEDERLAAG"
+    ],
+    "O": [
+      "ONDERZOEK",
+      "OPLOSSING"
+    ],
+    "P": [
+      "PASSAGIER",
+      "PRESIDENT",
+      "PROVINCIE"
+    ],
+    "S": [
+      "SATELLIET",
+      "SCHUTTING",
+      "SPEELTUIN",
+      "STRATEGIE",
+      "SUPPORTER"
+    ],
+    "T": [
+      "TANDPASTA",
+      "TELESCOOP",
+      "TELEVISIE"
+    ],
+    "U": [
+      "UITSPRAAK"
+    ],
+    "V": [
+      "VERGEVING",
+      "VLIEGTUIG",
+      "VLIEGVELD"
+    ],
+    "W": [
+      "WANDELING",
+      "WEDSTRIJD",
+      "WENKBRAUW",
+      "WERKNEMER",
+      "WINDMOLEN"
+    ]
+  },
+  "10": {
+    "B": [
+      "BEREKENING",
+      "BONDGENOOT"
+    ],
+    "D": [
+      "DIERENTUIN"
+    ],
+    "E": [
+      "EXPERIMENT"
+    ],
+    "G": [
+      "GEVANGENIS",
+      "GRAMMATICA"
+    ],
+    "H": [
+      "HANDSCHOEN",
+      "HELIKOPTER"
+    ],
+    "I": [
+      "INSTRUMENT"
+    ],
+    "M": [
+      "MICROSCOOP",
+      "MIDDELLIJN"
+    ],
+    "O": [
+      "ONDERBROEK",
+      "ONTDEKKING"
+    ],
+    "P": [
+      "POOLCIRKEL"
+    ],
+    "R": [
+      "RESTAURANT"
+    ],
+    "S": [
+      "SCHAKELAAR",
+      "SCHILDERIJ",
+      "STANDBEELD",
+      "STOFZUIGER"
+    ],
+    "T": [
+      "TONEELSTUK"
+    ],
+    "U": [
+      "UITVINDING"
+    ],
+    "V": [
+      "VERJAARDAG",
+      "VERTROUWEN",
+      "VOLWASSENE"
+    ],
+    "W": [
+      "WASMACHINE",
+      "WERKPLAATS",
+      "WETENSCHAP"
+    ],
+    "Z": [
+      "ZIEKENHUIS"
+    ]
+  }
+}

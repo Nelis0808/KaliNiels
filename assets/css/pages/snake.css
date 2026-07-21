@@ -15,6 +15,12 @@
    and pink site themes.
    ============================================================= */
 
+/* Score numbers otherwise share games.css's generic .ttt-score-value
+   color for every game — tinted here to match each player's own
+   piece color, same fix as wallz.css. */
+#snakeScoreP1 { color: var(--snake-p1, #7B68EE); }
+#snakeScoreP2 { color: var(--snake-p2, #FF6B9D); }
+
 .snake-board {
   --snake-cols: 30;
   --snake-rows: 20;

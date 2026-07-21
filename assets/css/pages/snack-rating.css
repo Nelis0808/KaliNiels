@@ -1,0 +1,189 @@
+/* =============================================================
+   PAGE: snack-rating.html
+   -------------------------------------------------------------
+   Loaded alongside gifts.css (reused for the shared "custom photo
+   file input" look — see .gf-add-photo-label etc. in gifts.html/
+   gifts.css) plus its own card grid + star-rating styling below.
+   ============================================================= */
+
+#snackApp {
+  width: min(92%, var(--container));
+  margin-inline: auto;
+}
+
+.sl-disabled .snack-add-form,
+.sl-disabled .snack-list {
+  display: none;
+}
+
+/* == CARD GRID == */
+.snack-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.snack-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.snack-card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.snack-card-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.snack-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.snack-card-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+}
+
+.snack-card-body {
+  padding: var(--space-4);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.snack-card-title-row {
+  min-width: 0;
+}
+
+.snack-card-name {
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+a.snack-card-name:hover {
+  text-decoration: underline;
+}
+
+.snack-card-desc {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.snack-card-actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: var(--space-1, 4px);
+}
+
+.snack-edit,
+.snack-delete {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+  font-size: .9rem;
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.snack-delete:hover,
+.snack-delete:focus-visible {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+.snack-edit:hover,
+.snack-edit:focus-visible {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* == STARS (both read-only on cards and clickable in the form) == */
+.snack-card-stars,
+.snack-star-picker {
+  display: flex;
+  gap: 2px;
+}
+
+.snack-star {
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--gray-500);
+}
+
+.snack-star-filled {
+  color: var(--todo-low, #FFD700); /* same gold as the TODO "laag" tint, if todo.css happens to be loaded too */
+}
+
+.snack-star-button {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform var(--transition-fast);
+}
+
+.snack-star-button:hover,
+.snack-star-button:focus-visible {
+  transform: scale(1.15);
+}
+
+/* == ADD/EDIT FORM == */
+.snack-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 480px;
+  margin-inline: auto;
+  margin-bottom: var(--space-3);
+}
+
+.snack-add-desc {
+  font: inherit;
+  resize: vertical;
+}
+
+.snack-add-star-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.snack-add-star-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.snack-add-photo-label {
+  align-self: flex-start;
+}
+
+#snackAddError {
+  max-width: 480px;
+  margin-inline: auto;
+}

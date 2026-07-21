@@ -112,7 +112,10 @@ function validateGifts(body) {
 
     const title = raw.title.trim().slice(0, MAX_TEXT_LENGTH);
     const url = raw.url.trim().slice(0, MAX_URL_LENGTH);
-    if (!title || !isHttpUrl(url)) continue; // silently drop malformed rows instead of rejecting the whole save
+    // Link is optional (see gifts.html/gifts.js) — a gift needs a
+    // title either way, but the url only has to be well-formed if
+    // one was actually provided; empty is fine.
+    if (!title || (url && !isHttpUrl(url))) continue; // silently drop malformed rows instead of rejecting the whole save
 
     cleaned.push({
       id: typeof raw.id === 'string' && raw.id ? raw.id : crypto.randomUUID(),
@@ -140,7 +143,7 @@ function validateGiftPatch(body) {
   if ('url' in body) {
     if (typeof body.url !== 'string') return null;
     const url = body.url.trim().slice(0, MAX_URL_LENGTH);
-    if (!isHttpUrl(url)) return null;
+    if (url && !isHttpUrl(url)) return null; // empty is fine (link is optional), non-empty must be well-formed
     patch.url = url;
   }
   if ('note' in body) {

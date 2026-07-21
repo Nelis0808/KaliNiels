@@ -88,12 +88,15 @@ export function initBoodschappenlijst() {
       .map(
         (item) => `
           <li class="sl-item ${item.checked ? 'sl-item-checked' : ''}" data-id="${escapeHtml(item.id)}">
-            <span class="sl-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(item.text)} verslepen om te herordenen, of pijltje omhoog/omlaag"></span>
+            <span class="sl-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(item.text)} verslepen om te herordenen (of vasthouden op de rij, of pijltje omhoog/omlaag)"></span>
             <label class="sl-item-label">
               <input type="checkbox" class="sl-checkbox" ${item.checked ? 'checked' : ''} aria-label="${escapeHtml(item.text)} afvinken">
               <span class="sl-item-text">${escapeHtml(item.text)}</span>
             </label>
-            <button type="button" class="sl-delete" aria-label="${escapeHtml(item.text)} verwijderen">✕</button>
+            <div class="sl-item-actions">
+              <button type="button" class="sl-rename" aria-label="${escapeHtml(item.text)} hernoemen">✏️</button>
+              <button type="button" class="sl-delete" aria-label="${escapeHtml(item.text)} verwijderen">✕</button>
+            </div>
           </li>
         `
       )
@@ -163,6 +166,14 @@ export function initBoodschappenlijst() {
     saveList();
   }
 
+  function renameItem(id, newText) {
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+    items = items.map((item) => (item.id === id ? { ...item, text: trimmed } : item));
+    render();
+    saveList();
+  }
+
   /** Moves the item with `id` to `targetIndex` in the list, then persists the new order. */
   function reorderItem(id, targetIndex) {
     const fromIndex = items.findIndex((item) => item.id === id);
@@ -200,8 +211,67 @@ export function initBoodschappenlijst() {
     if (deleteBtn) {
       const id = deleteBtn.closest('.sl-item')?.dataset.id;
       if (id) deleteItem(id);
+      return;
+    }
+
+    const renameBtn = event.target.closest('.sl-rename');
+    if (renameBtn) {
+      const li = renameBtn.closest('.sl-item');
+      if (li) startRename(li);
     }
   });
+
+  // ---- Rename (inline edit) -----------------------------------------
+  // Swaps the .sl-item-text <span> for a text <input> right in place,
+  // pre-filled with the current text and focused/selected so typing
+  // immediately replaces it. Enter or clicking away saves; Escape
+  // cancels and restores the original text untouched.
+  function startRename(li) {
+    if (li.querySelector('.sl-rename-input')) return; // already editing this row
+    const id = li.dataset.id;
+    const item = items.find((it) => it.id === id);
+    if (!item) return;
+
+    const textEl = qs('.sl-item-text', li);
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sl-rename-input';
+    input.value = item.text;
+    input.maxLength = 200;
+    input.setAttribute('aria-label', `${item.text} hernoemen`);
+    textEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let settled = false; // guards against both blur AND Enter firing the save
+
+    function commit() {
+      if (settled) return;
+      settled = true;
+      if (!input.value.trim()) {
+        render(); // empty rename = no-op, just restore the original text
+        return;
+      }
+      renameItem(id, input.value); // render() rebuilds the row, replacing this input
+    }
+
+    function cancel() {
+      if (settled) return;
+      settled = true;
+      render(); // just redraw with the unchanged text, discarding the edit
+    }
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commit();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        cancel();
+      }
+    });
+    input.addEventListener('blur', commit);
+  }
 
   listEl.addEventListener('change', (event) => {
     if (event.target.classList.contains('sl-checkbox')) {
@@ -213,17 +283,27 @@ export function initBoodschappenlijst() {
   // ---- Drag to reorder ----------------------------------------------
   // Pointer Events (not native HTML5 drag-and-drop, which touch
   // browsers don't reliably support) so the same code handles mouse
-  // AND touch. Only the small grip handle (.sl-drag-handle) starts a
-  // drag — the rest of the row stays dedicated to check/delete, so a
-  // normal tap never accidentally triggers a reorder.
+  // AND touch. Two ways to start a drag:
+  //   1. The small grip handle (.sl-drag-handle) — starts INSTANTLY on
+  //      pointerdown, no delay. Good for precise mouse use.
+  //   2. Press-and-hold anywhere else on the row (LONG_PRESS_MS) —
+  //      the more natural mobile gesture; a quick tap still reaches
+  //      the checkbox/rename/delete controls normally, and a normal
+  //      touch-scroll started on the row cancels the hold instead of
+  //      accidentally kicking off a drag.
   //
   // While dragging, the item currently under the pointer is
   // physically moved in the DOM (no ghost element/animation) — as
   // soon as the pointer crosses another row's vertical midpoint, the
   // dragged row swaps to that position. Simple and reliable rather
   // than pixel-smooth, which is plenty for a short household list.
+  const LONG_PRESS_MS = 350;
+  const LONG_PRESS_MOVE_TOLERANCE = 10; // px of wiggle before a hold-in-progress is cancelled
+
   let draggingLi = null;
   let dragPointerId = null;
+  let longPressTimer = null;
+  let longPressStart = null; // { x, y, li, pointerId } while a hold is pending
 
   function itemElements() {
     return Array.from(listEl.querySelectorAll('.sl-item'));
@@ -247,6 +327,13 @@ export function initBoodschappenlijst() {
     }
   }
 
+  function beginDrag(li, pointerId) {
+    draggingLi = li;
+    dragPointerId = pointerId;
+    draggingLi.classList.add('sl-item-dragging');
+    listEl.classList.add('sl-list-reordering');
+  }
+
   function endDrag() {
     if (!draggingLi) return;
     draggingLi.classList.remove('sl-item-dragging');
@@ -264,31 +351,67 @@ export function initBoodschappenlijst() {
     dragPointerId = null;
   }
 
+  function cancelPendingLongPress() {
+    if (longPressTimer) clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressStart = null;
+  }
+
   listEl.addEventListener('pointerdown', (event) => {
     const handle = event.target.closest('.sl-drag-handle');
-    if (!handle) return;
+    if (handle) {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      const li = handle.closest('.sl-item');
+      if (!li) return;
+      beginDrag(li, event.pointerId);
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault(); // stop touch-scroll/text-selection while dragging
+      return;
+    }
+
+    // Long-press-anywhere path: skip interactive controls entirely so
+    // taps on the checkbox/rename/delete buttons (or typing in an
+    // active rename input) behave completely normally.
+    if (event.target.closest('.sl-checkbox, .sl-rename, .sl-delete, .sl-rename-input')) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
-    draggingLi = handle.closest('.sl-item');
-    if (!draggingLi) return;
-    dragPointerId = event.pointerId;
-    draggingLi.classList.add('sl-item-dragging');
-    listEl.classList.add('sl-list-reordering');
-    handle.setPointerCapture(event.pointerId);
-    event.preventDefault(); // stop touch-scroll/text-selection while dragging
+    const li = event.target.closest('.sl-item');
+    if (!li) return;
+
+    longPressStart = { x: event.clientX, y: event.clientY, li, pointerId: event.pointerId };
+    longPressTimer = setTimeout(() => {
+      if (!longPressStart) return;
+      const { li: pendingLi, pointerId } = longPressStart;
+      longPressTimer = null;
+      longPressStart = null;
+      beginDrag(pendingLi, pointerId);
+      pendingLi.setPointerCapture(pointerId);
+    }, LONG_PRESS_MS);
   });
 
   listEl.addEventListener('pointermove', (event) => {
-    if (!draggingLi || event.pointerId !== dragPointerId) return;
-    moveDraggedRowTo(event.clientY);
+    if (draggingLi && event.pointerId === dragPointerId) {
+      moveDraggedRowTo(event.clientY);
+      return;
+    }
+    // A hold is pending but the pointer moved too much before the
+    // timer fired — this was a scroll/swipe attempt, not a hold, so
+    // don't start a drag.
+    if (longPressStart && event.pointerId === longPressStart.pointerId) {
+      const dx = event.clientX - longPressStart.x;
+      const dy = event.clientY - longPressStart.y;
+      if (Math.hypot(dx, dy) > LONG_PRESS_MOVE_TOLERANCE) cancelPendingLongPress();
+    }
   });
 
   listEl.addEventListener('pointerup', (event) => {
+    if (longPressStart && event.pointerId === longPressStart.pointerId) cancelPendingLongPress();
     if (event.pointerId !== dragPointerId) return;
     endDrag();
   });
 
   listEl.addEventListener('pointercancel', (event) => {
+    if (longPressStart && event.pointerId === longPressStart.pointerId) cancelPendingLongPress();
     if (event.pointerId !== dragPointerId) return;
     endDrag();
   });

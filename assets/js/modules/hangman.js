@@ -1,7 +1,7 @@
 // =================================================================
 // GALGJE (Hangman)
 // -----------------------------------------------------------------
-// Local single-device word-guessing game, English words (see
+// Local single-device word-guessing game (see
 // assets/data/word-list.json, shared with wordle.js — same JSON,
 // bucketed by length 4-10, then further grouped by starting letter:
 //   { "4": { "A": [...], "B": [...], ... }, "5": { ... }, ... }
@@ -11,13 +11,27 @@
 // a time. 6 wrong guesses allowed, each one reveals another part of
 // the drawing (assets/icons/hangman/stages, drawn inline as SVG —
 // see HANGMAN_STAGES below).
+//
+// LANGUAGE: same EN/NL word-list toggle as wordle.js — see the
+// LANGUAGE comment there for the full explanation. Defaults to the
+// browser's language, overridable with the EN/NL pill, remembered in
+// localStorage from then on (LANG_STORAGE_KEY below).
 // =================================================================
 
-const DATA_URL = new URL('../../data/word-list.json', import.meta.url);
+const DATA_URLS = {
+  en: new URL('../../data/word-list.json', import.meta.url),
+  nl: new URL('../../data/word-list-nl.json', import.meta.url),
+};
 const MIN_LEN = 4;
 const MAX_LEN = 10;
 const MAX_WRONG = 6;
 const LENGTH_STORAGE_KEY = 'hangmanLength';
+const LANG_STORAGE_KEY = 'hangmanLang';
+
+function detectDefaultLang() {
+  const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+  return browserLang.startsWith('nl') ? 'nl' : 'en';
+}
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -41,7 +55,7 @@ const GALLOWS_BASE = `
   <line x1="140" y1="20" x2="140" y2="52" />
 `;
 
-let wordsByLength = null; // loaded once, cached — flat arrays keyed by length
+const wordsCache = {}; // loaded once per language, cached — { en: {...}, nl: {...} }
 
 /** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
 function flattenWordData(raw) {
@@ -52,13 +66,13 @@ function flattenWordData(raw) {
   return flat;
 }
 
-async function loadWords() {
-  if (wordsByLength) return wordsByLength;
-  const response = await fetch(DATA_URL);
+async function loadWords(lang) {
+  if (wordsCache[lang]) return wordsCache[lang];
+  const response = await fetch(DATA_URLS[lang]);
   if (!response.ok) throw new Error(`Kon woordenlijst niet laden (HTTP ${response.status})`);
   const raw = await response.json();
-  wordsByLength = flattenWordData(raw);
-  return wordsByLength;
+  wordsCache[lang] = flattenWordData(raw);
+  return wordsCache[lang];
 }
 
 function pickWord(words) {
@@ -70,6 +84,7 @@ export function initHangman() {
   if (!root) return; // not on the hangman page
 
   const lengthPicker = document.getElementById('hangmanLengthPicker');
+  const langPicker = document.getElementById('hangmanLangPicker');
   const wordDisplay = document.getElementById('hangmanWord');
   const keyboard = document.getElementById('hangmanKeyboard');
   const statusEl = document.getElementById('hangmanStatus');
@@ -78,10 +93,12 @@ export function initHangman() {
   const newWordBtn = document.getElementById('hangmanNewWord');
 
   let wordLength = clampLength(Number(localStorage.getItem(LENGTH_STORAGE_KEY)) || 6);
+  let lang = localStorage.getItem(LANG_STORAGE_KEY) || detectDefaultLang();
   let answer = '';
   let guessedLetters = new Set();
   let wrongCount = 0;
   let gameOver = false;
+  let wordsByLength = null; // current language's flat arrays, keyed by length
 
   function clampLength(len) {
     return Math.min(MAX_LEN, Math.max(MIN_LEN, len));
@@ -89,6 +106,39 @@ export function initHangman() {
 
   function updateStatus(text) {
     statusEl.textContent = text;
+  }
+
+  function renderLangPicker() {
+    if (!langPicker) return;
+    langPicker.innerHTML = '';
+    [
+      { code: 'en', label: 'EN' },
+      { code: 'nl', label: 'NL' },
+    ].forEach(({ code, label }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wordle-length-pill' + (code === lang ? ' wordle-length-pill-active' : '');
+      btn.textContent = label;
+      btn.setAttribute('aria-pressed', String(code === lang));
+      btn.addEventListener('click', () => {
+        btn.blur();
+        if (code === lang) return;
+        lang = code;
+        localStorage.setItem(LANG_STORAGE_KEY, code);
+        renderLangPicker();
+        updateStatus('Woordenlijst laden…');
+        loadWords(lang)
+          .then((words) => {
+            wordsByLength = words;
+            startNewGame();
+          })
+          .catch((error) => {
+            updateStatus('Kon de woordenlijst niet laden. Probeer de pagina te herladen.');
+            console.error(error);
+          });
+      });
+      langPicker.appendChild(btn);
+    });
   }
 
   function renderLengthPicker() {
@@ -215,9 +265,11 @@ export function initHangman() {
     updateStatus(`Raad het woord van ${wordLength} letters. Je mag ${MAX_WRONG} keer fout gokken.`);
   }
 
-  loadWords()
-    .then(() => {
+  loadWords(lang)
+    .then((words) => {
+      wordsByLength = words;
       renderLengthPicker();
+      renderLangPicker();
       startNewGame();
       newWordBtn.addEventListener('click', () => {
         startNewGame();

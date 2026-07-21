@@ -87,6 +87,20 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'TODO Lijst',
+      description: 'Met prioriteit per taak.',
+      href: 'todo.html',
+      emoji: '✅',
+      status: 'available',
+    },
+    {
+      title: 'Snack Ratings',
+      description: 'Sterren, foto\u2019s en beschrijvingen.',
+      href: 'snack-rating.html',
+      emoji: '🍿',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we (samen) willen doen.',
       emoji: '📝',
@@ -156,6 +170,28 @@ export const siteConfig = {
   // above) — 'a' = Niels (right column), 'b' = Kalina (left column).
   gifts: {
     workerUrl: 'https://gifts.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
+  },
+
+  // Config for the TODO list (assets/js/modules/todo.js).
+  // STAPPENPLAN-TODO-SNACKS.md for usage. Same no-login reasoning and
+  // the same 'a' = Niels (right column) / 'b' = Kalina (left column)
+  // convention as `gifts` above.
+  todo: {
+    workerUrl: 'https://todo-lijst.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
+  },
+
+  // Config for the snack ratings list (assets/js/modules/snack-rating.js).
+  // STAPPENPLAN-TODO-SNACKS.md for usage. Same conventions as `todo` above.
+  snackRatings: {
+    workerUrl: 'https://snack-ratings.niels-luijten7.workers.dev',
     personLabels: {
       a: 'Niels',
       b: 'Kalina',

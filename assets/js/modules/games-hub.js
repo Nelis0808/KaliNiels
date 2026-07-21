@@ -48,7 +48,7 @@ const games = [
     status: 'available',
   },
   {
-    title: 'Wordle Engels',
+    title: 'Wordle EN/NL',
     description: 'Raad het Engelse woord.',
     href: 'games/wordle.html',
     emoji: '🟩🟨',

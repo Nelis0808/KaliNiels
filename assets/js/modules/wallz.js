@@ -59,9 +59,25 @@ import { qs, siteRootUrl } from './utils.js';
 const SIZE = 9;
 const TOTAL_WALLS = 10;
 
-const AVATAR_SRC = {
-  1: siteRootUrl('assets/icons/connect4/player-blue.svg'),
-  2: siteRootUrl('assets/icons/connect4/player-pink.svg'),
+// Same layered fallback as connect4.js / tictactoe.js: photo -> custom
+// SVG -> emoji, tried in that order via <img onerror> (see buildAvatar
+// below). Reuses the same connect4 asset pair so all board games share
+// one consistent blue/pink identity — drop in real photos later by
+// replacing assets/icons/connect4/player-blue.png / player-pink.png
+// (same filenames), nothing else needs to change.
+const AVATARS = {
+  1: {
+    photo: siteRootUrl('assets/icons/connect4/player-blue.png'),
+    svg: siteRootUrl('assets/icons/connect4/player-blue.svg'),
+    emoji: '🔵',
+    alt: 'Speler Blauw',
+  },
+  2: {
+    photo: siteRootUrl('assets/icons/connect4/player-pink.png'),
+    svg: siteRootUrl('assets/icons/connect4/player-pink.svg'),
+    emoji: '🩷',
+    alt: 'Speler Roze',
+  },
 };
 
 export function initWallz() {
@@ -255,10 +271,31 @@ export function initWallz() {
   // RENDERING
   // -----------------------------------------------------------------
   function buildAvatar(player, extraClass) {
+    const avatar = AVATARS[player];
+    const className = `wallz-head-img ${extraClass}`;
     const img = document.createElement('img');
-    img.src = AVATAR_SRC[player];
+    img.src = avatar.photo;
     img.alt = '';
-    img.className = `wallz-head-img ${extraClass}`;
+    img.className = className;
+    img.dataset.stage = 'photo';
+
+    img.addEventListener('error', () => {
+      if (img.dataset.stage === 'photo') {
+        // Custom photo missing/failed to load — drop to the built-in
+        // colored SVG piece.
+        img.dataset.stage = 'svg';
+        img.src = avatar.svg;
+        return;
+      }
+      // SVG failed too — replace the <img> with a plain emoji span,
+      // which can't fail to render.
+      const fallback = document.createElement('span');
+      fallback.className = `${className} wallz-head-emoji`;
+      fallback.textContent = avatar.emoji;
+      fallback.setAttribute('aria-hidden', 'true');
+      img.replaceWith(fallback);
+    });
+
     return img;
   }
 
@@ -464,7 +501,9 @@ export function initWallz() {
     score[winner] += 1;
     scoreP1El.textContent = String(score[1]);
     scoreP2El.textContent = String(score[2]);
-    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? '🔵' : '🩷'} Nieuwe ronde start zo...`);
+    setStatus(`${playerLabel(winner)} wint! ${winner === 1 ? 
+        `${siteRootUrl('assets/icons/connect4/player-blue.svg')}` : 
+        `${siteRootUrl('assets/icons/connect4/player-pink.svg')}`} Nieuwe ronde start zo...`);
     window.setTimeout(startRound, 1500);
   }
 

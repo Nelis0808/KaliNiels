@@ -131,15 +131,27 @@ export function initSnake() {
     cell.className = `snake-cell snake-cell-p${player}-head`;
     cell.replaceChildren();
 
-    const avatarSrc = player === 1
-      ? siteRootUrl('assets/icons/connect4/player-blue.svg')
-      : siteRootUrl('assets/icons/connect4/player-pink.svg');
+    const avatar = player === 1
+      ? { photo: siteRootUrl('assets/icons/connect4/player-blue.png'), svg: siteRootUrl('assets/icons/connect4/player-blue.svg') }
+      : { photo: siteRootUrl('assets/icons/connect4/player-pink.png'), svg: siteRootUrl('assets/icons/connect4/player-pink.svg') };
 
+    // Same three-tier fallback as wallz.js/connect4.js: custom photo
+    // -> built-in SVG -> plain CSS-colored cell background (handled
+    // by removing the <img> entirely, since snake-cell-p{n}-head
+    // already sets that color in snake.css).
     const img = document.createElement('img');
-    img.src = avatarSrc;
+    img.src = avatar.photo;
     img.alt = '';
     img.className = 'snake-head-img';
-    img.addEventListener('error', () => img.remove(), { once: true }); // falls back to the plain CSS-colored cell background
+    img.dataset.stage = 'photo';
+    img.addEventListener('error', () => {
+      if (img.dataset.stage === 'photo') {
+        img.dataset.stage = 'svg';
+        img.src = avatar.svg;
+        return;
+      }
+      img.remove(); // falls back to the plain CSS-colored cell background
+    });
     cell.appendChild(img);
   }
 
@@ -218,10 +230,10 @@ export function initSnake() {
       setStatus('Gelijkspel! Jullie botsten allebei tegelijk. 🤝');
     } else if (p1Dies) {
       score[2] += 1;
-      setStatus('Speler Roze wint! Speler Blauw crashte. 🩷');
+      setStatus(`Speler Roze wint! Speler Roze crashte. ${siteRootUrl('assets/icons/connect4/player-pink.svg')}`);
     } else {
       score[1] += 1;
-      setStatus('Speler Blauw wint! Speler Roze crashte. 🔵');
+      setStatus(`Speler Blauw wint! Speler Roze crashte. ${siteRootUrl('assets/icons/connect4/player-blue.svg')}`);
     }
 
     updateScoreboard();

@@ -109,10 +109,18 @@ export function initGifts() {
 
       empty.classList.add('hidden');
       list.innerHTML = personGifts
-        .map(
-          (gift) => `
+        .map((gift) => {
+          const hasUrl = Boolean(gift.url);
+          // Same visual card either way — just <a> (clickable, opens the
+          // link) when there IS a link, or a plain <div> (nothing to
+          // click through to) when the gift has no link at all.
+          const tag = hasUrl ? 'a' : 'div';
+          const linkAttrs = hasUrl
+            ? `href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer"`
+            : '';
+          return `
             <li class="gf-card" data-id="${escapeHtml(gift.id)}">
-              <a class="gf-card-link" href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer">
+              <${tag} class="gf-card-link${hasUrl ? '' : ' gf-card-link-nolink'}" ${linkAttrs}>
                 <div class="gf-card-image gf-card-loading" data-gift-image aria-hidden="true">
                   <span class="gf-card-fallback">🎁</span>
                 </div>
@@ -120,14 +128,14 @@ export function initGifts() {
                   <span class="gf-card-title">${escapeHtml(gift.title)}</span>
                   ${gift.note ? `<span class="gf-card-note">${escapeHtml(gift.note)}</span>` : ''}
                 </div>
-              </a>
+              </${tag}>
               <div class="gf-card-actions">
                 <button type="button" class="gf-edit" aria-label="${escapeHtml(gift.title)} bewerken">✏️</button>
                 <button type="button" class="gf-delete" aria-label="${escapeHtml(gift.title)} verwijderen">✕</button>
               </div>
             </li>
-          `
-        )
+          `;
+        })
         .join('');
 
       personGifts.forEach((gift) => {
@@ -258,6 +266,10 @@ export function initGifts() {
     setFormBusy(formEls, true, 'Bezig…');
 
     if (!trimmedTitle) {
+      // Only worth asking the Worker to peek at the link's title when
+      // there IS a link — the form guarantees at least a title OR a
+      // link was provided (see the submit handler), so if we get here
+      // with no title, trimmedUrl is guaranteed non-empty.
       trimmedTitle = (await fetchTitleFor(trimmedUrl)) || trimmedUrl;
     }
 
@@ -323,7 +335,7 @@ export function initGifts() {
     qs('.gf-add-note', form).value = gift.note || '';
     qs('.gf-add-photo', form).value = '';
     const editFilenameEl = qs('.gf-add-photo-filename', form);
-    if (editFilenameEl) editFilenameEl.textContent = editFilenameEl.dataset.defaultText || 'Kiest bestand';
+    if (editFilenameEl) editFilenameEl.textContent = editFilenameEl.dataset.defaultText || 'Kies bestand';
     qs('button[type="submit"]', form).textContent = 'Wijzigingen opslaan';
     form.classList.add('gf-add-form-editing');
 
@@ -340,7 +352,7 @@ export function initGifts() {
     const { form } = columnConfig;
     form.reset();
     const exitFilenameEl = qs('.gf-add-photo-filename', form);
-    if (exitFilenameEl) exitFilenameEl.textContent = exitFilenameEl.dataset.defaultText || 'Kiest bestand';
+    if (exitFilenameEl) exitFilenameEl.textContent = exitFilenameEl.dataset.defaultText || 'Kies bestand';
     qs('button[type="submit"]', form).textContent = 'Toevoegen';
     form.classList.remove('gf-add-form-editing');
     const cancelBtn = qs('.gf-edit-cancel', form);
@@ -360,16 +372,16 @@ export function initGifts() {
     const submitBtn = qs('button[type="submit"]', form);
     const cancelBtn = qs('.gf-edit-cancel', form);
 
-    // Shows the chosen file's name next to the custom "Kiest bestand"
+    // Shows the chosen file's name next to the custom "Kies bestand"
     // button (replaces the browser's native, hidden filename text —
     // see .gf-add-photo-filename in gifts.css).
     function resetPhotoFilename() {
-      if (photoFilenameEl) photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kiest bestand';
+      if (photoFilenameEl) photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
     }
 
     photoInput?.addEventListener('change', () => {
       if (photoFilenameEl) {
-        photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kiest bestand';
+        photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
       }
     });
 
@@ -378,15 +390,19 @@ export function initGifts() {
       errorEl.textContent = '';
 
       const urlValue = urlInput.value;
-      if (!urlValue.trim()) {
-        errorEl.textContent = 'Vul eerst een link in.';
-        return;
-      }
-      try {
-        // eslint-disable-next-line no-new
-        new URL(urlValue.trim());
-      } catch {
-        errorEl.textContent = 'Dat lijkt geen geldige link.';
+      const trimmedUrlValue = urlValue.trim();
+      if (trimmedUrlValue) {
+        try {
+          // eslint-disable-next-line no-new
+          new URL(trimmedUrlValue);
+        } catch {
+          errorEl.textContent = 'Dat lijkt geen geldige link.';
+          return;
+        }
+      } else if (!titleInput.value.trim()) {
+        // Link is optional now, but without one there's nothing to
+        // show on the card unless a title was typed in by hand.
+        errorEl.textContent = 'Vul een titel of een link in.';
         return;
       }
 

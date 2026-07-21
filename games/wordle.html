@@ -15,7 +15,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Raad het Engelse woord, met een letterlengte naar keuze.">
+  <meta name="description" content="Raad het woord, in het Engels of Nederlands, met een letterlengte naar keuze.">
   <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
@@ -46,12 +46,17 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🟩🟨 Wordle</h1>
-        <p>Raad het Engelse woord. Kies zelf hoeveel letters, hoe langer, hoe lastiger!</p>
+        <p>Raad het woord. Kies zelf hoeveel letters, en Engels of Nederlands — hoe langer het woord, hoe lastiger!</p>
       </div>
     </section>
 
     <section class="container" id="wordleApp">
       <a href="../games-hub.html" class="btn btn-outline ttt-back">&larr; Terug naar Games</a>
+
+      <div class="wordle-settings">
+        <span class="wordle-settings-label">Taal:</span>
+        <div id="wordleLangPicker" class="wordle-length-picker" role="group" aria-label="Kies de taal van het woord"></div>
+      </div>
 
       <div class="wordle-settings">
         <span class="wordle-settings-label">Aantal letters:</span>

@@ -1,0 +1,16 @@
+name = "snack-ratings"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Binds your KV namespace to this worker as `env.SNACKS_KV`. Create
+# the namespace first (Cloudflare dashboard > Workers & Pages > KV >
+# Create namespace), then either fill in its id below and run
+# `wrangler deploy`, OR just add the binding via the dashboard
+# (Worker > Settings > Bindings > KV Namespace) if you're not using
+# the CLI — see STAPPENPLAN-TODO-SNACKS.md.
+[[kv_namespaces]]
+binding = "SNACKS_KV"
+id = "snack-ratings"
+
+# No secrets needed for this worker — same reasoning as the shopping
+# list Worker, nothing here is sensitive enough to need a login.
