@@ -1,8 +1,0 @@
-name = "ticketmaster-proxy"
-main = "worker.js"
-compatibility_date = "2025-01-01"
-
-# The real API key is NOT set here. After deploying, run:
-#   wrangler secret put TICKETMASTER_API_KEY
-# (or set it via the Cloudflare dashboard: Workers & Pages > your worker
-# > Settings > Variables and Secrets > Add > Encrypt.)

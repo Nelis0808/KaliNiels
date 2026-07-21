@@ -1,0 +1,40 @@
+# --- Cloudflare Workers ---
+cloudflare/
+.wrangler/
+wrangler.toml
+wrangler.jsonc
+.dev.vars
+.dev.vars.*
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Build output (if you ever add a build step) ---
+dist/
+build/
+.cache/
