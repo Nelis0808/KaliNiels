@@ -24,10 +24,18 @@
   display: none;
 }
 
-/* == CARD GRID == */
+/* == CARD GRID ==
+   Was `display: grid` with `repeat(auto-fill, minmax(260px, 1fr))` —
+   auto-fill's `1fr` tracks always expand to fill the row, so a
+   left-over card in an uneven last row got left-packed instead of
+   centered (see the same fix already applied to .rz-city-photos in
+   reizen.css). Flex-wrap + justify-content: center centers any
+   incomplete last row for real, since each card keeps a fixed-ish
+   width instead of stretching to fill its grid track. */
 .snack-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-5);
   margin-bottom: var(--space-6);
 }
@@ -36,6 +44,19 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Was `flex: 1 1 260px` — each card sits inside a .gf-column (one
+     of the two side-by-side Kalina/Niels columns from gifts.css,
+     `grid-template-columns: 1fr 1fr`), which on anything other than
+     a very wide screen is comfortably narrower than 2×260px + gap.
+     Flex-wrap then had no choice but to drop to one card per row —
+     "everything vertical". Sizing the basis off the column's own
+     width instead (50% minus half the gap) means two cards fit
+     whenever there's genuinely room for two, and it gracefully drops
+     to one per row on its own once the column gets too narrow (e.g.
+     small phones) rather than needing a separate breakpoint. */
+  flex: 1 1 calc(50% - var(--space-5) / 2);
+  min-width: 220px;
+  max-width: 320px;
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);

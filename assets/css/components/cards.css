@@ -21,7 +21,7 @@
   text-align: center;
 
   background: var(--color-surface);
-  border-radius: var(--radius);
+  border-radius: 3px; /* was var(--radius) — cards use a fixed, tighter corner radius on purpose */
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);
@@ -78,7 +78,7 @@
 /* == HORIZONTAL FEATURE CARDS == */
 .card-hor {
   background: var(--color-surface);
-  border-radius: var(--radius);
+  border-radius: 3px; /* was var(--radius) — matches .card's fixed corner radius */
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);

@@ -123,7 +123,20 @@ export function initSnake() {
 
   function paintCell(x, y, className) {
     if (!inBounds(x, y)) return;
-    cells[cellIndex(x, y)].className = `snake-cell ${className}`;
+    const cell = cells[cellIndex(x, y)];
+    cell.className = `snake-cell ${className}`;
+    // A head cell moving on leaves its <img class="snake-head-img">
+    // behind as a leftover child on the cell it just vacated (this
+    // function only ever swapped the className, never touched
+    // children). That orphaned image is `position: absolute` (see
+    // snake.css) relative to the nearest *positioned* ancestor — the
+    // head cell classes are `position: relative`, but a plain trail
+    // cell isn't, so once the class flips to "-trail" the image's
+    // positioning context jumps all the way up to the board (or
+    // further), rendering as one huge image loose on the page instead
+    // of quietly sitting in its old cell. Clearing children here
+    // removes it before that can happen.
+    cell.replaceChildren();
   }
 
   function buildHeadCell(x, y, player) {

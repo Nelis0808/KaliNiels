@@ -44,6 +44,7 @@ import { initPhotoGallery } from './modules/photo-gallery.js';
 import { initBoodschappenlijst } from './modules/boodschappenlijst.js';
 import { initTodo } from './modules/todo.js';
 import { initSnackRating } from './modules/snack-rating.js';
+import { initClothing } from './modules/clothing.js';
 import { initGifts } from './modules/gifts.js';
 import { initReizen } from './modules/reizen.js';
 import { initReizenLand } from './modules/reizen-land.js';
@@ -91,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initBoodschappenlijst(); // boodschappenlijst.html
   initTodo();               // todo.html
   initSnackRating();        // snack-rating.html
+  initClothing();            // clothing.html
   initGifts();          // gifts.html
   initPageGate();        // reizen.html + reizen/land.html — hides the whole page until logged in
   initReizen();          // reizen.html

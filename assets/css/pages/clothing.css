@@ -1,0 +1,48 @@
+/* =============================================================
+   PAGE: clothing.html
+   -------------------------------------------------------------
+   Loaded alongside gifts.css, boodschappenlijst.css AND
+   snack-rating.css — this page reuses the exact same card grid,
+   star-rating and add/edit-form styling as snack-rating.css
+   (.snack-list, .snack-card, .snack-star-*, .snack-add-form, ...)
+   since the two pages are structurally identical aside from the
+   extra "maat" (size) field. Only that field's own styling and the
+   size badge shown on each card live here.
+   ============================================================= */
+
+#clothingApp {
+  width: min(92%, var(--container));
+  margin-inline: auto;
+  text-align: center;
+}
+
+.sl-disabled .snack-add-form,
+.sl-disabled .snack-list {
+  display: none;
+}
+
+.clothing-add-size {
+  font: inherit;
+}
+
+/* Small pill on each card showing the manually-entered size, next
+   to the star rating so it reads as metadata rather than prose. */
+.clothing-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.clothing-card-size {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

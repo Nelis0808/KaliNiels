@@ -101,6 +101,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Kleding',
+      description: 'Naam, maat, sterren en foto\u2019s.',
+      href: 'clothing.html',
+      emoji: '👕',
+      status: 'available',
+    },
+    {
       title: 'Bucket List',
       description: 'Dingen die we (samen) willen doen.',
       emoji: '📝',
@@ -192,6 +199,17 @@ export const siteConfig = {
   // STAPPENPLAN-TODO-SNACKS.md for usage. Same conventions as `todo` above.
   snackRatings: {
     workerUrl: 'https://snack-ratings.niels-luijten7.workers.dev',
+    personLabels: {
+      a: 'Niels',
+      b: 'Kalina',
+    },
+  },
+
+  // Config for the clothing ratings list (assets/js/modules/clothing.js).
+  // Same pattern/setup as `snackRatings` above (see
+  // STAPPENPLAN-TODO-SNACKS.md), just its own Worker + KV namespace
+  clothing: {
+    workerUrl: 'https://clothing.niels-luijten7.workers.dev',
     personLabels: {
       a: 'Niels',
       b: 'Kalina',

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<!--
+  CLOTHING RATING PAGE
+  Two synced columns (Kalina left, Niels right — same convention as
+  gifts.html/todo.html/snack-rating.html). Rate clothing: name, link
+  (optional), beschrijving (optional), maat (manually typed in),
+  photo (optional), 0-5 stars — all editable after the fact.
+  Logic lives in assets/js/modules/clothing.js.
+
+  SYNC: like snack-rating.html/boodschappenlijst.html/todo.html,
+  backed by a small Cloudflare Worker (cloudflare/cloudflare-worker-
+  clothing) — see STAPPENPLAN-TODO-SNACKS.md's pattern (this page
+  follows it 1:1, just with its own Worker + KV namespace) for how
+  to deploy it. Photos are downscaled + compressed client-side
+  before being sent to the Worker, to keep the shared list small
+  and fast to sync.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Onze kleding-beoordelingen: link, foto, maat, sterren en een beschrijving, voor Kalina en Niels.">
+  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+
+  <title>Kleding</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/gifts.css">
+  <link rel="stylesheet" href="assets/css/pages/boodschappenlijst.css">
+  <link rel="stylesheet" href="assets/css/pages/snack-rating.css">
+  <link rel="stylesheet" href="assets/css/pages/clothing.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>👕 Kleding</h1>
+        <p>Naam, een link als je wil, maat, sterren van 0 tot 5, en een beschrijving.</p>
+      </div>
+    </section>
+
+    <section class="container" id="clothingApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="clothingConfigWarning" class="gf-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-TODO-SNACKS.md</strong>
+        (zelfde stappen, eigen Worker + KV) om deze pagina werkend te krijgen.
+      </div>
+
+      <p id="clothingStatus" class="sl-status hidden" aria-live="polite"></p>
+
+      <div class="gf-columns">
+        <!-- LEFT: Kalina (person "b") -->
+        <section class="gf-column" aria-labelledby="clothingColKalinaHeading">
+          <h2 id="clothingColKalinaHeading" class="gf-column-heading">👗 Van <span data-clothing-person-label="b">Kalina</span></h2>
+
+          <ul id="clothingListB" class="snack-list" aria-label="Kleding van Kalina"></ul>
+          <div id="clothingEmptyB" class="empty-state hidden">Nog geen kleding beoordeeld, voeg hieronder de eerste toe.</div>
+
+          <form id="clothingAddFormB" class="snack-add-form" data-person="b">
+            <input type="text" class="clothing-add-name" placeholder="Naam van het kledingstuk..." maxlength="200" aria-label="Naam van het kledingstuk">
+            <input type="url" class="clothing-add-url" placeholder="Link naar het kledingstuk (optioneel)…" maxlength="2000" aria-label="Link naar het kledingstuk (optioneel)">
+            <input type="text" class="clothing-add-size" placeholder="Maat (bv. M, 42, 32/34)…" maxlength="50" aria-label="Maat">
+            <textarea class="clothing-add-desc" placeholder="Beschrijving (optioneel)…" maxlength="1000" rows="2" aria-label="Beschrijving"></textarea>
+
+            <div class="snack-add-star-row">
+              <span class="snack-add-star-label">Beoordeling:</span>
+              <div class="snack-star-picker" data-rating="0" role="radiogroup" aria-label="Beoordeling van 0 tot 5 sterren"></div>
+            </div>
+
+            <label class="gf-add-photo-label snack-add-photo-label">
+              📷 Foto (optioneel)
+              <span class="gf-add-photo-filename snack-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
+              <input type="file" class="gf-add-photo clothing-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Foto van het kledingstuk">
+            </label>
+
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline clothing-edit-cancel hidden">Annuleren</button>
+            </div>
+          </form>
+          <p class="clothing-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+
+        <!-- RIGHT: Niels (person "a") -->
+        <section class="gf-column" aria-labelledby="clothingColNielsHeading">
+          <h2 id="clothingColNielsHeading" class="gf-column-heading">👔 Van <span data-clothing-person-label="a">Niels</span></h2>
+
+          <ul id="clothingListA" class="snack-list" aria-label="Kleding van Niels"></ul>
+          <div id="clothingEmptyA" class="empty-state hidden">Nog geen kleding beoordeeld, voeg hieronder de eerste toe.</div>
+
+          <form id="clothingAddFormA" class="snack-add-form" data-person="a">
+            <input type="text" class="clothing-add-name" placeholder="Naam van het kledingstuk..." maxlength="200" aria-label="Naam van het kledingstuk">
+            <input type="url" class="clothing-add-url" placeholder="Link naar het kledingstuk (optioneel)…" maxlength="2000" aria-label="Link naar het kledingstuk (optioneel)">
+            <input type="text" class="clothing-add-size" placeholder="Maat (bv. M, 42, 32/34)…" maxlength="50" aria-label="Maat">
+            <textarea class="clothing-add-desc" placeholder="Beschrijving (optioneel)…" maxlength="1000" rows="2" aria-label="Beschrijving"></textarea>
+
+            <div class="snack-add-star-row">
+              <span class="snack-add-star-label">Beoordeling:</span>
+              <div class="snack-star-picker" data-rating="0" role="radiogroup" aria-label="Beoordeling van 0 tot 5 sterren"></div>
+            </div>
+
+            <label class="gf-add-photo-label snack-add-photo-label">
+              📷 Foto (optioneel)
+              <span class="gf-add-photo-filename snack-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
+              <input type="file" class="gf-add-photo clothing-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Foto van het kledingstuk">
+            </label>
+
+            <div class="gf-add-form-buttons">
+              <button type="submit" class="btn btn-primary">Toevoegen</button>
+              <button type="button" class="btn btn-outline clothing-edit-cancel hidden">Annuleren</button>
+            </div>
+          </form>
+          <p class="clothing-add-error sl-add-error" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
