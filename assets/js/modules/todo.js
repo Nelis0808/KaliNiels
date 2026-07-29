@@ -33,14 +33,37 @@ const LONG_PRESS_MS = 350;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 // Cycle order the priority swatch button on each row steps through.
-const PRIORITIES = [
-  { level: 'high', label: 'Hoog', dot: '🔴' },
-  { level: 'medium', label: 'Gemiddeld', dot: '🟠' },
-  { level: 'low', label: 'Laag', dot: '🟡' },
-  { level: 'none', label: 'Geen', dot: '⚪' },
-];
-const PRIORITY_BY_LEVEL = Object.fromEntries(PRIORITIES.map((p) => [p.level, p]));
+function getDots() {
+  return localStorage.getItem('color-theme-preference').toLowerCase() === 'blue'
+    ? ['🔴', '🟠', '🟡', '⚪']
+    : ['🌹', '🏵️', '🌻', '💮'];
+}
+
+let dots = getDots();
+
+function getPriorities() {
+  return [
+    { level: 'high',   label: 'Hoog',      dot: dots[0] },
+    { level: 'medium', label: 'Gemiddeld', dot: dots[1] },
+    { level: 'low',    label: 'Laag',      dot: dots[2] },
+    { level: 'none',   label: 'Geen',      dot: dots[3] },
+  ];
+}
+
+let PRIORITIES = getPriorities();
+
+function getPriorityByLevel() {
+  return Object.fromEntries(PRIORITIES.map((p) => [p.level, p]));
+}
+
+let PRIORITY_BY_LEVEL = getPriorityByLevel();
 const DEFAULT_PRIORITY = 'none';
+
+function updateThemeDots() {
+  dots = getDots();
+  PRIORITIES = getPriorities();
+  PRIORITY_BY_LEVEL = getPriorityByLevel();
+}
 
 export function initTodo() {
   const root = document.getElementById('todoApp');
@@ -497,6 +520,13 @@ export function initTodo() {
       loadItems({ silent: true });
       startPolling();
     }
+  });
+
+  // ---- Theme change listener ----------------------------------------
+
+  window.addEventListener('themechange', () => {
+    updateThemeDots();
+    renderAll();
   });
 
   // ---- Initial load --------------------------------------------------

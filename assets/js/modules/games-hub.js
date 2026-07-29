@@ -34,7 +34,7 @@ const games = [
   },
   {
     title: 'Snake',
-    description: 'Laat een spoor achter je en probeer de ander erin te laten crashen.',
+    description: 'Laat je tegenstander in je spoor crashen. Toetsenbord vereist!',
     href: 'games/snake.html',
     emoji: `${get_emoji('snake/player-blue.png', 'snake/player-blue.svg')}
             ${get_emoji('snake/player-pink.png', 'snake/player-pink.svg')}`,

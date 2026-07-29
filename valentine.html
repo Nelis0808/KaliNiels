@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<!--
+==============================================================
+VALENTIJN PAGINA — vraag Kalina om je Valentijn te zijn.
+==============================================================
+Gebouwd volgens hetzelfde patroon als template.html:
+- gebruikt assets/css/main.css + een eigen pagina-CSS
+- gebruikt het data-include header/footer patroon
+- laadt zijn logica als losse module in assets/js/modules/
+
+VOOR JE 'M LIVE ZET:
+1. Vervang assets/icons/valentine/stitch-placeholder.svg door je
+   eigen 400x400 foto van Stitch (bv. stitch.jpg) en werk de
+   src/data-yes-src hieronder bij.
+2. Vervang assets/icons/valentine/stitch-yes-placeholder.svg door
+   je 400x400 "Ja"-foto (bv. stitch-yes.jpg).
+3. Voeg een navigatielink toe op elke pagina (zie README §4):
+   <a href="valentine.html">Valentijn</a>
+4. Voeg een entry toe aan `pages` in assets/js/config.js zodat hij
+   als kaart op de homepage verschijnt.
+5. Importeer en roep initValentine() aan in assets/js/main.js,
+   naast de andere init...()-functies (zie onderaan dit bestand
+   voor het exacte importregel).
+==============================================================
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Wil je mijn Valentijn zijn, Kalina?">
+  <meta name="theme-color" content="#ff5c8a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <title>Wil je mijn Valentijn zijn? 💌</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/valentine.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="val-stage" class="val-stage">
+      <!-- laag voor de hartjes/confetti die verschijnen na "Ja" -->
+      <div id="valHearts" class="val-hearts" aria-hidden="true"></div>
+
+      <div id="valContainer" class="container val-container">
+        <p class="val-eyebrow">Een vraagje voor jou...</p>
+        <h1 class="val-title">Wil jij mijn Valentijn zijn?</h1>
+        <p class="val-subtitle">Probeer daar maar eens 'nee' op te zeggen!</p>
+
+        <div class="val-photo-row">
+          <span class="val-emoji" aria-hidden="true">⭐</span>
+          <img
+            id="valImage"
+            class="val-photo"
+            src="assets/icons/valentine/stitch.png"
+            data-yes-src="assets/icons/valentine/stitch-yes.png"
+            width="400" height="400"
+            alt="Stitch met vraagteken"
+          >
+          <span class="val-emoji" aria-hidden="true">⭐</span>
+        </div>
+
+        <p id="valMessage" class="val-message" role="status" aria-live="polite" hidden></p>
+
+        <div id="valButtons" class="val-buttons">
+          <button id="valYes" type="button" class="btn btn-primary val-btn val-btn-yes">Ja</button>
+          <button id="valNo" type="button" class="btn btn-primary val-btn val-btn-no">Nee</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

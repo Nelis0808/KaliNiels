@@ -59,6 +59,7 @@ import { initBlackjack } from './modules/blackjack.js';
 import { initSpiderette } from './modules/spiderette.js';
 import { initSnake } from './modules/snake.js';
 import { initWallz } from './modules/wallz.js';
+import { initValentine } from './modules/valentine.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Load the shared header/back-to-top partials FIRST — every module
@@ -107,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSpiderette();    // games/spiderette.html
   initSnake();         // games/snake.html
   initWallz();         // games/wallz.html
+  initValentine();     // valentine.html
 
   console.log(`${document.title} — initialized ✅`);
 });

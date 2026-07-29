@@ -21,7 +21,7 @@
   text-align: center;
 
   background: var(--color-surface);
-  border-radius: 3px; /* was var(--radius) — cards use a fixed, tighter corner radius on purpose */
+  border-radius: var(--radius);
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);

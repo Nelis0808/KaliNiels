@@ -1,0 +1,234 @@
+/* ==========================================================================
+   Valentijn pagina — thema kleuren
+   --------------------------------------------------------------------------
+   Deze vallen automatisch terug op je bestaande site-tokens als die
+   bestaan (--color-primary etc. uit assets/css/base). Wil je liever de
+   blauwe variant van je thema? Zet --v-primary hieronder op je blauwe
+   accentkleur, bv. #4dabf7 / #1c7ed6.
+   ========================================================================== */
+#val-stage {
+  --v-primary: var(--color-primary, #ff5c8a);
+  --v-primary-dark: var(--color-primary-dark, #c2255c);
+  --v-bg-1: #fff5f8;
+  --v-bg-2: #ffe1ec;
+  --v-text: var(--color-heading, #3a1f2b);
+}
+
+@media (prefers-color-scheme: dark) {
+  #val-stage {
+    --v-bg-1: #241019;
+    --v-bg-2: #341425;
+    --v-text: #ffe9f1;
+  }
+}
+
+.val-stage {
+  position: relative;
+  min-height: calc(100vh - var(--header-height, 72px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 4rem) 1rem;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 0%, var(--v-bg-2), var(--v-bg-1) 70%);
+  text-align: center;
+}
+
+.val-container {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.val-eyebrow {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--v-primary-dark);
+}
+
+.val-title {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  line-height: 1.15;
+  color: var(--v-text);
+}
+
+/* Vanaf laptopbreedte past de vraag op één regel; op mobiel mag hij
+   gewoon afbreken zodat er geen tekst buiten beeld valt. */
+@media (min-width: 700px) {
+  .val-title {
+    white-space: nowrap;
+    width: max-content;
+    max-width: 92vw;
+    margin-inline: auto;
+    font-size: clamp(1.9rem, 2.1vw + 1rem, 3rem);
+  }
+}
+
+.val-subtitle {
+  margin: 0 0 0.5rem;
+  color: var(--v-text);
+  opacity: 0.75;
+}
+
+/* -------------------------------- foto ---------------------------------- */
+.val-photo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 3vw, 1.5rem);
+  margin: 0.5rem 0 1rem;
+}
+
+.val-emoji {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  animation: val-twinkle 2.4s ease-in-out infinite;
+}
+
+.val-emoji:nth-child(3) {
+  animation-delay: 1.2s;
+}
+
+.val-photo {
+  width: min(280px, 60vw);
+  height: min(280px, 60vw);
+  object-fit: cover;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px -12px rgba(194, 37, 92, 0.35);
+  animation: val-float 4s ease-in-out infinite;
+  transition: transform 0.4s ease;
+}
+
+.val-stage--yes .val-photo {
+  animation: val-pop 0.6s ease;
+}
+
+/* -------------------------------- bericht -------------------------------- */
+.val-message {
+  max-width: 32rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.9rem 1.25rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--v-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--v-primary) 35%, transparent);
+  color: var(--v-text);
+  font-weight: 600;
+  animation: val-fade-up 0.5s ease;
+}
+
+.val-message[hidden] {
+  display: none;
+}
+
+/* -------------------------------- knoppen -------------------------------- */
+.val-buttons {
+  position: relative;
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.75rem;
+  min-height: 4rem;
+  width: 100%;
+}
+
+/* Geen eigen kleur/vorm hier — Ja en Nee gebruiken gewoon de
+   bestaande .btn / .btn-primary component van de site (dezelfde als
+   bv. de "Binnen"/"Buiten"-activiteit knoppen op date.html), zodat ze
+   er identiek uitzien. Hier staat alleen wat nodig is voor de
+   ontwijk-animatie. */
+.val-btn {
+  white-space: nowrap;
+}
+
+/* zodra het "achtervolg-spel" begint, worden beide knoppen los van de
+   normale flow gepositioneerd (JS zet left/top in pixels) */
+.val-btn--roaming {
+  position: fixed;
+  z-index: 5;
+  transition: left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              top 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              transform 0.3s ease;
+}
+
+.val-btn-yes.val-btn--roaming {
+  /* moet altijd boven Nee blijven zweven, ook als Nee er straks
+     precies onder verdwijnt */
+  z-index: 6;
+}
+
+/* laatste zet van Nee: een bewust tragere, vloeiende glijbeweging
+   naar precies onder de Ja-knop, zodat je 'm echt ziet wegschuiven */
+.val-btn-no.val-btn--hiding {
+  transition: left 0.75s cubic-bezier(0.65, 0, 0.35, 1),
+              top 0.75s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.val-btn-no.val-btn--stuck {
+  transition: none;
+  pointer-events: none;
+}
+
+/* -------------------------------- hartjes -------------------------------- */
+.val-hearts {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.val-heart {
+  position: fixed;
+  top: -10vh;
+  will-change: transform, opacity;
+  animation: val-fall linear forwards;
+}
+
+/* -------------------------------- keyframes ------------------------------ */
+@keyframes val-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes val-pop {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes val-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.25) rotate(12deg); opacity: 0.7; }
+}
+
+@keyframes val-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes val-fall {
+  from { transform: translateY(0) rotate(0deg); opacity: 1; }
+  to { transform: translateY(115vh) rotate(320deg); opacity: 0; }
+}
+
+/* -------------------------------- motion / mobiel ------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .val-photo,
+  .val-emoji,
+  .val-message {
+    animation: none !important;
+  }
+  .val-btn--roaming,
+  .val-btn-no.val-btn--hiding {
+    transition: none !important;
+  }
+}
+
+
