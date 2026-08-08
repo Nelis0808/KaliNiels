@@ -1,7 +1,7 @@
 /* =============================================================
    PAGE: todo.html
    -------------------------------------------------------------
-   Loaded ALONGSIDE boodschappenlijst.css (see todo.html's <link>
+   Loaded ALONGSIDE lijstje.css (see todo.html's <link>
    tags) — the shared list/row/drag-handle/rename/delete styles
    (.sl-list, .sl-item, .sl-drag-handle, .sl-item-actions, .sl-rename,
    .sl-delete, .sl-rename-input, ...) come from there unchanged. This
@@ -17,7 +17,7 @@
 }
 
 /* == PAGE-LEVEL CENTERING (todo.html has no own #todoApp block in
-   boodschappenlijst.css, unlike #shoppingListApp there) == */
+   lijstje.css, unlike #shoppingListApp there) == */
 #todoApp {
   text-align: center;
 }

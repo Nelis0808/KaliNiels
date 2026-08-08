@@ -187,7 +187,10 @@ a.snack-card-name:hover {
   transform: scale(1.15);
 }
 
-/* == ADD/EDIT FORM == */
+/* == ADD/EDIT FORM ==
+   Same "white card, clearly separate from the page background"
+   treatment as .gf-add-form on gifts.html — this page previously
+   left the form floating directly on the page background. */
 .snack-add-form {
   display: flex;
   flex-direction: column;
@@ -195,6 +198,10 @@ a.snack-card-name:hover {
   max-width: 480px;
   margin-inline: auto;
   margin-bottom: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
 }
 
 .snack-add-desc {

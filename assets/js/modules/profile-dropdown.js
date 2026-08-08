@@ -10,6 +10,9 @@
 // =================================================================
 
 import { getAuth, login, logout, onAuthChange, currentPersonLabel } from './auth.js';
+import { EXCLUSIVE_DROPDOWN_EVENT, announceDropdownOpen } from './utils.js';
+
+const DROPDOWN_ID = 'profile';
 
 export function initProfileDropdown() {
   const dropdown = document.getElementById('navProfileDropdown');
@@ -50,11 +53,14 @@ export function initProfileDropdown() {
   function toggleMenu() {
     const isOpen = dropdown.classList.toggle('open');
     trigger.setAttribute('aria-expanded', String(isOpen));
-    if (isOpen && !getAuth()) {
-      loginError.textContent = '';
-      passphraseInput.value = '';
-      // Slight delay so the focus happens after the menu is actually visible.
-      requestAnimationFrame(() => passphraseInput.focus());
+    if (isOpen) {
+      announceDropdownOpen(DROPDOWN_ID); // tell the settings dropdown (or any other) to close
+      if (!getAuth()) {
+        loginError.textContent = '';
+        passphraseInput.value = '';
+        // Slight delay so the focus happens after the menu is actually visible.
+        requestAnimationFrame(() => passphraseInput.focus());
+      }
     }
   }
 
@@ -65,6 +71,11 @@ export function initProfileDropdown() {
 
   document.addEventListener('click', (event) => {
     if (!dropdown.contains(event.target)) closeMenu();
+  });
+
+  // Another exclusive dropdown (e.g. settings) just opened — close this one.
+  document.addEventListener(EXCLUSIVE_DROPDOWN_EVENT, (event) => {
+    if (event.detail?.source !== DROPDOWN_ID) closeMenu();
   });
 
   dropdown.addEventListener('keydown', (event) => {

@@ -24,7 +24,7 @@ Browser (je vriendin) →  Worker "clothing"  →  Cloudflare KV (de kleding-ite
 ```
 
 Geen wachtwoord nodig — zelfde afweging als bij de snack-ratings en
-het boodschappenlijstje: een lijstje kledingbeoordelingen is niet
+het lijstje: een lijstje kledingbeoordelingen is niet
 gevoelig genoeg om die extra stap waard te zijn.
 
 De stappen hieronder zijn vrijwel identiek aan die in

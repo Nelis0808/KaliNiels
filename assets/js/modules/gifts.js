@@ -4,7 +4,7 @@
 // Talks ONLY to the gifts Cloudflare Worker (see
 // /cloudflare/cloudflare-worker-gifts + STAPPENPLAN-GIFTS.md), which
 // stores the shared list in Cloudflare KV. No login — same reasoning
-// as the boodschappenlijst Worker (see its top comment).
+// as the lijstje Worker (see its top comment).
 //
 // TWO COLUMNS, ONE LIST: every gift has a `person` field ('a' =
 // Niels, 'b' = Kalina, same convention as photos/blackjack). The
@@ -34,7 +34,7 @@
 // plain gift-box icon).
 //
 // SYNC MODEL: same optimistic-update + polling approach as
-// boodschappenlijst.js — see its top comment for the reasoning.
+// lijstje.js — see its top comment for the reasoning.
 // =================================================================
 
 import { siteConfig } from '../config.js';

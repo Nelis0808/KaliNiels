@@ -1,5 +1,5 @@
 /* =============================================================
-   PAGE: boodschappenlijst.html
+   PAGE: lijstje.html
    -------------------------------------------------------------
    Centered, narrow app column (same pattern as the games pages),
    with a checkable/deletable list + an add-form underneath.
@@ -9,6 +9,121 @@
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
   text-align: center;
+}
+
+/* == CATEGORY SWITCHER (dropdown, which list is currently shown) ==
+   Same visual language as the "Meer" nav dropdown
+   (assets/css/components/dropdown.css), just centered under the
+   hero instead of anchored to the navbar. */
+.sl-list-switcher {
+  position: relative;
+  display: inline-block;
+  margin-bottom: var(--space-5);
+}
+
+.sl-list-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font: inherit;
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+
+.sl-list-trigger:hover,
+.sl-list-trigger:focus-visible {
+  box-shadow: var(--shadow);
+}
+
+.sl-list-trigger .chevron {
+  font-size: 0.7em;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.sl-list-switcher.open .sl-list-trigger .chevron {
+  transform: rotate(180deg);
+}
+
+.sl-list-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  display: none;
+  flex-direction: column;
+  text-align: left;
+  z-index: var(--z-navbar);
+}
+
+.sl-list-switcher.open .sl-list-menu {
+  display: flex;
+}
+
+.sl-list-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: left;
+  color: var(--color-text);
+}
+
+.sl-list-menu-item:hover,
+.sl-list-menu-item:focus-visible {
+  background: var(--color-border);
+  color: var(--color-primary);
+}
+
+.sl-list-menu-item.active {
+  color: var(--color-primary);
+}
+
+.sl-list-menu-item.active::after {
+  content: '✓';
+  float: right;
+}
+
+.sl-list-menu-divider {
+  height: 1px;
+  margin: var(--space-2) var(--space-1);
+  background: var(--color-border);
+}
+
+.sl-list-menu-add {
+  color: var(--color-primary);
+}
+
+.sl-list-new-form {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1) var(--space-1);
+}
+
+.sl-list-new-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* == STATUS LINE (e.g. "3 van 17 afgevinkt") == */
@@ -48,7 +163,7 @@
   box-shadow: var(--shadow);
 }
 
-/* == DRAG HANDLE (drag up/down to reorder — see boodschappenlijst.js) ==
+/* == DRAG HANDLE (drag up/down to reorder — see lijstje.js) ==
    A small 2x3 dot grid, the universal "grip" affordance. Only this
    handle starts a drag — the rest of the row stays dedicated to
    check/delete, exactly like a native app list. */

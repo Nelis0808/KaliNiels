@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <!--
-  BOODSCHAPPENLIJSTJE PAGE
+  LIJSTJE PAGE
   Shared, synced shopping list. Logic lives in
-  assets/js/modules/boodschappenlijst.js — this file only contains
+  assets/js/modules/lijstje.js — this file only contains
   the markup (status line, list, add-form) that the module fills in
   and wires up. Data is stored in Cloudflare KV via a small Worker
-  (cloudflare/cloudflare-worker-boodschappen), so both of you see the
-  same list — see STAPPENPLAN-BOODSCHAPPEN.md for how to deploy it.
+  (cloudflare/cloudflare-worker-lijstje), so both of you see the
+  same list — see STAPPENPLAN-LIJSTJE.md for how to deploy it.
 -->
 <html lang="nl">
 <head>
@@ -14,11 +14,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Ons gedeelde boodschappenlijstje, samen bijgehouden.">
-  <meta name="theme-color" content="#7B68EE" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Ons gedeelde lijstje, samen bijgehouden.">
+  <meta name="theme-color" content="#F5F5F5">
 
-  <title>Boodschappenlijstje</title>
+  <title>Lijstje</title>
 
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 
@@ -27,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="assets/css/main.css">
-  <link rel="stylesheet" href="assets/css/pages/boodschappenlijst.css">
+  <link rel="stylesheet" href="assets/css/pages/lijstje.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Ga naar inhoud</a>
@@ -43,7 +42,7 @@
   <main id="main">
     <section id="hero" class="hero">
       <div class="container">
-        <h1>🛒 Boodschappenlijstje</h1>
+        <h1>🛒 Lijstje</h1>
         <p>Samen bijgehouden.</p>
       </div>
     </section>
@@ -51,13 +50,31 @@
     <section class="container" id="shoppingListApp">
       <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
       <div id="slConfigWarning" class="sl-config-warning hidden">
-        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-BOODSCHAPPEN.md</strong>
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-LIJSTJE.md</strong>
         om de sync tussen jullie twee werkend te krijgen.
+      </div>
+
+      <!-- Category switcher: which list (e.g. "Boodschappen", "Klussen")
+           is currently shown. Filled in + wired up by lijstje.js.
+           "+ Nieuwe lijst toevoegen" always renders last, below a
+           divider. -->
+      <div class="sl-list-switcher" id="slListSwitcher">
+        <button
+          type="button"
+          id="slListTrigger"
+          class="sl-list-trigger"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          <span id="slListTriggerLabel">Lijstje</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div id="slListMenu" class="sl-list-menu" role="menu"></div>
       </div>
 
       <p id="slStatus" class="sl-status" aria-live="polite">Laden…</p>
 
-      <ul id="slItems" class="sl-list" aria-label="Boodschappenlijstje"></ul>
+      <ul id="slItems" class="sl-list" aria-label="Lijstje"></ul>
 
       <div id="slEmptyState" class="empty-state hidden">
         Lijstje is leeg, voeg hieronder iets toe.

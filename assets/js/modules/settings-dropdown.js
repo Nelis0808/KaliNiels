@@ -19,7 +19,9 @@
 // =================================================================
 
 import { siteConfig } from '../config.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, EXCLUSIVE_DROPDOWN_EVENT, announceDropdownOpen } from './utils.js';
+
+const DROPDOWN_ID = 'settings';
 
 function renderPlaceholder(setting) {
   const emoji = setting.emoji ? `${setting.emoji} ` : '';
@@ -51,6 +53,7 @@ export function initSettingsDropdown() {
   function toggleMenu() {
     const isOpen = dropdown.classList.toggle('open');
     trigger.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) announceDropdownOpen(DROPDOWN_ID); // tell the profile dropdown (or any other) to close
   }
 
   trigger.addEventListener('click', (event) => {
@@ -62,6 +65,11 @@ export function initSettingsDropdown() {
   // INSIDE it should NOT close it — you might want to flip both.
   document.addEventListener('click', (event) => {
     if (!dropdown.contains(event.target)) closeMenu();
+  });
+
+  // Another exclusive dropdown (e.g. profile) just opened — close this one.
+  document.addEventListener(EXCLUSIVE_DROPDOWN_EVENT, (event) => {
+    if (event.detail?.source !== DROPDOWN_ID) closeMenu();
   });
 
   // Escape closes it and returns focus to the trigger button.

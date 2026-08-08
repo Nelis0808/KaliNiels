@@ -1,10 +1,19 @@
 // =================================================================
-// BOODSCHAPPENLIJSTJE (boodschappenlijst.html)
+// LIJSTJE (lijstje.html)
 // -----------------------------------------------------------------
-// Talks ONLY to the boodschappenlijst Cloudflare Worker (see
-// /cloudflare/cloudflare-worker-boodschappen + STAPPENPLAN-BOODSCHAPPEN.md),
-// which stores the shared list in Cloudflare KV. No login — see the
-// worker's top comment for why that's fine here.
+// Talks ONLY to the lijstje Cloudflare Worker (see
+// /cloudflare/cloudflare-worker-lijstje + STAPPENPLAN-LIJSTJE.md),
+// which stores one or more named lists (categories) in Cloudflare
+// KV. No login — see the worker's top comment for why that's fine
+// here.
+//
+// MULTIPLE LISTS: the dropdown at the top (#slListSwitcher) lets you
+// switch between categories (e.g. "Boodschappen", "Klussen") — each
+// is its own list on the server, addressed by an id. "+ Nieuwe lijst
+// toevoegen" always sits at the bottom of that dropdown and opens a
+// small inline form to create another one. The last list you had
+// open is remembered per-browser (localStorage), so this device
+// reopens the same one next time.
 //
 // SYNC MODEL: every local change (add/check/delete) is sent to the
 // worker immediately (optimistic UI — the change shows instantly,
@@ -24,8 +33,9 @@ import { siteConfig } from '../config.js';
 import { qs, escapeHtml } from './utils.js';
 
 const POLL_INTERVAL_MS = 5000;
+const ACTIVE_LIST_STORAGE_KEY = 'lijstje-active-list-id';
 
-export function initBoodschappenlijst() {
+export function initLijstje() {
   const root = document.getElementById('shoppingListApp');
   if (!root) return; // not on this page
 
@@ -38,6 +48,11 @@ export function initBoodschappenlijst() {
   const addInput      = qs('#slAddInput', root);
   const addError       = qs('#slAddError', root);
   const configWarning  = qs('#slConfigWarning', root);
+
+  const switcherEl   = qs('#slListSwitcher', root);
+  const switcherTrigger = qs('#slListTrigger', root);
+  const switcherLabel   = qs('#slListTriggerLabel', root);
+  const switcherMenu    = qs('#slListMenu', root);
 
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
@@ -54,6 +69,11 @@ export function initBoodschappenlijst() {
   let items = [];
   let pollTimer = null;
   let saveInFlight = false; // avoids overlapping PUTs stomping on each other
+
+  // Categories (separate lists). `lists` mirrors the server's index;
+  // `activeListId` is whichever one is currently shown.
+  let lists = [];
+  let activeListId = localStorage.getItem(ACTIVE_LIST_STORAGE_KEY) || null;
 
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
@@ -106,15 +126,16 @@ export function initBoodschappenlijst() {
   // ---- Networking ------------------------------------------------
 
   async function loadList({ silent = false } = {}) {
+    if (!activeListId) return;
     if (!silent) setStatus('Laden…');
     try {
-      const response = await fetch(`${workerUrl}/list`);
+      const response = await fetch(`${workerUrl}/list?id=${encodeURIComponent(activeListId)}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       items = Array.isArray(data.items) ? data.items : [];
       render();
     } catch (error) {
-      console.error('Kon boodschappenlijst niet laden:', error);
+      console.error('Kon lijstje niet laden:', error);
       if (!silent) setStatus('❌ Kon lijstje niet laden. Probeer het opnieuw.', true);
     }
   }
@@ -124,9 +145,10 @@ export function initBoodschappenlijst() {
   // failure we reload the real state from the server so the UI
   // never stays out of sync with what's actually saved.
   async function saveList() {
+    if (!activeListId) return;
     saveInFlight = true;
     try {
-      const response = await fetch(`${workerUrl}/list`, {
+      const response = await fetch(`${workerUrl}/list?id=${encodeURIComponent(activeListId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items }),
@@ -143,6 +165,161 @@ export function initBoodschappenlijst() {
       saveInFlight = false;
     }
   }
+
+  // ---- Category switcher (multiple lists) ---------------------------
+
+  function closeSwitcher() {
+    switcherEl.classList.remove('open');
+    switcherTrigger.setAttribute('aria-expanded', 'false');
+
+    // Reset the "new list" inline form back to its collapsed state
+    // (just the "+ Nieuwe lijst toevoegen" button) for next time it opens.
+    const form = qs('#slNewListForm', switcherMenu);
+    const addBtn = qs('#slNewListBtn', switcherMenu);
+    if (form && addBtn) {
+      form.classList.add('hidden');
+      addBtn.classList.remove('hidden');
+      qs('#slNewListInput', form).value = '';
+    }
+  }
+
+  function toggleSwitcher() {
+    const isOpen = switcherEl.classList.toggle('open');
+    switcherTrigger.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      const activeBtn = qs('.sl-list-menu-item.active', switcherMenu);
+      (activeBtn || qs('.sl-list-menu-item', switcherMenu))?.focus();
+    }
+  }
+
+  function renderSwitcher() {
+    const active = lists.find((list) => list.id === activeListId);
+    switcherLabel.textContent = active ? active.name : 'Lijstje';
+
+    const listButtonsHtml = lists
+      .map(
+        (list) => `
+          <button
+            type="button"
+            class="sl-list-menu-item ${list.id === activeListId ? 'active' : ''}"
+            role="menuitemradio"
+            aria-checked="${list.id === activeListId}"
+            data-list-id="${escapeHtml(list.id)}"
+          >${escapeHtml(list.name)}</button>
+        `
+      )
+      .join('');
+
+    switcherMenu.innerHTML = `
+      ${listButtonsHtml}
+      <div class="sl-list-menu-divider" role="separator"></div>
+      <button type="button" id="slNewListBtn" class="sl-list-menu-item sl-list-menu-add" role="menuitem">
+        ＋ Nieuwe lijst toevoegen
+      </button>
+      <form id="slNewListForm" class="sl-list-new-form hidden">
+        <input
+          type="text"
+          id="slNewListInput"
+          class="sl-list-new-input"
+          placeholder="Naam van de lijst…"
+          maxlength="60"
+          aria-label="Naam van de nieuwe lijst"
+        >
+        <button type="submit" class="btn btn-primary btn-sm">Aanmaken</button>
+      </form>
+    `;
+  }
+
+  async function switchToList(listId) {
+    if (listId === activeListId) {
+      closeSwitcher();
+      return;
+    }
+    activeListId = listId;
+    localStorage.setItem(ACTIVE_LIST_STORAGE_KEY, listId);
+    renderSwitcher();
+    closeSwitcher();
+    await loadList();
+  }
+
+  async function createList(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    try {
+      const response = await fetch(`${workerUrl}/lists`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const newList = await response.json();
+      lists = [...lists, newList];
+      await switchToList(newList.id);
+    } catch (error) {
+      console.error('Kon nieuwe lijst niet aanmaken:', error);
+      setStatus('❌ Kon nieuwe lijst niet aanmaken. Probeer het opnieuw.', true);
+    }
+  }
+
+  async function loadLists() {
+    try {
+      const response = await fetch(`${workerUrl}/lists`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      lists = Array.isArray(data.lists) ? data.lists : [];
+
+      // Fall back to the first list if there's no (valid) remembered
+      // selection yet — e.g. first visit ever, or a deleted list id.
+      if (!activeListId || !lists.some((list) => list.id === activeListId)) {
+        activeListId = lists[0]?.id || null;
+        if (activeListId) localStorage.setItem(ACTIVE_LIST_STORAGE_KEY, activeListId);
+      }
+
+      renderSwitcher();
+    } catch (error) {
+      console.error('Kon lijsten niet laden:', error);
+      setStatus('❌ Kon lijsten niet laden. Probeer het opnieuw.', true);
+    }
+  }
+
+  switcherTrigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleSwitcher();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!switcherEl.contains(event.target)) closeSwitcher();
+  });
+
+  switcherEl.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeSwitcher();
+      switcherTrigger.focus();
+    }
+  });
+
+  switcherMenu.addEventListener('click', (event) => {
+    const listBtn = event.target.closest('.sl-list-menu-item[data-list-id]');
+    if (listBtn) {
+      switchToList(listBtn.dataset.listId);
+      return;
+    }
+
+    const newListBtn = event.target.closest('#slNewListBtn');
+    if (newListBtn) {
+      const form = qs('#slNewListForm', switcherMenu);
+      form.classList.remove('hidden');
+      newListBtn.classList.add('hidden');
+      qs('#slNewListInput', form).focus();
+    }
+  });
+
+  switcherMenu.addEventListener('submit', (event) => {
+    if (event.target.id !== 'slNewListForm') return;
+    event.preventDefault();
+    const input = qs('#slNewListInput', event.target);
+    createList(input.value);
+  });
 
   // ---- Mutations ---------------------------------------------------
 
@@ -467,6 +644,9 @@ export function initBoodschappenlijst() {
 
   // ---- Initial load --------------------------------------------------
 
-  loadList();
-  startPolling();
+  (async function init() {
+    await loadLists();
+    await loadList();
+    startPolling();
+  })();
 }

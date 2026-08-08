@@ -165,6 +165,13 @@
   color: var(--color-text-muted);
 }
 
+/* Logged-in view (hint + logout button) reads better centered than
+   left-aligned under the icon-only trigger — the login form above
+   stays left-aligned since it's paired with a full-width input. */
+#profileLoggedIn {
+  text-align: center;
+}
+
 .profile-login-form {
   display: flex;
   flex-direction: column;
@@ -197,7 +204,7 @@
 }
 
 .profile-logout-btn {
-  margin: 0 var(--space-4) var(--space-2);
+  margin: 0 0 var(--space-2); /* horizontal centering comes from #profileLoggedIn's text-align */
 }
 
 @media (max-width: 480px) {

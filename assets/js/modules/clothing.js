@@ -14,7 +14,7 @@
 // resizing — with one extra "size" field threaded through. If you
 // change one, check whether the same fix applies to the other.
 //
-// SYNC MODEL: identical to snack-rating.js/boodschappenlijst.js/
+// SYNC MODEL: identical to snack-rating.js/lijstje.js/
 // todo.js — talks to the clothing Cloudflare Worker
 // (cloudflare/cloudflare-worker-clothing + STAPPENPLAN-TODO-SNACKS.md's
 // pattern), one shared array covering BOTH columns (each item

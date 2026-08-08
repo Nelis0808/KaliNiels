@@ -8,7 +8,7 @@
 // column's add-form doubles as its edit-form in place (see
 // enterEditMode/exitEditMode), exactly like gifts.js.
 //
-// SYNC MODEL: identical to boodschappenlijst.js/todo.js — talks to
+// SYNC MODEL: identical to lijstje.js/todo.js — talks to
 // the snacks Cloudflare Worker (cloudflare/cloudflare-worker-snacks +
 // STAPPENPLAN-TODO-SNACKS.md), one shared array covering BOTH
 // columns (each item carries a `person` field), saved optimistically
@@ -63,7 +63,7 @@ export function initSnackRating() {
     statusEl.classList.remove('hidden');
   }
 
-  // ---- Networking (identical shape to boodschappenlijst.js) ----------
+  // ---- Networking (identical shape to lijstje.js) ----------
 
   async function loadSnacks({ silent = false } = {}) {
     if (!silent) setStatus('Laden…');

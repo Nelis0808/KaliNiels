@@ -25,6 +25,19 @@
 const STORAGE_KEY       = 'theme-preference';
 const COLOR_STORAGE_KEY = 'color-theme-preference';
 
+// Keeps the mobile browser-chrome color (<meta name="theme-color">,
+// the strip above the page on Android Chrome / iOS Safari) in sync
+// with the site's actual background instead of a color hardcoded in
+// each page's <head>. Reads --color-bg AFTER data-theme is applied,
+// so it's always whatever's currently on screen (light or dark) —
+// never stale, never the old hardcoded purple.
+function syncThemeColorMeta() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
+  if (bg) meta.setAttribute('content', bg);
+}
+
 function applyTheme(theme, toggleBtn) {
   document.documentElement.setAttribute('data-theme', theme);
 
@@ -35,6 +48,7 @@ function applyTheme(theme, toggleBtn) {
       'To light mode' : 'To dark mode');
   }
 
+  syncThemeColorMeta();
   document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
 }
 

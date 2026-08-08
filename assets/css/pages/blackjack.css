@@ -163,7 +163,7 @@
 .bj-card-img {
   width: 64px;
   height: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
 }
 

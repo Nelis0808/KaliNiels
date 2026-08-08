@@ -41,7 +41,7 @@ import { initDatePicker } from './modules/date-picker.js';
 import { initTournament } from './modules/tournament.js';
 import { initTicketmaster } from './modules/ticketmaster.js';
 import { initPhotoGallery } from './modules/photo-gallery.js';
-import { initBoodschappenlijst } from './modules/boodschappenlijst.js';
+import { initLijstje } from './modules/lijstje.js';
 import { initTodo } from './modules/todo.js';
 import { initSnackRating } from './modules/snack-rating.js';
 import { initClothing } from './modules/clothing.js';
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTournament();   // tournament.html
   initTicketmaster(); // ticketmaster.html
   initPhotoGallery(); // photos.html
-  initBoodschappenlijst(); // boodschappenlijst.html
+  initLijstje(); // lijstje.html
   initTodo();               // todo.html
   initSnackRating();        // snack-rating.html
   initClothing();            // clothing.html

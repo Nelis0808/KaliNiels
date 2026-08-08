@@ -73,9 +73,9 @@ export const siteConfig = {
       status: 'available',
     },
     {
-      title: 'Boodschappenlijstje',
+      title: 'Lijstje',
       description: 'Samen bijgehouden, altijd in sync.',
-      href: 'boodschappenlijst.html',
+      href: 'lijstje.html',
       emoji: '🛒',
       status: 'available',
     },
@@ -173,10 +173,10 @@ export const siteConfig = {
     },
   },
 
-  // Config for the synced shopping list (assets/js/modules/boodschappenlijst.js).
-  // STAPPENPLAN-BOODSCHAPPEN.md for usage.
+  // Config for the synced shopping list (assets/js/modules/lijstje.js).
+  // STAPPENPLAN-LIJSTJE.md for usage.
   shoppingList: {
-    workerUrl: 'https://boodschappenlijst.niels-luijten7.workers.dev',
+    workerUrl: 'https://lijstje.niels-luijten7.workers.dev',
   },
 
   // Config for the gift ideas lists (assets/js/modules/gifts.js).

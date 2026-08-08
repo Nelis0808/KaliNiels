@@ -35,6 +35,29 @@ export function debounce(fn, wait = 150) {
 }
 
 // -----------------------------------------------------------------
+// EXCLUSIVE DROPDOWN COORDINATION
+// -----------------------------------------------------------------
+// Several independent header dropdowns (profile "👤" and settings
+// "⚙️" being the main ones) each manage their own open/closed state.
+// Without coordination, opening one doesn't close the other, so both
+// can end up open and overlapping at once.
+//
+// Fix: whenever a dropdown opens, it dispatches this event on
+// `document` with its own id in `detail.source`. Every OTHER
+// dropdown listens for it and closes itself if the event didn't
+// come from itself — see profile-dropdown.js / settings-dropdown.js
+// for the two current listeners. Add a new header dropdown later?
+// Dispatch this same event on open and listen for it the same way
+// to keep it playing nicely with the others.
+// -----------------------------------------------------------------
+export const EXCLUSIVE_DROPDOWN_EVENT = 'site-dropdown-open';
+
+/** Tells every other exclusive dropdown to close. Call this right after a dropdown opens. */
+export function announceDropdownOpen(source) {
+  document.dispatchEvent(new CustomEvent(EXCLUSIVE_DROPDOWN_EVENT, { detail: { source } }));
+}
+
+// -----------------------------------------------------------------
 // SITE ROOT PATH HELPER
 // -----------------------------------------------------------------
 // Config data (siteConfig.pages, siteConfig.nav, ...) stores hrefs

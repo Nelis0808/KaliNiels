@@ -34,8 +34,8 @@ ververst. Inloggen ontgrendelt twee dingen:
 1. **Een opgeslagen chipsaldo.** Dat saldo staat niet lokaal in de
    browser (dan zou het bij een ander apparaat weer op 1000 beginnen),
    maar in **Cloudflare KV** — dezelfde soort simpele sleutel/waarde-
-   opslag als het boodschappenlijstje. Een kleine Worker (net als bij
-   de fotogalerij, Ticketmaster en het boodschappenlijstje) leest en
+   opslag als het lijstje. Een kleine Worker (net als bij
+   de fotogalerij, Ticketmaster en het lijstje) leest en
    schrijft dat saldo namens de site:
 
    ```
@@ -44,7 +44,7 @@ ververst. Inloggen ontgrendelt twee dingen:
    ```
 
    Dit is een **vierde, aparte Worker** — los van de fotogalerij, het
-   boodschappenlijstje en de Ticketmaster-proxy, ze hebben niets met
+   lijstje en de Ticketmaster-proxy, ze hebben niets met
    elkaar te maken (al gebruiken ze wel hetzelfde inlog-principe).
 
 2. **De "special" kaartvariant.** `assets/icons/playing-cards/` bevat

@@ -6,13 +6,13 @@
 // checkable / renamable / priority-tagged / drag-reorderable, plus a
 // running index number per column.
 //
-// SYNC MODEL: identical to boodschappenlijst.js — talks to the todo
+// SYNC MODEL: identical to lijstje.js — talks to the todo
 // Cloudflare Worker (cloudflare/cloudflare-worker-todo +
 // STAPPENPLAN-TODO-SNACKS.md), one shared array in Cloudflare KV
 // covering BOTH columns (each item carries a `person` field), saved
 // optimistically on every change and polled every few seconds so a
 // change on the other person's device shows up here too. See
-// boodschappenlijst.js's file header for the fuller reasoning (no
+// lijstje.js's file header for the fuller reasoning (no
 // login, not real-time, last-write-wins) — all of that applies here
 // unchanged.
 //
@@ -104,7 +104,7 @@ export function initTodo() {
     statusEl.classList.remove('hidden');
   }
 
-  // ---- Networking (identical shape to boodschappenlijst.js) ----------
+  // ---- Networking (identical shape to lijstje.js) ----------
 
   async function loadItems({ silent = false } = {}) {
     if (!silent) setStatus('Laden…');

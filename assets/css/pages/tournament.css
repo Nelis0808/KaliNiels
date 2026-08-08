@@ -2,14 +2,19 @@
    PAGE: TOURNAMENT (tournament.html)
    ============================================================= */
 
+/* Everything on this page is centered (text + buttons) — the one
+   deliberate exception is the text typed into #tournamentOptions
+   below, which stays left-aligned like normal textarea text. */
 #tournamentApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
+  text-align: center;
 }
 
 .tournament-presets {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
@@ -26,6 +31,7 @@
   color: var(--color-text);
   font: inherit;
   font-family: var(--font-body);
+  text-align: left; /* exception: typed content stays left-aligned */
   resize: vertical;
 }
 
@@ -50,6 +56,7 @@
 .match {
   display: flex;
   align-items: stretch;
+  justify-content: center;
   gap: var(--space-5);
   margin-top: var(--space-6);
 }
@@ -106,7 +113,7 @@
 }
 
 .tournament-history {
-  text-align: left;
+  text-align: center;
   margin-top: var(--space-6);
   padding: var(--space-5);
   background: var(--color-surface);

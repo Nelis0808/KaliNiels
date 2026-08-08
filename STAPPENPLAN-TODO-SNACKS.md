@@ -8,7 +8,7 @@ Deze update voegt twee pagina's toe, allebei in twee gedeelde kolommen
 - **`snack-rating.html`** — snack-beoordelingen per persoon: link,
   optioneel een foto, sterren van 0 tot 5, en een beschrijving.
 
-Beide werken op **exact dezelfde manier** als het boodschappenlijstje:
+Beide werken op **exact dezelfde manier** als het lijstje:
 wat jij verandert, ziet de ander een paar seconden later ook (en
 andersom) — zonder in te loggen. Dat betekent: **twee nieuwe, aparte
 Workers**, elk met hun eigen Cloudflare KV-opslag. Ze hebben niets met
@@ -22,7 +22,7 @@ Browser (jij)         →  Worker "snack-ratings"  →  Cloudflare KV (de rating
 Browser (je vriendin) →  Worker "snack-ratings"  →  Cloudflare KV (de ratings)
 ```
 
-Geen wachtwoord nodig (net als bij het boodschappenlijstje en de
+Geen wachtwoord nodig (net als bij het lijstje en de
 cadeau-ideeën): een TODO-lijstje en een lijstje snack-ratings zijn niet
 gevoelig genoeg om die extra stap waard te zijn.
 
@@ -101,7 +101,7 @@ snackRatings: {
 → vul bij `workerUrl` de echte URL's in die je in stap 2.5 noteerde.
 Zolang dit nog de placeholder is, toont elke pagina netjes een
 waarschuwing in plaats van kapot te gaan (zelfde gedrag als bij het
-boodschappenlijstje).
+lijstje).
 
 `personLabels` bepaalt alleen de namen die boven elke kolom staan —
 verander die gerust als jullie iets anders willen zien, dat heeft
@@ -188,8 +188,8 @@ verschijnen.
 
 ## Hoe de sync precies werkt
 
-Exact hetzelfde model als het boodschappenlijstje (zie
-`STAPPENPLAN-BOODSCHAPPEN.md` voor de volledige uitleg) — samengevat:
+Exact hetzelfde model als het lijstje (zie
+`STAPPENPLAN-LIJSTJE.md` voor de volledige uitleg) — samengevat:
 
 - Elke wijziging wordt **meteen** naar de bijbehorende Worker
   gestuurd en direct in beeld bijgewerkt.
@@ -199,7 +199,7 @@ Exact hetzelfde model als het boodschappenlijstje (zie
   je terugkomt.
 - Last-write-wins, geen ingewikkelde botsingslogica — ruim voldoende
   voor twee mensen die af en toe iets aanpassen.
-- **Belangrijk verschil met het boodschappenlijstje:** hier delen
+- **Belangrijk verschil met het lijstje:** hier delen
   BEIDE kolommen (Kalina + Niels) samen ÉÉN lijst in Cloudflare KV
   (elk item heeft een `person`-veld) — elke opslag stuurt dus altijd
   de volledige lijst van beide kolommen mee, niet alleen die van de

@@ -4,7 +4,7 @@ Deze update voegt `gifts.html` toe: twee gedeelde lijstjes met
 cadeau-ideeën — **links voor Kalina, rechts voor Niels**. Je plakt
 een linkje naar het cadeau erin, en de site zoekt er zelf een plaatje
 bij. Wat de één toevoegt of verwijdert, ziet de ander een paar
-seconden later ook — net als bij het boodschappenlijstje, zonder dat
+seconden later ook — net als bij het lijstje, zonder dat
 iemand hoeft in te loggen.
 
 ```
@@ -15,7 +15,7 @@ Browser (je vriendin) →  Worker "gifts"  →  Cloudflare KV (de lijst: titels/
 ```
 
 Dit is een **vierde, aparte Worker**, los van Ticketmaster, de
-fotogalerij en het boodschappenlijstje — ze hebben niets met elkaar
+fotogalerij en het lijstje — ze hebben niets met elkaar
 te maken en kunnen onafhankelijk werken/breken.
 
 ## Hoe het plaatje bij elk cadeau tot stand komt
@@ -40,7 +40,7 @@ naar de webshop lekt.
 
 Geen wachtwoord nodig hier (in tegenstelling tot de foto's): een
 lijstje met cadeau-ideeën is niet gevoelig genoeg om die extra stap
-waard te zijn — zelfde afweging als bij het boodschappenlijstje.
+waard te zijn — zelfde afweging als bij het lijstje.
 
 ---
 
@@ -182,7 +182,7 @@ seconden — nieuwe cadeaus van de ander moeten daar ook verschijnen.
 - ✅ Een eigen foto uploaden overschrijft altijd het automatisch
   gevonden plaatje, nooit andersom.
 - ⚠️ **Geen geheimhouding**: dit lijstje werkt zoals het
-  boodschappenlijstje — beide van jullie kunnen alles zien en
+  lijstje — beide van jullie kunnen alles zien en
   bewerken, ook cadeaus die "voor" de ander bedoeld zijn. Handig om
   ideeën te verzamelen, maar dus geen verrassing als je zelf
   regelmatig meekijkt op de site. Wil je dat wél geheim per persoon,
