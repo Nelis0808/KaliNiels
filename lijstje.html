@@ -56,8 +56,10 @@
 
       <!-- Category switcher: which list (e.g. "Boodschappen", "Klussen")
            is currently shown. Filled in + wired up by lijstje.js.
-           "+ Nieuwe lijst toevoegen" always renders last, below a
-           divider. -->
+           "+ Nieuwe lijst" and (with 2+ lists) "Lijsten wijzigen" always
+           render last, below a divider. "Lijsten wijzigen" swaps the
+           menu into an edit view — drag handle + rename (✏️) + delete
+           (✕) per list — until "Klaar" is clicked again. -->
       <div class="sl-list-switcher" id="slListSwitcher">
         <button
           type="button"

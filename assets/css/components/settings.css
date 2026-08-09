@@ -166,8 +166,9 @@
 }
 
 /* Logged-in view (hint + logout button) reads better centered than
-   left-aligned under the icon-only trigger — the login form above
-   stays left-aligned since it's paired with a full-width input. */
+   left-aligned under the icon-only trigger — the login form above is
+   centered too (the "Inloggen" button), while the password input
+   itself stays full-width via width: 100% below. */
 #profileLoggedIn {
   text-align: center;
 }
@@ -175,6 +176,7 @@
 .profile-login-form {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-4) var(--space-2);
 }

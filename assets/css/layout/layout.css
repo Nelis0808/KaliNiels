@@ -36,6 +36,16 @@ section {
   padding: var(--space-9) 0;
 }
 
+/* A hero is already visually "roomy" (its own space-7 padding plus
+   the gradient banner itself reads as a distinct block), so the
+   very next section's top padding on top of that stacks up to ~9rem
+   of empty space before any real content appears. Trim just that
+   first gap; the section keeps its normal bottom padding and every
+   later section on the page is unaffected. */
+.hero + section {
+  padding-top: var(--space-5);
+}
+
 .section-title {
   text-align: center;
   margin-bottom: var(--space-8);
@@ -65,6 +75,7 @@ section {
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   section { padding: var(--space-7) 0; }
+  .hero + section { padding-top: var(--space-4); }
 }
 
 @media (max-width: 480px) {

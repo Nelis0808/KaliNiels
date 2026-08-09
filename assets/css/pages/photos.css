@@ -56,12 +56,34 @@
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
-.pg-gradient-1 { background: linear-gradient(135deg, var(--color-primary),   var(--color-secondary)); }
-.pg-gradient-2 { background: linear-gradient(135deg, var(--color-secondary), var(--color-tertiary)); }
-.pg-gradient-3 { background: linear-gradient(135deg, var(--color-tertiary),  var(--color-accent)); }
-.pg-gradient-4 { background: linear-gradient(135deg, var(--color-accent),    var(--color-primary)); }
-.pg-gradient-5 { background: linear-gradient(135deg, var(--color-primary),   var(--color-accent)); }
-.pg-gradient-6 { background: linear-gradient(135deg, var(--color-secondary), var(--color-primary)); }
+/* One continuous blue -> pink -> blue sweep across all 10 tiles
+   (read left-to-right, top-to-bottom in the grid): each tile is a
+   135deg slice of that sweep using its own start/end color, and
+   neighbouring tiles share a color at the seam, so the eye reads it
+   as one smooth transition rather than 10 independent gradients.
+
+   Fixed hex values on purpose, not the --color-* theme tokens: the
+   site's [data-color-theme] can be "pink" (primary/secondary/tertiary
+   are the pink shades and accent is blue) just as easily as "blue"
+   (the reverse) -- tying this to those tokens would make the sweep
+   flip direction, or stop being blue-pink-blue at all, depending on
+   which theme happens to be active. These placeholders should always
+   read the same way regardless of theme.
+
+   Stops, evenly spaced blue -> pink -> blue:
+     #3867D6 (blue, start/end) -> #5C7FE0 -> #8098E9 -> #A5B0EE
+     -> #C9A8DB -> #E4A0C7 (midpoint) -> #F088B0 -> #FF69B4 (pink)
+     -> #C9A8DB -> #8098E9 -> back to #3867D6 */
+.pg-gradient-1  { background: linear-gradient(135deg, #3867D6, #5C7FE0); }
+.pg-gradient-2  { background: linear-gradient(135deg, #5C7FE0, #8098E9); }
+.pg-gradient-3  { background: linear-gradient(135deg, #8098E9, #A5B0EE); }
+.pg-gradient-4  { background: linear-gradient(135deg, #A5B0EE, #C9A8DB); }
+.pg-gradient-5  { background: linear-gradient(135deg, #C9A8DB, #E4A0C7); }
+.pg-gradient-6  { background: linear-gradient(135deg, #E4A0C7, #F088B0); }
+.pg-gradient-7  { background: linear-gradient(135deg, #F088B0, #FF69B4); }
+.pg-gradient-8  { background: linear-gradient(135deg, #FF69B4, #C9A8DB); }
+.pg-gradient-9  { background: linear-gradient(135deg, #C9A8DB, #8098E9); }
+.pg-gradient-10 { background: linear-gradient(135deg, #8098E9, #3867D6); }
 
 /* == REAL PHOTO CARDS (logged-in) == */
 .pg-card {

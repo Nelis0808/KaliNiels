@@ -17,6 +17,7 @@
 .tm-tabs {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
 }
 
@@ -46,6 +47,7 @@
 .tm-filters {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
   gap: var(--space-4);
 }
@@ -53,6 +55,7 @@
 .tm-search-row {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-3);
   flex: 1 1 320px;
 }
@@ -62,8 +65,75 @@
   min-width: 0;
 }
 
+.tm-favorites-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  flex: 1 1 320px;
+}
+
+.tm-favorites-row input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+/* == FAVORITES CHIPS ==
+   One pill per saved artist, each with its own ✕ to remove it —
+   same "chip with inline delete" idea as elsewhere on the site, just
+   scoped to this page. Sits directly under the toolbar, above the
+   results grid, so you can see + prune the saved list without
+   re-opening the input. */
+.tm-favorites-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.tm-favorite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.tm-favorite-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  line-height: 1;
+}
+
+.tm-favorite-chip-remove:hover,
+.tm-favorite-chip-remove:focus-visible {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+/* Shown instead of the chip row when the list is empty (first visit,
+   or every artist has been removed) — a nudge toward the input above
+   rather than just blank space. */
+.tm-favorites-empty-hint {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-6);
+}
+
 .tm-country-row {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
@@ -189,11 +259,13 @@
   }
 
   .tm-search-row,
+  .tm-favorites-row,
   .tm-country-row {
     width: 100%;
   }
 
   .tm-search-row button,
+  .tm-favorites-row button,
   .tm-country-row button {
     width: 100%;
   }

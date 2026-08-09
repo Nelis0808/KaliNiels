@@ -6,6 +6,14 @@
   the repo root) so the real API key never ships to the browser.
   Logic lives in assets/js/modules/ticketmaster.js — this file only
   contains the toolbar (tabs + filters) and the results container.
+
+  "Favorieten" tab: a SECOND, separate Worker
+  (cloudflare/cloudflare-worker-favorite-artists) stores a shared list
+  of artist names in its own KV namespace, synced across every device
+  — add "Coldplay" on your phone, it shows up on the laptop too. That
+  Worker only stores names; ticketmaster.js still uses the existing
+  proxy above (one search call per saved artist) to fetch the actual
+  concert data. See STAPPENPLAN-TICKETMASTER-FAVORIETEN.md.
 -->
 <html lang="nl">
 <head>
@@ -49,7 +57,10 @@
     <section class="container" id="ticketmasterApp">
       <div class="tm-toolbar">
         <div class="tm-tabs" role="tablist" aria-label="Wat wil je zien?">
-          <button type="button" id="tmTabUpcoming" class="tm-tab" role="tab" aria-selected="true" aria-controls="tmResultsPanel">
+          <button type="button" id="tmTabFavorites" class="tm-tab" role="tab" aria-selected="true" aria-controls="tmResultsPanel">
+            ⭐ Favorieten
+          </button>
+          <button type="button" id="tmTabUpcoming" class="tm-tab" role="tab" aria-selected="false" aria-controls="tmResultsPanel">
             Aankomende concerten
           </button>
           <button type="button" id="tmTabSales" class="tm-tab" role="tab" aria-selected="false" aria-controls="tmResultsPanel">
@@ -65,6 +76,16 @@
             <label for="tmSearchInput" class="sr-only">Artiest of band</label>
             <input type="search" id="tmSearchInput" placeholder="Coldplay, Maroon5, Suzanne &amp; Freek" autocomplete="off">
             <button type="button" id="tmSearchBtn" class="btn btn-primary">Zoeken</button>
+          </div>
+
+          <!-- Favorieten-beheer: opgeslagen artiestnamen (gedeeld tussen
+               apparaten via de favorite-artists Worker). Toevoegen via
+               het tekstveld; elke naam wordt een "chip" met een ✕ om 'm
+               weer te verwijderen. Alleen zichtbaar op de Favorieten-tab. -->
+          <div id="tmFavoritesRow" class="tm-favorites-row hidden">
+            <label for="tmFavoriteInput" class="sr-only">Artiest of band toevoegen aan favorieten</label>
+            <input type="text" id="tmFavoriteInput" placeholder="Artiest toevoegen…" maxlength="100" autocomplete="off">
+            <button type="button" id="tmFavoriteAddBtn" class="btn btn-primary">Toevoegen</button>
           </div>
 
           <div class="tm-country-row">
@@ -83,6 +104,11 @@
           </div>
         </div>
       </div>
+
+      <!-- Chips voor elke opgeslagen favoriete artiest, met een ✕ om
+           'm te verwijderen. Alleen zichtbaar op de Favorieten-tab.
+           Leeg totdat ticketmaster.js de lijst heeft opgehaald. -->
+      <div id="tmFavoritesChips" class="tm-favorites-chips hidden" aria-label="Opgeslagen favorieten"></div>
 
       <div id="tmResultsPanel" role="tabpanel" aria-label="Resultaten">
         <p id="tmStatus" class="tm-status" role="status" aria-live="polite"></p>

@@ -2,11 +2,13 @@
 // TICKETMASTER (ticketmaster.html)
 // -----------------------------------------------------------------
 // Shows live concert data from the Ticketmaster Discovery API in
-// three modes:
-//   - "upcoming" : general upcoming concerts (any artist)
-//   - "sales"    : concerts whose public onsale hasn't started yet
-//   - "search"   : concerts matching a specific artist/act name
-// All three can be filtered by country.
+// four modes:
+//   - "favorites" : concerts for every artist in the saved favorites
+//                    list (see FAVORITES below) — the default tab
+//   - "upcoming"  : general upcoming concerts (any artist)
+//   - "sales"     : concerts whose public onsale hasn't started yet
+//   - "search"    : concerts matching a specific artist/act name
+// All four can be filtered by country.
 //
 // SECURITY NOTE: this module never talks to Ticketmaster directly
 // and never touches an API key. It only calls the small serverless
@@ -17,7 +19,25 @@
 // key directly in this file (or config.js) would let anyone reading
 // the source, or GitHub Pages' shipped JS, use up your daily quota.
 //
-// EXTENDING: want a 4th mode (e.g. "by venue")? Add it to the
+// FAVORITES: a SEPARATE small Worker
+// (siteConfig.ticketmaster.favoriteArtistsWorkerUrl, see
+// /cloudflare/cloudflare-worker-favorite-artists +
+// STAPPENPLAN-TICKETMASTER-FAVORIETEN.md) stores just the list of
+// saved artist NAMES, shared across every device — add "Coldplay" on
+// your phone, it's there on the laptop too. It does not know
+// anything about concerts itself. When the favorites tab is active,
+// this module fires one `mode=search` request per saved artist at
+// the EXISTING Ticketmaster proxy (same one "Zoek op naam" uses),
+// then merges + sorts all the results by date client-side. That
+// keeps the Ticketmaster proxy itself completely unchanged.
+//
+// Because merging N artists' results means N independent Ticketmaster
+// pages rather than one, the favorites tab intentionally shows a
+// single page per artist (see FAVORITES_PAGE_SIZE) and has no "Meer
+// laden" button, rather than building real cross-artist pagination —
+// simpler, and plenty for "did anyone I like just announce a show".
+//
+// EXTENDING: want a 5th mode (e.g. "by venue")? Add it to the
 // `MODES` set below, add a matching tab button in ticketmaster.html,
 // and handle it the same way "search" is handled here.
 // =================================================================
@@ -26,6 +46,7 @@ import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml, debounce } from './utils.js';
 
 const PAGE_SIZE = 12;
+const FAVORITES_PAGE_SIZE = 6; // per artist, since results from every saved artist get merged into one list
 
 const COUNTRY_LABELS = {
   NL: 'Nederland',
@@ -42,9 +63,10 @@ export function initTicketmaster() {
   if (!root) return; // not on this page
 
   const tabs = {
-    upcoming: qs('#tmTabUpcoming', root),
-    sales:    qs('#tmTabSales', root),
-    search:   qs('#tmTabSearch', root),
+    favorites: qs('#tmTabFavorites', root),
+    upcoming:  qs('#tmTabUpcoming', root),
+    sales:     qs('#tmTabSales', root),
+    search:    qs('#tmTabSearch', root),
   };
   const searchRow     = qs('#tmSearchRow', root);
   const searchInput   = qs('#tmSearchInput', root);
@@ -55,11 +77,22 @@ export function initTicketmaster() {
   const resultsEl     = qs('#tmResults', root);
   const loadMoreBtn   = qs('#tmLoadMore', root);
 
-  const workerUrl     = siteConfig.ticketmaster?.workerUrl || '';
+  const favoritesRow   = qs('#tmFavoritesRow', root);
+  const favoriteInput  = qs('#tmFavoriteInput', root);
+  const favoriteAddBtn = qs('#tmFavoriteAddBtn', root);
+  const favoritesChips = qs('#tmFavoritesChips', root);
+
+  const workerUrl = siteConfig.ticketmaster?.workerUrl || '';
+  const favoriteArtistsWorkerUrl = siteConfig.ticketmaster?.favoriteArtistsWorkerUrl || '';
   countrySelect.value = siteConfig.ticketmaster?.defaultCountry ?? 'NL';
 
+  // The saved favorites list itself (artist names) — separate from
+  // `state` below, which describes the current query/results. Starts
+  // empty and is filled in by loadFavoriteArtists() during init.
+  let favoriteArtists = [];
+
   // Current query state — rebuilt whenever a tab, filter, or search changes.
-  let state = { mode: 'upcoming', keyword: '', page: 0, loading: false };
+  let state = { mode: 'favorites', keyword: '', page: 0, loading: false };
 
   function setMode(mode) {
     state = { ...state, mode, page: 0 };
@@ -67,6 +100,8 @@ export function initTicketmaster() {
       btn.setAttribute('aria-selected', String(key === mode));
     });
     searchRow.classList.toggle('hidden', mode !== 'search');
+    favoritesRow.classList.toggle('hidden', mode !== 'favorites');
+    favoritesChips.classList.toggle('hidden', mode !== 'favorites');
 
     if (mode === 'search') {
       searchInput.focus();
@@ -77,17 +112,25 @@ export function initTicketmaster() {
         return;
       }
     }
+
+    if (mode === 'favorites' && favoriteArtists.length === 0) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = 'Nog geen favorieten opgeslagen — voeg hierboven een artiest toe.';
+      loadMoreBtn.classList.add('hidden');
+      return;
+    }
+
     runQuery({ replace: true });
   }
 
-  function buildUrl(page) {
+  function buildUrl(page, { mode = state.mode, keyword = state.keyword, size = PAGE_SIZE } = {}) {
     const params = new URLSearchParams({
-      mode: state.mode,
+      mode: mode === 'favorites' ? 'search' : mode, // favorites has no server-side "mode" of its own — it's N search calls merged client-side
       page: String(page),
-      size: String(PAGE_SIZE),
+      size: String(size),
     });
     if (countrySelect.value) params.set('countryCode', countrySelect.value);
-    if (state.mode === 'search') params.set('keyword', state.keyword);
+    if (mode === 'search' || mode === 'favorites') params.set('keyword', keyword);
     return `${workerUrl}?${params.toString()}`;
   }
 
@@ -97,6 +140,11 @@ export function initTicketmaster() {
         '⚠️ Geen worker geconfigureerd. Zet je Cloudflare Worker-URL in assets/js/config.js (ticketmaster.workerUrl), zie STAPPENPLAN.md.';
       resultsEl.innerHTML = '';
       loadMoreBtn.classList.add('hidden');
+      return;
+    }
+
+    if (state.mode === 'favorites') {
+      await runFavoritesQuery();
       return;
     }
 
@@ -154,6 +202,90 @@ export function initTicketmaster() {
     } finally {
       state.loading = false;
     }
+  }
+
+  // ---- Favorites: fan-out one search per saved artist, then merge ----
+  // No "Meer laden" here (see the module header comment for why) —
+  // every call below already asks for a full page (FAVORITES_PAGE_SIZE)
+  // per artist, so this is inherently a "replace everything" query.
+  async function runFavoritesQuery() {
+    if (state.loading) return;
+    state.loading = true;
+    resultsEl.innerHTML = '';
+    loadMoreBtn.classList.add('hidden');
+    statusEl.textContent = `Bezig met laden voor ${favoriteArtists.length} favoriet${favoriteArtists.length === 1 ? '' : 'en'}…`;
+
+    try {
+      const results = await Promise.allSettled(
+        favoriteArtists.map((artist) =>
+          fetch(buildUrl(0, { mode: 'favorites', keyword: artist, size: FAVORITES_PAGE_SIZE })).then(async (response) => {
+            if (!response.ok) {
+              const body = await response.json().catch(() => ({}));
+              throw new Error(body.error || body.fault?.faultstring || `HTTP ${response.status}`);
+            }
+            return response.json();
+          })
+        )
+      );
+
+      // Partial failure (one artist's request fails, e.g. a transient
+      // network blip) shouldn't blank out results for every other
+      // artist that DID succeed — collect events from whichever calls
+      // came back, and only surface an error if literally all of them
+      // failed.
+      const allEvents = [];
+      let failures = 0;
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          const events = (result.value._embedded?.events ?? []).filter(isStillHappening);
+          allEvents.push(...events);
+        } else {
+          failures += 1;
+          console.error('Ticketmaster proxy error (favorites):', result.reason);
+        }
+      }
+
+      if (failures === results.length) {
+        throw new Error(results[0].reason?.message || 'Onbekende fout');
+      }
+
+      // De-dupe (the same show can legitimately come back twice if two
+      // saved artists are both playing it, e.g. a festival lineup) and
+      // sort everything into one chronological list across all artists.
+      const seenIds = new Set();
+      const deduped = allEvents.filter((event) => {
+        if (!event.id || seenIds.has(event.id)) return false;
+        seenIds.add(event.id);
+        return true;
+      });
+      deduped.sort((a, b) => eventTimestamp(a) - eventTimestamp(b));
+
+      if (deduped.length === 0) {
+        resultsEl.innerHTML = '';
+        statusEl.textContent = 'Geen aankomende concerten gevonden voor je favorieten in dit land.';
+        return;
+      }
+
+      resultsEl.insertAdjacentHTML('beforeend', deduped.map(renderCard).join(''));
+      qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
+
+      const countryLabel = COUNTRY_LABELS[countrySelect.value] ?? countrySelect.value;
+      const failureNote = failures > 0 ? ` (${failures} favoriet${failures === 1 ? '' : 'en'} kon niet geladen worden)` : '';
+      statusEl.textContent = `${deduped.length} resultaten in ${countryLabel} voor ${favoriteArtists.length} favoriet${
+        favoriteArtists.length === 1 ? '' : 'en'
+      }${failureNote}.`;
+    } catch (error) {
+      console.error('Ticketmaster proxy error (favorites):', error);
+      statusEl.textContent = `❌ Kon geen data ophalen (${error.message}). Probeer het later opnieuw.`;
+    } finally {
+      state.loading = false;
+    }
+  }
+
+  function eventTimestamp(event) {
+    const start = event.dates?.start;
+    if (!start?.localDate) return Number.POSITIVE_INFINITY; // undated shows sort last
+    return new Date(`${start.localDate}T${start.localTime ?? '00:00:00'}`).getTime();
   }
 
   /** Skip events Ticketmaster marks as cancelled or postponed — they're
@@ -264,8 +396,110 @@ export function initTicketmaster() {
     });
   }
 
+  // ---- Favorites list (shared across devices) -----------------------
+  // Talks to a SEPARATE Worker from the Ticketmaster proxy above — see
+  // the module header comment. GET on init, PUT (whole list) on every
+  // add/remove — same "send the whole array back" pattern as
+  // lijstje.js's item saves, appropriate here too since this list is
+  // small (tens of names, not thousands, see MAX_ARTISTS server-side).
+
+  function renderFavoritesChips() {
+    if (favoriteArtists.length === 0) {
+      favoritesChips.innerHTML = '<p class="tm-favorites-empty-hint">Nog geen favorieten — voeg er hierboven een toe.</p>';
+      return;
+    }
+    favoritesChips.innerHTML = favoriteArtists
+      .map(
+        (artist) => `
+          <span class="tm-favorite-chip" data-artist="${escapeHtml(artist)}">
+            ${escapeHtml(artist)}
+            <button type="button" class="tm-favorite-chip-remove" aria-label="${escapeHtml(artist)} verwijderen uit favorieten">✕</button>
+          </span>
+        `
+      )
+      .join('');
+  }
+
+  async function loadFavoriteArtists() {
+    if (!favoriteArtistsWorkerUrl || favoriteArtistsWorkerUrl.includes('YOUR-SUBDOMAIN')) {
+      favoritesChips.innerHTML =
+        '<p class="tm-favorites-empty-hint">⚠️ Geen favorieten-worker geconfigureerd. Zet favoriteArtistsWorkerUrl in assets/js/config.js, zie STAPPENPLAN-TICKETMASTER-FAVORIETEN.md.</p>';
+      return;
+    }
+    try {
+      const response = await fetch(`${favoriteArtistsWorkerUrl}/artists`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      favoriteArtists = Array.isArray(data.artists) ? data.artists : [];
+    } catch (error) {
+      console.error('Kon favoriete artiesten niet laden:', error);
+      favoritesChips.innerHTML = '<p class="tm-favorites-empty-hint">❌ Kon favorieten niet laden. Probeer het later opnieuw.</p>';
+      return;
+    }
+    renderFavoritesChips();
+  }
+
+  /** Sends the whole current `favoriteArtists` array to the Worker. On
+   *  failure, rolls back to `previous` both locally and on screen —
+   *  same optimistic-with-rollback pattern lijstje.js uses. */
+  async function saveFavoriteArtists(previous) {
+    try {
+      const response = await fetch(`${favoriteArtistsWorkerUrl}/artists`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artists: favoriteArtists }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (Array.isArray(data.artists)) favoriteArtists = data.artists;
+      renderFavoritesChips();
+      return true;
+    } catch (error) {
+      console.error('Kon favoriete artiesten niet opslaan:', error);
+      favoriteArtists = previous;
+      renderFavoritesChips();
+      statusEl.textContent = '❌ Kon favoriet niet opslaan. Probeer het opnieuw.';
+      return false;
+    }
+  }
+
+  async function addFavoriteArtist(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (favoriteArtists.some((artist) => artist.toLowerCase() === trimmed.toLowerCase())) {
+      favoriteInput.value = '';
+      return; // already saved, nothing to do
+    }
+
+    const previous = favoriteArtists;
+    favoriteArtists = [...favoriteArtists, trimmed];
+    renderFavoritesChips();
+    favoriteInput.value = '';
+
+    const saved = await saveFavoriteArtists(previous);
+    if (saved && state.mode === 'favorites') runQuery({ replace: true });
+  }
+
+  async function removeFavoriteArtist(name) {
+    const previous = favoriteArtists;
+    favoriteArtists = favoriteArtists.filter((artist) => artist !== name);
+    renderFavoritesChips();
+
+    const saved = await saveFavoriteArtists(previous);
+    if (saved && state.mode === 'favorites') {
+      if (favoriteArtists.length === 0) {
+        resultsEl.innerHTML = '';
+        statusEl.textContent = 'Nog geen favorieten opgeslagen — voeg hierboven een artiest toe.';
+        loadMoreBtn.classList.add('hidden');
+      } else {
+        runQuery({ replace: true });
+      }
+    }
+  }
+
   // ---- Wiring ------------------------------------------------------
 
+  tabs.favorites.addEventListener('click', () => setMode('favorites'));
   tabs.upcoming.addEventListener('click', () => setMode('upcoming'));
   tabs.sales.addEventListener('click', () => setMode('sales'));
   tabs.search.addEventListener('click', () => setMode('search'));
@@ -297,6 +531,26 @@ export function initTicketmaster() {
     }, 500)
   );
 
-  // Initial load.
-  setMode('upcoming');
+  favoriteAddBtn.addEventListener('click', () => addFavoriteArtist(favoriteInput.value));
+  favoriteInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addFavoriteArtist(favoriteInput.value);
+    }
+  });
+  favoritesChips.addEventListener('click', (event) => {
+    const removeBtn = event.target.closest('.tm-favorite-chip-remove');
+    if (!removeBtn) return;
+    const artist = removeBtn.closest('.tm-favorite-chip')?.dataset.artist;
+    if (artist) removeFavoriteArtist(artist);
+  });
+
+  // Initial load: fetch the saved favorites list first so the default
+  // "favorites" tab has something to query — setMode('favorites') below
+  // reads favoriteArtists synchronously, so it has to run after this
+  // await resolves, not in parallel with it.
+  (async function init() {
+    await loadFavoriteArtists();
+    setMode('favorites');
+  })();
 }

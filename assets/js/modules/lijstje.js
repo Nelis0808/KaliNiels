@@ -9,11 +9,19 @@
 //
 // MULTIPLE LISTS: the dropdown at the top (#slListSwitcher) lets you
 // switch between categories (e.g. "Boodschappen", "Klussen") — each
-// is its own list on the server, addressed by an id. "+ Nieuwe lijst
-// toevoegen" always sits at the bottom of that dropdown and opens a
-// small inline form to create another one. The last list you had
-// open is remembered per-browser (localStorage), so this device
-// reopens the same one next time.
+// is its own list on the server, addressed by an id. "+ Nieuwe lijst"
+// always sits at the bottom of that dropdown and opens a small inline
+// form to create another one. The last list you had open is
+// remembered per-browser (localStorage), so this device reopens the
+// same one next time.
+//
+// EDITING LISTS: with 2+ lists, a "Lijsten wijzigen" button also sits
+// at the bottom of the dropdown. Clicking it swaps the dropdown into
+// an edit view — each list becomes a row with a drag handle (reorder),
+// a ✏️ rename button, and a ✕ delete button — until "Klaar" is
+// clicked again. Same drag mechanics (Pointer Events, long-press or
+// handle-drag, ArrowUp/ArrowDown keyboard fallback) as reordering
+// items within a list, just scoped to the dropdown instead.
 //
 // SYNC MODEL: every local change (add/check/delete) is sent to the
 // worker immediately (optimistic UI — the change shows instantly,
@@ -34,6 +42,20 @@ import { qs, escapeHtml } from './utils.js';
 
 const POLL_INTERVAL_MS = 5000;
 const ACTIVE_LIST_STORAGE_KEY = 'lijstje-active-list-id';
+
+// A 404/405 on PATCH/DELETE/PUT /lists specifically (as opposed to a
+// network error, 500, etc.) almost always means one thing: the
+// worker.js deployed on Cloudflare is still the older version that
+// only knew about items inside a single list, and doesn't have the
+// rename/delete/reorder routes yet — see STAPPENPLAN-LIJSTJE.md. Any
+// other status is a genuine runtime error and gets the plain message
+// instead.
+function describeListsApiError(response) {
+  if (response && (response.status === 404 || response.status === 405)) {
+    return 'moet je de Cloudflare Worker opnieuw deployen (zie STAPPENPLAN-LIJSTJE.md bovenaan)';
+  }
+  return 'probeer het opnieuw';
+}
 
 export function initLijstje() {
   const root = document.getElementById('shoppingListApp');
@@ -69,6 +91,7 @@ export function initLijstje() {
   let items = [];
   let pollTimer = null;
   let saveInFlight = false; // avoids overlapping PUTs stomping on each other
+  let renamingItemId = null; // set while an item's rename <input> is open, so polling doesn't clobber it
 
   // Categories (separate lists). `lists` mirrors the server's index;
   // `activeListId` is whichever one is currently shown.
@@ -168,12 +191,19 @@ export function initLijstje() {
 
   // ---- Category switcher (multiple lists) ---------------------------
 
+  // Whether the dropdown is currently showing the "Lijsten wijzigen"
+  // edit view (drag handle + rename + delete per list) instead of
+  // the normal pick-a-list view. Reset to false whenever the
+  // dropdown closes, so it always reopens in the normal view.
+  let listsEditMode = false;
+
   function closeSwitcher() {
     switcherEl.classList.remove('open');
     switcherTrigger.setAttribute('aria-expanded', 'false');
+    listsEditMode = false;
 
     // Reset the "new list" inline form back to its collapsed state
-    // (just the "+ Nieuwe lijst toevoegen" button) for next time it opens.
+    // (just the "+ Nieuwe lijst" button) for next time it opens.
     const form = qs('#slNewListForm', switcherMenu);
     const addBtn = qs('#slNewListBtn', switcherMenu);
     if (form && addBtn) {
@@ -181,6 +211,7 @@ export function initLijstje() {
       addBtn.classList.remove('hidden');
       qs('#slNewListInput', form).value = '';
     }
+    renderSwitcher();
   }
 
   function toggleSwitcher() {
@@ -189,12 +220,20 @@ export function initLijstje() {
     if (isOpen) {
       const activeBtn = qs('.sl-list-menu-item.active', switcherMenu);
       (activeBtn || qs('.sl-list-menu-item', switcherMenu))?.focus();
+    } else if (listsEditMode) {
+      listsEditMode = false;
+      renderSwitcher(); // otherwise the edit-mode rows (with now-stale click targets) linger until reopened
     }
   }
 
   function renderSwitcher() {
     const active = lists.find((list) => list.id === activeListId);
     switcherLabel.textContent = active ? active.name : 'Lijstje';
+
+    if (listsEditMode) {
+      renderSwitcherEditMode();
+      return;
+    }
 
     const listButtonsHtml = lists
       .map(
@@ -214,7 +253,7 @@ export function initLijstje() {
       ${listButtonsHtml}
       <div class="sl-list-menu-divider" role="separator"></div>
       <button type="button" id="slNewListBtn" class="sl-list-menu-item sl-list-menu-add" role="menuitem">
-        ＋ Nieuwe lijst toevoegen
+        + Nieuwe lijst
       </button>
       <form id="slNewListForm" class="sl-list-new-form hidden">
         <input
@@ -227,6 +266,38 @@ export function initLijstje() {
         >
         <button type="submit" class="btn btn-primary btn-sm">Aanmaken</button>
       </form>
+      <button type="button" id="slEditListsBtn" class="sl-list-menu-item sl-list-menu-add" role="menuitem">
+        Lijsten wijzigen
+      </button>
+    `;
+  }
+
+  // ---- "Lijsten wijzigen" edit view ----------------------------------
+  // Each list becomes a row with a drag handle (reorder, same
+  // pointer-events approach as the item rows further down this
+  // file), a rename (✏️) button, and a delete (✕) button.
+  function renderSwitcherEditMode() {
+    const rowsHtml = lists
+      .map(
+        (list) => `
+          <div class="sl-list-edit-row" data-list-id="${escapeHtml(list.id)}">
+            <span class="sl-list-drag-handle" role="button" tabindex="0" aria-label="${escapeHtml(list.name)} verslepen om te herordenen (of vasthouden, of pijltje omhoog/omlaag)"></span>
+            <span class="sl-list-edit-name">${escapeHtml(list.name)}</span>
+            <div class="sl-list-edit-actions">
+              <button type="button" class="sl-list-rename-btn" aria-label="${escapeHtml(list.name)} hernoemen">✏️</button>
+              <button type="button" class="sl-list-delete-btn" aria-label="${escapeHtml(list.name)} verwijderen" ${lists.length <= 1 ? 'disabled' : ''}>✕</button>
+            </div>
+          </div>
+        `
+      )
+      .join('');
+
+    switcherMenu.innerHTML = `
+      ${rowsHtml}
+      <div class="sl-list-menu-divider" role="separator"></div>
+      <button type="button" id="slEditListsBtn" class="sl-list-menu-item sl-list-menu-add sl-editing" role="menuitem">
+        Klaar
+      </button>
     `;
   }
 
@@ -282,6 +353,82 @@ export function initLijstje() {
     }
   }
 
+  async function renameList(id, newName) {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const previous = lists;
+    lists = lists.map((list) => (list.id === id ? { ...list, name: trimmed } : list));
+    renderSwitcher();
+    try {
+      const response = await fetch(`${workerUrl}/lists?id=${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!response.ok) {
+        const err = new Error(`HTTP ${response.status}`);
+        err.response = response;
+        throw err;
+      }
+    } catch (error) {
+      console.error('Kon lijst niet hernoemen:', error);
+      setStatus(`❌ Kon lijst niet hernoemen — ${describeListsApiError(error.response)}.`, true);
+      lists = previous; // roll back the optimistic rename
+      renderSwitcher();
+    }
+  }
+
+  async function deleteList(id) {
+    if (lists.length <= 1) return; // worker rejects this too; guard here so the UI never even tries
+    const previous = lists;
+    lists = lists.filter((list) => list.id !== id);
+    renderSwitcher();
+    try {
+      const response = await fetch(`${workerUrl}/lists?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const err = new Error(`HTTP ${response.status}`);
+        err.response = response;
+        throw err;
+      }
+      if (id === activeListId) {
+        activeListId = lists[0]?.id || null;
+        if (activeListId) {
+          localStorage.setItem(ACTIVE_LIST_STORAGE_KEY, activeListId);
+          await loadList();
+        }
+      }
+    } catch (error) {
+      console.error('Kon lijst niet verwijderen:', error);
+      setStatus(`❌ Kon lijst niet verwijderen — ${describeListsApiError(error.response)}.`, true);
+      lists = previous; // roll back
+      renderSwitcher();
+    }
+  }
+
+  // Persists a new list order (drag-and-drop in edit mode). Optimistic,
+  // same pattern as saveList()/reorderItem() below — the DOM/array is
+  // already in the new order before this is called.
+  async function saveListOrder() {
+    try {
+      const response = await fetch(`${workerUrl}/lists`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: lists.map((list) => list.id) }),
+      });
+      if (!response.ok) {
+        const err = new Error(`HTTP ${response.status}`);
+        err.response = response;
+        throw err;
+      }
+      const data = await response.json();
+      if (Array.isArray(data.lists)) lists = data.lists;
+    } catch (error) {
+      console.error('Kon volgorde van lijsten niet opslaan:', error);
+      setStatus(`⚠️ Volgorde niet opgeslagen (${describeListsApiError(error.response)}) — wordt hersteld…`, true);
+      await loadLists();
+    }
+  }
+
   switcherTrigger.addEventListener('click', (event) => {
     event.stopPropagation();
     toggleSwitcher();
@@ -299,6 +446,17 @@ export function initLijstje() {
   });
 
   switcherMenu.addEventListener('click', (event) => {
+    // Stopped here, not just relied on switcherEl.contains() in the
+    // document listener below: several branches in this handler (new
+    // list, edit-mode toggle, rename, delete) rewrite switcherMenu's
+    // innerHTML synchronously. That detaches the exact node that was
+    // clicked from the DOM, so by the time the document-level
+    // listener runs on the same click, .contains(event.target) on
+    // the now-detached node returns false and closeSwitcher() fires
+    // right after — which looked like "clicking anything in here
+    // just closes the dropdown and does nothing."
+    event.stopPropagation();
+
     const listBtn = event.target.closest('.sl-list-menu-item[data-list-id]');
     if (listBtn) {
       switchToList(listBtn.dataset.listId);
@@ -311,8 +469,88 @@ export function initLijstje() {
       form.classList.remove('hidden');
       newListBtn.classList.add('hidden');
       qs('#slNewListInput', form).focus();
+      return;
+    }
+
+    const editListsBtn = event.target.closest('#slEditListsBtn');
+    if (editListsBtn) {
+      listsEditMode = !listsEditMode;
+      renderSwitcher();
+      return;
+    }
+
+    const deleteListBtn = event.target.closest('.sl-list-delete-btn');
+    if (deleteListBtn) {
+      const id = deleteListBtn.closest('.sl-list-edit-row')?.dataset.listId;
+      if (id) deleteList(id);
+      return;
+    }
+
+    const renameListBtn = event.target.closest('.sl-list-rename-btn');
+    if (renameListBtn) {
+      const row = renameListBtn.closest('.sl-list-edit-row');
+      if (row) startListRename(row);
     }
   });
+
+  // ---- Rename a list (inline edit, edit mode) ------------------------
+  // Same swap-span-for-input pattern as startRename() for items below:
+  // Enter or blur commits, Escape cancels. Doesn't touch `renamingItemId`
+  // (that guard is specifically for item rows) — the switcher dropdown
+  // has its own polling-independent lifecycle, so there's no refresh
+  // racing this input while the dropdown is open.
+  function startListRename(row) {
+    if (row.querySelector('.sl-list-rename-input')) return; // already editing this row
+    const id = row.dataset.listId;
+    const list = lists.find((l) => l.id === id);
+    if (!list) return;
+
+    const nameEl = qs('.sl-list-edit-name', row);
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sl-list-rename-input';
+    input.value = list.name;
+    input.maxLength = 60;
+    input.setAttribute('aria-label', `${list.name} hernoemen`);
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let settled = false;
+
+    function commit() {
+      if (settled) return;
+      settled = true;
+      if (!input.value.trim() || input.value.trim() === list.name) {
+        renderSwitcher(); // no real change = no-op, just restore
+        return;
+      }
+      renameList(id, input.value); // renderSwitcher() rebuilds the row, replacing this input
+    }
+
+    function cancel() {
+      if (settled) return;
+      settled = true;
+      renderSwitcher();
+    }
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commit();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        cancel();
+      }
+    });
+    input.addEventListener('blur', commit);
+    // Dropdown-wide Escape (see switcherEl's keydown listener) would
+    // otherwise close the whole dropdown while renaming — stop it
+    // from bubbling there so Escape only cancels this input.
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') event.stopPropagation();
+    });
+  }
 
   switcherMenu.addEventListener('submit', (event) => {
     if (event.target.id !== 'slNewListForm') return;
@@ -409,6 +647,12 @@ export function initLijstje() {
     const item = items.find((it) => it.id === id);
     if (!item) return;
 
+    // While this input is open, the background poll (every few
+    // seconds) is skipped — otherwise it would call render(), which
+    // rebuilds the whole list's innerHTML and wipes out whatever the
+    // person is mid-typing here, well before they hit Enter.
+    renamingItemId = id;
+
     const textEl = qs('.sl-item-text', li);
     const input = document.createElement('input');
     input.type = 'text';
@@ -425,6 +669,7 @@ export function initLijstje() {
     function commit() {
       if (settled) return;
       settled = true;
+      renamingItemId = null;
       if (!input.value.trim()) {
         render(); // empty rename = no-op, just restore the original text
         return;
@@ -435,6 +680,7 @@ export function initLijstje() {
     function cancel() {
       if (settled) return;
       settled = true;
+      renamingItemId = null;
       render(); // just redraw with the unchanged text, discarding the edit
     }
 
@@ -611,6 +857,145 @@ export function initLijstje() {
     listEl.querySelector(`.sl-item[data-id="${id}"] .sl-drag-handle`)?.focus();
   });
 
+  // ---- Drag to reorder the LISTS themselves (edit mode) ---------------
+  // Same Pointer Events approach as the item drag above (works for
+  // mouse and touch alike), scoped to switcherMenu instead of listEl,
+  // and only ever live while listsEditMode is on — the rows with
+  // .sl-list-drag-handle only exist in that view.
+  let draggingListRow = null;
+  let listDragPointerId = null;
+  let listLongPressTimer = null;
+  let listLongPressStart = null;
+
+  function listRowElements() {
+    return Array.from(switcherMenu.querySelectorAll('.sl-list-edit-row'));
+  }
+
+  function moveDraggedListRowTo(clientY) {
+    const siblings = listRowElements().filter((el) => el !== draggingListRow);
+    for (const sibling of siblings) {
+      const rect = sibling.getBoundingClientRect();
+      const middle = rect.top + rect.height / 2;
+      if (clientY < middle) {
+        if (sibling.previousElementSibling !== draggingListRow) {
+          switcherMenu.insertBefore(draggingListRow, sibling);
+        }
+        return;
+      }
+    }
+    // Below every other row — but never past the divider/"Klaar" button
+    // that follow the rows, so insert before the first non-row element.
+    const firstNonRow = switcherMenu.querySelector(':scope > :not(.sl-list-edit-row)');
+    if (firstNonRow && firstNonRow.previousElementSibling !== draggingListRow) {
+      switcherMenu.insertBefore(draggingListRow, firstNonRow);
+    }
+  }
+
+  function beginListDrag(row, pointerId) {
+    draggingListRow = row;
+    listDragPointerId = pointerId;
+    draggingListRow.classList.add('sl-list-edit-row-dragging');
+  }
+
+  function endListDrag() {
+    if (!draggingListRow) return;
+    draggingListRow.classList.remove('sl-list-edit-row-dragging');
+
+    const newOrderIds = listRowElements().map((el) => el.dataset.listId);
+    lists = newOrderIds.map((id) => lists.find((list) => list.id === id)).filter(Boolean);
+    saveListOrder();
+
+    draggingListRow = null;
+    listDragPointerId = null;
+  }
+
+  function cancelPendingListLongPress() {
+    if (listLongPressTimer) clearTimeout(listLongPressTimer);
+    listLongPressTimer = null;
+    listLongPressStart = null;
+  }
+
+  switcherMenu.addEventListener('pointerdown', (event) => {
+    if (!listsEditMode) return;
+
+    const handle = event.target.closest('.sl-list-drag-handle');
+    if (handle) {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      const row = handle.closest('.sl-list-edit-row');
+      if (!row) return;
+      beginListDrag(row, event.pointerId);
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+      return;
+    }
+
+    // Long-press-anywhere path, skipping the rename/delete buttons so
+    // taps there still work normally — same idea as the item list.
+    if (event.target.closest('.sl-list-rename-btn, .sl-list-delete-btn, .sl-list-rename-input')) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    const row = event.target.closest('.sl-list-edit-row');
+    if (!row) return;
+
+    listLongPressStart = { x: event.clientX, y: event.clientY, row, pointerId: event.pointerId };
+    listLongPressTimer = setTimeout(() => {
+      if (!listLongPressStart) return;
+      const { row: pendingRow, pointerId } = listLongPressStart;
+      listLongPressTimer = null;
+      listLongPressStart = null;
+      beginListDrag(pendingRow, pointerId);
+      pendingRow.setPointerCapture(pointerId);
+    }, LONG_PRESS_MS);
+  });
+
+  switcherMenu.addEventListener('pointermove', (event) => {
+    if (draggingListRow && event.pointerId === listDragPointerId) {
+      moveDraggedListRowTo(event.clientY);
+      return;
+    }
+    if (listLongPressStart && event.pointerId === listLongPressStart.pointerId) {
+      const dx = event.clientX - listLongPressStart.x;
+      const dy = event.clientY - listLongPressStart.y;
+      if (Math.hypot(dx, dy) > LONG_PRESS_MOVE_TOLERANCE) cancelPendingListLongPress();
+    }
+  });
+
+  switcherMenu.addEventListener('pointerup', (event) => {
+    if (listLongPressStart && event.pointerId === listLongPressStart.pointerId) cancelPendingListLongPress();
+    if (event.pointerId !== listDragPointerId) return;
+    endListDrag();
+  });
+
+  switcherMenu.addEventListener('pointercancel', (event) => {
+    if (listLongPressStart && event.pointerId === listLongPressStart.pointerId) cancelPendingListLongPress();
+    if (event.pointerId !== listDragPointerId) return;
+    endListDrag();
+  });
+
+  // Keyboard fallback, same idea as the items' ArrowUp/ArrowDown handling.
+  switcherMenu.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    const handle = event.target.closest('.sl-list-drag-handle');
+    if (!handle) return;
+    event.preventDefault();
+
+    const id = handle.closest('.sl-list-edit-row')?.dataset.listId;
+    if (!id) return;
+    const fromIndex = lists.findIndex((list) => list.id === id);
+    if (fromIndex === -1) return;
+    const targetIndex = Math.max(0, Math.min(fromIndex + (event.key === 'ArrowUp' ? -1 : 1), lists.length - 1));
+    if (targetIndex === fromIndex) return;
+
+    const reordered = [...lists];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+    lists = reordered;
+    renderSwitcher();
+    saveListOrder();
+    // renderSwitcher() just rebuilt the rows, so refocus the (new) handle.
+    switcherMenu.querySelector(`.sl-list-edit-row[data-list-id="${id}"] .sl-list-drag-handle`)?.focus();
+  });
+
   // ---- Polling (picks up changes made on the other person's device) ----
 
   function startPolling() {
@@ -623,8 +1008,11 @@ export function initLijstje() {
       // would orphan the row currently being dragged (it's still
       // referenced by draggingLi but no longer part of the live DOM)
       // — finishing the drag after that could re-insert it alongside
-      // its freshly-rendered twin, showing the item twice.
-      if (!saveInFlight && !draggingLi) loadList({ silent: true });
+      // its freshly-rendered twin, showing the item twice. Same idea
+      // for renamingItemId: render() would blow away the open rename
+      // <input> (and whatever's been typed into it) before Enter/blur
+      // ever commits it.
+      if (!saveInFlight && !draggingLi && !renamingItemId) loadList({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 

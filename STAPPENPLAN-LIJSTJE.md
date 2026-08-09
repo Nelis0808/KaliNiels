@@ -1,5 +1,47 @@
 # Lijstje toevoegen — stappenplan
 
+> ## ⚠️ ACTIE VEREIST: (opnieuw) deploy de Worker
+>
+> Twee dingen zijn recent veranderd in `worker.js` — beide vragen om
+> een nieuwe deploy naar Cloudflare, ongeacht of je de vorige versie
+> al had geplaatst:
+>
+> 1. **Crash-fix.** Een eerdere versie crashte direct bij het
+>    deployen met `Uncaught Error: Disallowed operation called within
+>    global scope` — een paar standaard-items werden aangemaakt met
+>    `crypto.randomUUID()` buiten een handler om, en dat verbiedt de
+>    Workers-runtime tegenwoordig. Als je die foutmelding zag, deployde
+>    Cloudflare je Worker dus nooit echt. Deze versie genereert die
+>    id's pas op het moment dat een request binnenkomt, dus dat is nu
+>    opgelost.
+> 2. **Rate limiting.** De Worker gebruikt nu, net als alle andere
+>    Workers op deze site, een gedeelde dagelijkse limiet (5.000
+>    aanvragen/dag) via een `RATE_LIMIT_KV`-binding. Zie stap 4
+>    hieronder — zonder deze binding blijft de Worker gewoon werken,
+>    alleen zonder limiet.
+>
+> **Zo deploy je 'm:**
+> 1. Ga naar [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**.
+> 2. Klik op je Worker met de naam **`lijstje`**.
+> 3. Klik op **Edit code** (soms "Quick edit"), selecteer alles
+>    (Ctrl/Cmd+A), verwijder het, en plak de **volledige** inhoud van
+>    `cloudflare/cloudflare-worker-lijstje/worker.js` uit deze zip erin.
+>    **Save and deploy**.
+> 4. **Settings → Bindings** → check of **`RATE_LIMIT_KV`** er al
+>    staat. Zo niet: **Add binding** → **KV Namespace** → variable
+>    name **exact** `RATE_LIMIT_KV` → kies de **bestaande, gedeelde**
+>    rate-limit-namespace die je andere Workers (bv. clothing,
+>    snack-ratings) ook gebruiken — geen nieuwe aanmaken. → **Save and deploy**.
+> 5. Ververs `lijstje.html` in je browser (hard refresh, Ctrl/Cmd+Shift+R)
+>    en probeer opnieuw te hernoemen of te herordenen.
+>
+> Nog steeds een foutmelding na deze stappen? Open de browser
+> Developer Tools (F12) → tabblad **Console** of **Network**, klik
+> nogmaals op hernoemen, en kijk naar de exacte statuscode/foutmelding
+> bij de `PATCH` of `PUT` request naar `.../lists` — die vertelt precies
+> wat er misgaat (bijv. `LIST_KV`-binding ontbreekt, of de Worker is
+> nog niet opgeslagen).
+
 Deze update voegt `lijstje.html` toe: een gedeeld
 lijstje met afvinken, verwijderen en toevoegen. Wat jij
 verandert, ziet je vriendin een paar seconden later ook (en
@@ -92,9 +134,16 @@ richten met iemand anders' lijstje afwasmiddel.
 3. **Edit code** → plak de volledige inhoud van
    `cloudflare/cloudflare-worker-lijstje/worker.js` (uit deze
    zip) erin → **Deploy**.
-4. **Settings → Bindings** → **Add binding** → kies **KV Namespace**:
-   - Variable name: `LIST_KV`
-   - KV namespace: de namespace die je in stap 1 maakte
+4. **Settings → Bindings** → **Add binding** → kies **KV Namespace**,
+   twee keer:
+   - Variable name: **exact** `LIST_KV` — KV namespace: de namespace
+     die je in stap 1 maakte.
+   - Variable name: **exact** `RATE_LIMIT_KV` — dit is dezelfde
+     gedeelde rate-limit-namespace die alle andere Workers op deze
+     site ook gebruiken (dus **niet** een nieuwe aanmaken — kies de
+     bestaande KV-namespace die je bijvoorbeeld ook aan de
+     clothing- of snack-ratings-Worker hebt gekoppeld). Zonder deze
+     binding werkt de Worker nog steeds, maar zonder dagelijkse limiet.
    → **Save and deploy**.
 5. Noteer de Worker-URL, bv.
    `https://lijstje.<jouw-subdomain>.workers.dev`
@@ -206,3 +255,5 @@ bijgewerkt worden.
 | `404`/`Not found` van de Worker | Verkeerde `workerUrl`, of typefout in het pad | Controleer of de URL exact eindigt op `.workers.dev` zonder extra pad |
 | Oude lijst is leeg na de upgrade | Migratie in `worker.js` zocht de oude KV-key onder een andere naam dan verwacht (zie `LEGACY_KEYS` bovenin dat bestand) | Voeg de juiste oude keynaam toe aan `LEGACY_KEYS` en deploy opnieuw — dit werkt alleen vóórdat de `lists`-key al bestaat, dus doe dit vóór je de pagina voor het eerst na de upgrade opent |
 | Dropdown bovenaan toont geen lijsten | Oude Worker-code draait nog (kent `/lists` niet) | Stap 0.1 hierboven — Worker-code bijwerken |
+| `Uncaught Error: Disallowed operation called within global scope` bij het deployen | Oudere versie van `worker.js` riep `crypto.randomUUID()` aan buiten een handler om | Plak de huidige `worker.js` uit deze zip opnieuw — dat is al gefixt |
+| "Dagelijkse limiet van 5000 aanvragen bereikt" | De gedeelde `RATE_LIMIT_KV`-teller voor deze Worker zit vol voor vandaag (zie DAILY_LIMIT in `worker.js`) | Normaliter geen probleem bij normaal gebruik; komt de teller structureel vol te zitten, verhoog dan `DAILY_LIMIT` in `worker.js` en deploy opnieuw |

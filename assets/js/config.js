@@ -158,6 +158,12 @@ export const siteConfig = {
   ticketmaster: {
     workerUrl: 'https://ticketmaster-proxy.niels-luijten7.workers.dev',
     defaultCountry: 'NL',
+    // Separate small Worker that stores the shared "Favorieten" artist
+    // list (see cloudflare/cloudflare-worker-favorite-artists +
+    // STAPPENPLAN-TICKETMASTER-FAVORIETEN.md). Not the same Worker as
+    // workerUrl above — that one only proxies Ticketmaster itself and
+    // has no storage of its own.
+    favoriteArtistsWorkerUrl: 'https://favorite-artists.niels-luijten7.workers.dev',
   },
 
   // Config for the private photo gallery (assets/js/modules/photo-gallery.js)

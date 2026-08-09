@@ -106,6 +106,100 @@
 
 .sl-list-menu-add {
   color: var(--color-primary);
+  text-align: center;
+}
+
+/* == "Lijsten wijzigen" — edit mode ==
+   Toggled by clicking "Lijsten wijzigen" at the bottom of the
+   dropdown. Swaps each plain list button for a row with a drag
+   handle + rename (✏️) + delete (✕) button, same visual language as
+   the item rows below (.sl-item-actions in the section further
+   down this file). A second click on the now-relabelled "Klaar"
+   button (or Escape) leaves edit mode again. */
+.sl-list-menu-add.sl-editing {
+  color: var(--color-text);
+}
+
+.sl-list-edit-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.sl-list-edit-row.sl-list-edit-row-dragging {
+  opacity: 0.5;
+}
+
+.sl-list-drag-handle {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  cursor: grab;
+  touch-action: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-text-muted) 0,
+    var(--color-text-muted) 2px,
+    transparent 2px,
+    transparent 6px
+  );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.sl-list-drag-handle:hover,
+.sl-list-drag-handle:focus-visible {
+  background-color: var(--color-border);
+}
+
+.sl-list-edit-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sl-list-rename-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.sl-list-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.sl-list-rename-btn,
+.sl-list-delete-btn {
+  padding: var(--space-1);
+  font-size: var(--fs-sm);
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+
+.sl-list-rename-btn:hover,
+.sl-list-rename-btn:focus-visible,
+.sl-list-delete-btn:hover,
+.sl-list-delete-btn:focus-visible {
+  background: var(--color-border);
 }
 
 .sl-list-new-form {
