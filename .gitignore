@@ -1,5 +1,5 @@
 # --- Cloudflare Workers ---
-# cloudflare/
+cloudflare/
 .wrangler/
 wrangler.toml
 wrangler.jsonc
