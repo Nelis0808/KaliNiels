@@ -102,30 +102,36 @@ export function initTicTacToe() {
   let roundOver = false;
   const score = { X: 0, O: 0, draw: 0 };
 
+  // Emoji label for a player
   function playerLabel(player) {
     return player === 'X' ? '❌' : '⭕';
   }
 
+  // Updates the status line text
   function updateStatus(text) {
     statusEl.textContent = text;
   }
 
+  // Refreshes the score numbers
   function updateScoreboard() {
     scoreXEl.textContent = String(score.X);
     scoreOEl.textContent = String(score.O);
     scoreDrawEl.textContent = String(score.draw);
   }
 
+  // Returns the winning line's cell indices, or undefined if there isn't one
   function findWinningLine() {
     return WIN_LINES.find(([a, b, c]) =>
       cellValues[a] && cellValues[a] === cellValues[b] && cellValues[a] === cellValues[c]
     );
   }
 
+  // Adds the win highlight class to a line's cells
   function highlightWin(line) {
     line.forEach((index) => cells[index].classList.add('ttt-cell-win'));
   }
 
+  // Locks the board and updates score/status for a win or draw
   function endRound({ winner, line }) {
     roundOver = true;
     cells.forEach((cell) => cell.setAttribute('aria-disabled', 'true'));
@@ -142,6 +148,7 @@ export function initTicTacToe() {
     updateScoreboard();
   }
 
+  // Handles a cell click: places the mark, checks for a win/draw, switches turns
   function handleCellClick(event) {
     if (roundOver) return;
 
@@ -169,6 +176,7 @@ export function initTicTacToe() {
     updateStatus(`Speler ${playerLabel(currentPlayer)} is aan de beurt`);
   }
 
+  // Clears the board for a new round, keeping the running score
   function startNewRound() {
     cellValues = Array(9).fill(null);
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
@@ -183,6 +191,7 @@ export function initTicTacToe() {
     updateStatus(`Speler ${playerLabel(currentPlayer)} is aan de beurt`);
   }
 
+  // Resets the score to 0-0-0 and starts a fresh round
   function resetScore() {
     score.X = 0;
     score.O = 0;

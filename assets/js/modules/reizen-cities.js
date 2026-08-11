@@ -7,7 +7,7 @@
 //   1. loadCities()      — ask the photo-gallery Worker's public
 //                           /travel endpoint which cities exist for
 //                           a country (see that worker's own
-//                           comment + STAPPENPLAN-REIZEN.md).
+//                           comment + ACTION-EXPANSION-PLAN.md).
 //   2. positionCities()  — decide where each city's pin goes: a
 //                           manually-measured real-world {lon,lat}
 //                           from travel-countries.json's "cityPins"
@@ -41,6 +41,7 @@ import { getAuth } from './auth.js';
 let lightboxEls = null;
 let lastFocusedTrigger = null;
 
+// Finds (or lazily caches) the lightbox elements and wires up its close handlers
 function getLightboxEls() {
   if (lightboxEls) return lightboxEls;
   const lightbox = document.getElementById('reizenPhotoLightbox');
@@ -64,6 +65,7 @@ function getLightboxEls() {
   return lightboxEls;
 }
 
+// Opens the lightbox with a given image + caption
 function openPhotoLightbox(imageUrl, caption) {
   const els = getLightboxEls();
   if (!els) return;
@@ -76,6 +78,7 @@ function openPhotoLightbox(imageUrl, caption) {
   els.close.focus();
 }
 
+// Closes the lightbox and returns focus to whatever triggered it
 function closePhotoLightbox() {
   if (!lightboxEls) return;
   lightboxEls.lightbox.classList.add('hidden');

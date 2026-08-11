@@ -76,6 +76,7 @@ function buildAvatarImg(player, className) {
   return img;
 }
 
+// Replaces a placeholder element's content with the layered avatar for a player
 function mountAvatar(placeholder, player, className) {
   if (!placeholder) return;
   placeholder.replaceChildren(buildAvatarImg(player, className));
@@ -93,6 +94,7 @@ const DIRECTIONS = [
   [1, -1], // diagonal \
 ];
 
+// Checks all 4 directions from the just-placed disc for a run of 4
 function findWinningLine(grid, lastRow, lastCol, player) {
   for (const [dc, dr] of DIRECTIONS) {
     const line = [[lastRow, lastCol]];
@@ -152,6 +154,7 @@ export function initConnect4() {
     }
   }
 
+  // Looks up a cell's DOM element by grid coordinates
   function cellAt(row, col) {
     return cells.find((c) => Number(c.dataset.row) === row && Number(c.dataset.col) === col);
   }
@@ -161,6 +164,7 @@ export function initConnect4() {
   let roundOver = false;
   const score = { B: 0, P: 0, draw: 0 };
 
+  // HTML label for a player, using an inline SVG for pink (see file header)
   function playerLabel(player) {
     return player === 'B'
       ? 'Blauw <img src="' + siteRootUrl('assets/icons/connect4/player-blue.svg') + '" alt="blue" class="emoji-icon">'
@@ -180,6 +184,7 @@ export function initConnect4() {
     scoreDrawEl.textContent = String(score.draw);
   }
 
+  // Finds the lowest empty row in a column (gravity), or -1 if full
   function lowestFreeRow(col) {
     for (let row = 0; row < ROWS; row++) {
       if (!grid[row * COLS + col]) return row;
@@ -187,6 +192,7 @@ export function initConnect4() {
     return -1; // column full
   }
 
+  // Locks the board and updates score/status for a win or draw
   function endRound({ winner, line }) {
     roundOver = true;
     board.classList.add('c4-board-over');
@@ -203,6 +209,7 @@ export function initConnect4() {
     updateScoreboard();
   }
 
+  // Drops the current player's disc into a column, checks for a win/draw, switches turns
   function handleColumnClick(col) {
     if (roundOver) return;
 
@@ -230,6 +237,7 @@ export function initConnect4() {
     updateStatus(`${playerLabel(currentPlayer)} is aan de beurt`);
   }
 
+  // Clears the board for a new round, keeping the running score
   function startNewRound() {
     grid = Array(COLS * ROWS).fill(null);
     currentPlayer = currentPlayer === 'B' ? 'P' : 'B';
@@ -244,6 +252,7 @@ export function initConnect4() {
     updateStatus(`${playerLabel(currentPlayer)} is aan de beurt`);
   }
 
+  // Resets the score to 0-0-0 and starts a fresh round
   function resetScore() {
     score.B = 0;
     score.P = 0;

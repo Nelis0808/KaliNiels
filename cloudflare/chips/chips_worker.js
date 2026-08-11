@@ -2,10 +2,10 @@
 // SHARED CHIP BALANCE — AUTH + CHIPS (Cloudflare Worker)
 // -----------------------------------------------------------------
 // Same login pattern as the private photo gallery
-// (cloudflare/cloudflare-worker-photos/worker.js): two passphrases,
-// one per person, a signed token proves who's logged in. This
-// worker does NOT touch the photo gallery's secrets or storage —
-// it's a fourth, separate Worker with its own KV namespace.
+// (cloudflare/gallery/gallery_worker.js): two passphrases, one per
+// person, a signed token proves who's logged in. This worker does
+// NOT touch the photo gallery's secrets or storage — it's a
+// separate Worker with its own KV namespace.
 //
 // WHAT IT'S FOR: this worker is a single, GAME-AGNOSTIC chip balance
 // shared by every chip-based game on the site — currently BlackJack
@@ -41,7 +41,7 @@
 // supported way to top someone up or dock their chips — the worker
 // only ever reads it fresh, never caches it.
 //
-// Deploy instructions: see STAPPENPLAN-BLACKJACK.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   POST /login           { passphrase }        -> { token, who, exp }
@@ -129,10 +129,12 @@ function rateLimitedResponse(headers, limit) {
 }
 
 // ---- base64url + HMAC token helpers -------------------------------
-// Identical scheme to cloudflare-worker-photos/worker.js — a tiny
-// stateless JWT-alike. Deliberately duplicated rather than shared,
-// so this worker has zero dependency on the photo gallery's code or
-// secrets (they can be edited/rotated fully independently).
+// Identical scheme to gallery/gallery_worker.js — a tiny stateless
+// JWT-alike. Deliberately duplicated rather than shared, so this
+// worker has zero dependency on the photo gallery's code (only on
+// its secrets matching — see the setup note in
+// ACTION-EXPANSION-PLAN.md — so tokens issued by either Worker
+// verify on both).
 
 function toBase64Url(bytes) {
   let binary = '';

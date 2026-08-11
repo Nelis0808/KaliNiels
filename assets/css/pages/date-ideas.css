@@ -2,6 +2,7 @@
     PAGE: DATE IDEAS (date.html)
     ============================================================= */
 
+/* Row of "Binnen"/"Buiten" choice buttons in the hero */
 .hero-buttons {
   display: flex;
   justify-content: center;
@@ -10,10 +11,12 @@
   flex-wrap: wrap;
 }
 
+/* Buttons animate in on page load */
 .hero-buttons .btn {
   animation: btn-arrive 0.6s ease both;
 }
 
+/* Slight stagger so the second button arrives just after the first */
 #btnBuiten { animation-delay: 0.1s; }
 
 @keyframes btn-arrive {
@@ -32,6 +35,7 @@
   padding-block: var(--space-6) var(--space-8);
 }
 
+/* Reserved slot for one drawn idea card */
 .result-box {
   flex: 1 1 320px;
   max-width: 420px;
@@ -40,15 +44,18 @@
   justify-content: center;
 }
 
+/* The idea card itself, centered within its result box */
 .idea-card {
   width: 100%;
   text-align: center;
 }
 
+/* Dim the box briefly while a new idea is being drawn */
 .result-box[aria-busy='true'] {
   opacity: 0.6;
 }
 
+/* Stack the choice buttons full-width on narrow screens */
 @media (max-width: 600px) {
   .hero-buttons {
     flex-direction: column;

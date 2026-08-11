@@ -5,6 +5,7 @@
    with a checkable/deletable list + an add-form underneath.
    ============================================================= */
 
+/* Centered app column shared by every state (menu, list, add-form) */
 #shoppingListApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
@@ -21,6 +22,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Pill button that opens the list-picker dropdown */
 .sl-list-trigger {
   display: inline-flex;
   align-items: center;
@@ -37,21 +39,25 @@
   transition: box-shadow var(--transition-fast);
 }
 
+/* Hover/focus feedback for the trigger */
 .sl-list-trigger:hover,
 .sl-list-trigger:focus-visible {
   box-shadow: var(--shadow);
 }
 
+/* Chevron icon inside the trigger, rotates when open */
 .sl-list-trigger .chevron {
   font-size: 0.7em;
   color: var(--color-text-muted);
   transition: transform var(--transition-fast);
 }
 
+/* Rotate the chevron 180° while the dropdown is open */
 .sl-list-switcher.open .sl-list-trigger .chevron {
   transform: rotate(180deg);
 }
 
+/* Dropdown panel listing every shopping list */
 .sl-list-menu {
   position: absolute;
   top: calc(100% + var(--space-2));
@@ -68,10 +74,12 @@
   z-index: var(--z-navbar);
 }
 
+/* Reveal the panel while open */
 .sl-list-switcher.open .sl-list-menu {
   display: flex;
 }
 
+/* One selectable list name row inside the dropdown */
 .sl-list-menu-item {
   display: block;
   width: 100%;
@@ -83,27 +91,32 @@
   color: var(--color-text);
 }
 
+/* Hover/focus state for a list row */
 .sl-list-menu-item:hover,
 .sl-list-menu-item:focus-visible {
   background: var(--color-border);
   color: var(--color-primary);
 }
 
+/* Currently-open list, highlighted */
 .sl-list-menu-item.active {
   color: var(--color-primary);
 }
 
+/* Checkmark next to the active list's name */
 .sl-list-menu-item.active::after {
   content: '✓';
   float: right;
 }
 
+/* Thin divider line above the "Nieuwe lijst" / edit-mode rows */
 .sl-list-menu-divider {
   height: 1px;
   margin: var(--space-2) var(--space-1);
   background: var(--color-border);
 }
 
+/* "Lijsten wijzigen" / "Nieuwe lijst" trigger rows at the bottom of the menu */
 .sl-list-menu-add {
   color: var(--color-primary);
   text-align: center;
@@ -120,6 +133,7 @@
   color: var(--color-text);
 }
 
+/* One list row while in edit mode: drag handle + name + rename/delete */
 .sl-list-edit-row {
   display: flex;
   align-items: center;
@@ -128,10 +142,12 @@
   border-radius: var(--radius-sm);
 }
 
+/* Fade the row while it's being dragged to reorder */
 .sl-list-edit-row.sl-list-edit-row-dragging {
   opacity: 0.5;
 }
 
+/* Dotted-line grip icon for reordering lists */
 .sl-list-drag-handle {
   flex-shrink: 0;
   width: 20px;
@@ -151,11 +167,13 @@
   border-radius: var(--radius-sm);
 }
 
+/* Hover/focus feedback on the drag handle */
 .sl-list-drag-handle:hover,
 .sl-list-drag-handle:focus-visible {
   background-color: var(--color-border);
 }
 
+/* List name label, truncates with an ellipsis if too long */
 .sl-list-edit-name {
   flex: 1;
   min-width: 0;
@@ -167,6 +185,7 @@
   white-space: nowrap;
 }
 
+/* Inline text input shown when renaming a list */
 .sl-list-rename-input {
   flex: 1;
   min-width: 0;
@@ -180,6 +199,7 @@
   color: var(--color-text);
 }
 
+/* Rename/delete icon buttons at the end of an edit row */
 .sl-list-edit-actions {
   display: flex;
   align-items: center;
@@ -187,6 +207,7 @@
   flex-shrink: 0;
 }
 
+/* Shared sizing for the rename (✏️) and delete (✕) icon buttons */
 .sl-list-rename-btn,
 .sl-list-delete-btn {
   padding: var(--space-1);
@@ -195,6 +216,7 @@
   border-radius: var(--radius-sm);
 }
 
+/* Hover/focus feedback for both icon buttons */
 .sl-list-rename-btn:hover,
 .sl-list-rename-btn:focus-visible,
 .sl-list-delete-btn:hover,
@@ -202,12 +224,14 @@
   background: var(--color-border);
 }
 
+/* Inline "add a new list" form at the bottom of the dropdown */
 .sl-list-new-form {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-1) var(--space-1);
 }
 
+/* Text input for the new list's name */
 .sl-list-new-input {
   flex: 1;
   min-width: 0;
@@ -227,6 +251,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Error variant of the status line, e.g. failed to load/save */
 .sl-status-error {
   color: var(--color-danger);
   font-weight: 600;
@@ -241,6 +266,7 @@
   text-align: left;
 }
 
+/* One shopping-list row: checkbox, label, rename/delete actions */
 .sl-item {
   display: flex;
   align-items: center;
@@ -253,6 +279,7 @@
   transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Slightly stronger shadow on hover */
 .sl-item:hover {
   box-shadow: var(--shadow);
 }
@@ -273,6 +300,7 @@
   border-radius: var(--radius-sm);
 }
 
+/* The 2x3 dot grid itself, drawn with box-shadow instead of 6 separate elements */
 .sl-drag-handle::before {
   content: '';
   width: 3px;
@@ -287,12 +315,14 @@
     7px 7px 0 var(--color-text-muted);
 }
 
+/* Hover/focus feedback on the item drag handle */
 .sl-drag-handle:hover,
 .sl-drag-handle:focus-visible {
   cursor: grabbing;
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
 }
 
+/* Keyboard focus ring for the drag handle */
 .sl-drag-handle:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -314,6 +344,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Clickable label area (checkbox + text) that toggles the item */
 .sl-item-label {
   display: flex;
   align-items: center;
@@ -323,6 +354,7 @@
   cursor: pointer;
 }
 
+/* The checkbox itself, tinted to match the active color theme */
 .sl-checkbox {
   flex-shrink: 0;
   width: 22px;
@@ -331,6 +363,7 @@
   cursor: pointer;
 }
 
+/* Item text, wraps anywhere so long words don't overflow the row */
 .sl-item-text {
   overflow-wrap: anywhere;
 }
@@ -343,6 +376,7 @@
   flex-shrink: 0;
 }
 
+/* Pencil icon button that switches a row into rename mode */
 .sl-rename {
   flex-shrink: 0;
   width: 36px;
@@ -354,12 +388,14 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Hover/focus feedback for the rename button */
 .sl-rename:hover,
 .sl-rename:focus-visible {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
 }
 
+/* Inline text input shown when renaming an item */
 .sl-rename-input {
   flex: 1;
   min-width: 0;
@@ -378,10 +414,12 @@
   opacity: 0.55;
 }
 
+/* Strike-through the text once an item is checked off */
 .sl-item-checked .sl-item-text {
   text-decoration: line-through;
 }
 
+/* ✕ icon button that removes an item */
 .sl-delete {
   flex-shrink: 0;
   width: 36px;
@@ -393,6 +431,7 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Turns red on hover/focus as a delete warning */
 .sl-delete:hover,
 .sl-delete:focus-visible {
   background: var(--color-danger);
@@ -400,21 +439,25 @@
 }
 
 /* == EMPTY STATE == */
+/* "Nothing here yet" message shown when the active list is empty */
 #slEmptyState {
   margin-bottom: var(--space-6);
 }
 
 /* == ADD FORM == */
+/* Text input + submit button for adding a new item */
 .sl-add-form {
   display: flex;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
 
+/* Input grows to fill the row, button stays its natural width */
 .sl-add-form input {
   flex: 1;
 }
 
+/* Inline validation/error message under the add form */
 .sl-add-error {
   color: var(--color-danger);
   font-size: var(--fs-sm);
@@ -433,12 +476,14 @@
   color: var(--color-text-muted);
 }
 
+/* Hides the working app when config.js still has the placeholder URL */
 .sl-disabled .sl-add-form,
 .sl-disabled .sl-list,
 .sl-disabled .sl-status {
   display: none;
 }
 
+/* Stack the add form vertically on narrow screens */
 @media (max-width: 480px) {
   .sl-add-form {
     flex-direction: column;

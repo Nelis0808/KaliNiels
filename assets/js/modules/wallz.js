@@ -116,14 +116,17 @@ export function initWallz() {
   const wallBarsWrap = document.createElement('div');
   wallBarsWrap.className = 'wallz-walls-layer';
 
+  // String key for a cell coordinate
   function key(r, c) {
     return `${r},${c}`;
   }
 
+  // True if a coordinate is within the 9x9 board
   function inBounds(r, c) {
     return r >= 0 && r < SIZE && c >= 0 && c < SIZE;
   }
 
+  // 1-indexed (col,row) label for on-screen aria text
   function toLabel(r, c) {
     return `(${c + 1},${r + 1})`;
   }
@@ -182,6 +185,7 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // MOVEMENT / CONNECTIVITY HELPERS
   // -----------------------------------------------------------------
+  // True if a wall blocks movement from (r,c) one step in direction (dr,dc)
   function isBlockedBetween(r, c, dr, dc) {
     if (dr === 1) return rowBlock.has(key(r, c)); // moving up (toward row 9)
     if (dr === -1) return rowBlock.has(key(r - 1, c)); // moving down
@@ -190,6 +194,7 @@ export function initWallz() {
     return false;
   }
 
+  // The (up to 4) cells reachable from (r,c) in one un-walled step
   function neighbors(r, c) {
     const out = [];
     for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -221,12 +226,15 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // WALL PLACEMENT
   // -----------------------------------------------------------------
+  // The two block-set keys a wall at this joint/orientation would occupy
   function wallSegmentsFor(orient, gr, gc) {
     return orient === 'h'
       ? { set: 'row', keys: [key(gr, gc), key(gr, gc + 1)] }
       : { set: 'col', keys: [key(gr, gc), key(gr + 1, gc)] };
   }
 
+  // Checks wall count, overlap, and (via a tentative placement + BFS)
+  // that both players still have a path to their goal row.
   function canPlaceWall(orient, gr, gc, player) {
     if (wallsLeft[player] <= 0) return { ok: false, reason: 'Geen muren meer over.' };
     if (usedJoints.has(key(gr, gc))) return { ok: false, reason: 'Daar ligt al een muur.' };
@@ -247,6 +255,7 @@ export function initWallz() {
     return { ok: true };
   }
 
+  // Actually places a wall: updates the block sets, wall count, and draws the bar
   function placeWall(orient, gr, gc, player) {
     const { set, keys } = wallSegmentsFor(orient, gr, gc);
     const target = set === 'row' ? rowBlock : colBlock;
@@ -269,6 +278,7 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // RENDERING
   // -----------------------------------------------------------------
+  // Builds a player's head image with the photo -> SVG -> emoji fallback chain
   function buildAvatar(player, extraClass) {
     const avatar = AVATARS[player];
     const className = `wallz-head-img ${extraClass}`;
@@ -298,6 +308,7 @@ export function initWallz() {
     return img;
   }
 
+  // Redraws every cell's classes and player avatar(s) from current state
   function renderCells() {
     for (let r = 0; r < SIZE; r++) {
       for (let c = 0; c < SIZE; c++) {
@@ -327,10 +338,12 @@ export function initWallz() {
     }
   }
 
+  // Removes the legal-move highlight from every cell
   function clearLegalMoveHighlights() {
     cellEls.forEach((cell) => cell.classList.remove('wallz-cell-legal-move'));
   }
 
+  // Highlights the current player's legal move destinations
   function highlightLegalMoves() {
     clearLegalMoveHighlights();
     if (!running || gameOver) return;
@@ -340,11 +353,13 @@ export function initWallz() {
     });
   }
 
+  // Refreshes the "walls remaining" numbers
   function updateWallsUi() {
     wallsP1El.textContent = String(wallsLeft[1]);
     wallsP2El.textContent = String(wallsLeft[2]);
   }
 
+  // Highlights whichever player currently has the move
   function updateTurnUi() {
     const p1Active = running && !gameOver && turn === 1;
     const p2Active = running && !gameOver && turn === 2;
@@ -359,11 +374,13 @@ export function initWallz() {
     });
   }
 
+  // Updates the ↕️/↔️ button's label and pressed state
   function updateOrientationUi() {
     orientationBtn.textContent = orientation === 'v' ? '↕️ Muur: Verticaal' : '↔️ Muur: Horizontaal';
     orientationBtn.setAttribute('aria-pressed', String(orientation === 'h'));
   }
 
+  // Flips the current wall-placement orientation and refreshes any active preview
   function toggleOrientation() {
     if (!running || gameOver) return;
     orientation = orientation === 'v' ? 'h' : 'v';
@@ -392,12 +409,14 @@ export function initWallz() {
   // wall in whatever the current orientation is; the wall is only
   // actually placed on release (click, or lifting a finger) while
   // still over that joint.
+  // Removes the hover/drag preview styling from a joint
   function clearPreview(gr, gc) {
     const joint = jointEls.get(key(gr, gc));
     joint.classList.remove('wallz-joint-preview-ok', 'wallz-joint-preview-bad', 'wallz-joint-preview-h', 'wallz-joint-preview-v');
     if (previewJoint && previewJoint.gr === gr && previewJoint.gc === gc) previewJoint = null;
   }
 
+  // Shows a legal/illegal wall preview at a joint in the current orientation
   function updatePreview(gr, gc) {
     if (!running || gameOver) return;
     previewJoint = { gr, gc };
@@ -409,10 +428,12 @@ export function initWallz() {
     joint.classList.toggle('wallz-joint-preview-v', orientation === 'v');
   }
 
+  // Re-runs the preview check at the currently-hovered joint, if any
   function refreshPreview() {
     if (previewJoint) updatePreview(previewJoint.gr, previewJoint.gc);
   }
 
+  // Attempts to actually place a wall at a joint, ending the turn on success
   function commitAt(gr, gc) {
     if (!running || gameOver) return;
     const result = canPlaceWall(orientation, gr, gc, turn);
@@ -434,6 +455,7 @@ export function initWallz() {
   // As a defensive fallback (and to make click-drag on desktop from
   // outside a joint also work), track the joint under the pointer
   // via elementFromPoint and commit against that on release.
+  // Finds which joint (if any) is under a client (x,y) point
   function jointFromPoint(x, y) {
     const el = document.elementFromPoint(x, y);
     const joint = el?.closest?.('.wallz-joint');
@@ -470,6 +492,7 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // INTERACTION
   // -----------------------------------------------------------------
+  // Moves the current player if the clicked cell is a legal destination
   function handleCellClick(r, c) {
     if (!running || gameOver) return;
     const p = players[turn];
@@ -488,12 +511,14 @@ export function initWallz() {
     endTurn();
   }
 
+  // Switches the active player and refreshes turn UI + legal-move highlights
   function endTurn() {
     turn = turn === 1 ? 2 : 1;
     updateTurnUi();
     highlightLegalMoves();
   }
 
+  // Locks the board, updates the score, and schedules the next round
   function endRound(winner) {
     running = false;
     gameOver = true;
@@ -512,6 +537,7 @@ export function initWallz() {
   // -----------------------------------------------------------------
   // ROUND LIFECYCLE
   // -----------------------------------------------------------------
+  // Resets players, walls, and blocks to their starting state
   function resetBoard() {
     players = {
       1: { r: 0, c: 4 },
@@ -533,6 +559,7 @@ export function initWallz() {
     highlightLegalMoves();
   }
 
+  // Resets the board and starts a fresh round
   function startRound() {
     resetBoard();
     running = true;
@@ -540,6 +567,7 @@ export function initWallz() {
     updateTurnUi();
   }
 
+  // Resets the score to 0-0
   function resetScore() {
     score[1] = 0;
     score[2] = 0;

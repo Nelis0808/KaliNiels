@@ -1,56 +1,38 @@
 // =================================================================
 // SHARED SITE AUTH ("Profiel" in the sticky header)
 // -----------------------------------------------------------------
-// ONE login for the whole site. Before this module existed, every
-// gated feature (Onze Foto's, Onze Reizen se steden-foto's,
-// BlackJack, Spiderette) had its OWN login form on its OWN page,
-// its own localStorage key, and — for BlackJack/Spiderette — even
-// its own separate Cloudflare Worker. That meant logging in on
-// photos.html didn't help you on reizen.html, and logging in for
-// BlackJack didn't help on Spiderette: four independent sessions
-// for what is really always the same two people.
-//
-// This module replaces all of that with a single session:
-//   - ONE login form, which lives in the sticky header's "Profiel"
-//     dropdown (assets/partials/header.html +
-//     assets/js/modules/profile-dropdown.js) and is reachable from
-//     every page.
+// ONE login, ONE session, for the whole site:
+//   - ONE login form, in the sticky header's "Profiel" dropdown
+//     (assets/partials/header.html + profile-dropdown.js), reachable
+//     from every page.
 //   - ONE localStorage key (AUTH_STORAGE_KEY below).
-//   - ONE Cloudflare Worker for identity: the existing
-//     "photo-gallery" worker's /login route (see
-//     cloudflare/cloudflare-worker-photos/worker.js) — already knows
-//     PASSPHRASE_A/PASSPHRASE_B for both of you, so nothing new to
-//     deploy there.
+//   - ONE Cloudflare Worker for identity: the "photo-gallery" worker's
+//     /login route (cloudflare/gallery/gallery_worker.js) — it holds
+//     PASSPHRASE_A/PASSPHRASE_B for both people.
 //
-// FEATURES THAT USED TO HAVE THEIR OWN LOGIN (photo-gallery.js,
-// reizen-cities.js, blackjack.js, spiderette.js) now import
-// `getAuth()`/`onAuthChange()` from here instead of keeping their
-// own copy of the passphrase form. BlackJack and Spiderette's chip
-// balance still lives in the separate "blackjack" Worker/KV
-// namespace (no reason to move real money-like state) — but that
-// Worker must now trust tokens signed by the shared identity
-// Worker. Concretely: **set the "blackjack" Worker's TOKEN_SECRET,
-// PASSPHRASE_A and PASSPHRASE_B secrets to the exact same values as
-// the "photo-gallery" Worker's**. Both workers already use the
-// identical signing scheme (base64url(payload) + "." +
-// HMAC-SHA256), so a token signed by one verifies cleanly on the
-// other once the secrets match — no code change needed in either
-// worker for this, just matching secrets. See STAPPENPLAN-REIZEN.md
-// / README for the full note.
+// Every gated feature (Onze Foto's, Onze Reizen's city photos,
+// BlackJack, Spiderette) imports `getAuth()`/`onAuthChange()` from
+// here rather than keeping its own login form. BlackJack/Spiderette's
+// chip balance still lives in its own separate "blackjack" Worker/KV
+// namespace, but that Worker must trust tokens signed by this same
+// identity Worker — so its TOKEN_SECRET, PASSPHRASE_A and
+// PASSPHRASE_B secrets must be set to the exact same values as the
+// "photo-gallery" Worker's. Both workers sign tokens the same way
+// (base64url(payload) + "." + HMAC-SHA256), so a token from one
+// verifies cleanly on the other once the secrets match — see
+// ACTION-EXPANSION-PLAN.md for the full setup note.
 //
-// SESSION LENGTH: same ~30 days as before, controlled server-side by
-// the photo-gallery Worker's /login response (`exp`), and enforced
-// client-side too — readStoredAuth() below already discards a stored
-// token once its `exp` has passed, without any network call. That's
-// also why BlackJack/Spiderette's chip loader does NOT call logout()
-// here on a 401 from the blackjack Worker's /chips: that Worker isn't
-// the source of truth for whether the shared session is valid, only
-// for that one Worker's own token check, and a 401 there essentially
-// always means its TOKEN_SECRET doesn't match this Worker's (a
-// misconfiguration, not an expired session) — logging the whole site
-// out over it just forces a fresh login that gets signed with the
-// exact same still-mismatched secret and 401s again, a repeating
-// "keeps logging me out" loop that never actually fixes anything.
+// SESSION LENGTH: ~30 days, controlled server-side by the
+// photo-gallery Worker's /login response (`exp`), and enforced
+// client-side too — readStoredAuth() discards a stored token once its
+// `exp` has passed, with no network call needed. That's also why the
+// BlackJack/Spiderette chip loader does NOT call logout() on a 401
+// from the blackjack Worker's /chips: that Worker isn't the source of
+// truth for whether the shared session is valid, only for its own
+// token check, and a 401 there usually just means its TOKEN_SECRET
+// doesn't match this Worker's — logging the whole site out over it
+// would only force a re-login that gets signed with the same
+// mismatched secret and 401s again.
 // =================================================================
 
 import { siteConfig } from '../config.js';
@@ -62,6 +44,7 @@ export const AUTH_STORAGE_KEY = 'siteAuth';
 // without polling localStorage themselves.
 const listeners = new Set();
 
+// Reads and validates the stored session, discarding it if expired/corrupt
 function readStoredAuth() {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -81,6 +64,7 @@ export function getAuth() {
   return currentAuth;
 }
 
+// True if there's a valid current session
 export function isLoggedIn() {
   return Boolean(currentAuth);
 }
@@ -98,6 +82,7 @@ export function onAuthChange(fn) {
   return () => listeners.delete(fn);
 }
 
+// Calls every subscribed listener with the current auth state
 function notify() {
   listeners.forEach((fn) => {
     try {
@@ -108,6 +93,7 @@ function notify() {
   });
 }
 
+// True once config.js's photos.workerUrl has been set to a real Worker URL
 function workerConfigured() {
   const url = siteConfig.photos?.workerUrl || '';
   return url && !url.includes('YOUR-SUBDOMAIN');
@@ -121,7 +107,7 @@ function workerConfigured() {
  */
 export async function login(passphrase) {
   if (!workerConfigured()) {
-    return { ok: false, error: '⚠️ Nog geen Worker gekoppeld, zie PHOTO-GALLERY.md.' };
+    return { ok: false, error: '⚠️ Nog geen Worker gekoppeld, zie ACTION-EXPANSION-PLAN.md.' };
   }
 
   try {
@@ -146,6 +132,7 @@ export async function login(passphrase) {
   }
 }
 
+// Clears the current session and notifies listeners
 export function logout() {
   currentAuth = null;
   localStorage.removeItem(AUTH_STORAGE_KEY);

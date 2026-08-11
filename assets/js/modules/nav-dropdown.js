@@ -15,6 +15,8 @@ import { qsa, escapeHtml, siteRootUrl } from './utils.js';
 // keep this in sync with the <nav> markup in every HTML file.
 const PERMANENT_LINKS = new Set(['index.html', 'date.html', 'ticketmaster.html']);
 
+// Renders one dropdown row: a real link if available, else a disabled
+// "Binnenkort" placeholder.
 function renderItem(page) {
   const isAvailable = page.status === 'available' && page.href;
 
@@ -30,6 +32,7 @@ function renderItem(page) {
   `;
 }
 
+// Builds the "Meer" dropdown from config.js and wires up open/close.
 export function initNavDropdown() {
   const dropdown = document.getElementById('navMoreDropdown');
   const trigger = document.getElementById('navMoreBtn');
@@ -46,11 +49,13 @@ export function initNavDropdown() {
     return;
   }
 
+  // Closes the dropdown and updates aria-expanded
   function closeMenu() {
     dropdown.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
   }
 
+  // Toggles the dropdown open/closed
   function toggleMenu() {
     const isOpen = dropdown.classList.toggle('open');
     trigger.setAttribute('aria-expanded', String(isOpen));

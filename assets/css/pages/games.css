@@ -18,6 +18,7 @@
   text-align: center;
 }
 
+/* Back-to-hub link at the top of each game page */
 .ttt-back {
   display: inline-flex;
   margin-bottom: var(--space-6);
@@ -32,6 +33,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* One player's score card */
 .ttt-score {
   flex: 1;
   max-width: 160px;
@@ -45,12 +47,14 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Player name label above the score number */
 .ttt-score-label {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   font-weight: 600;
 }
 
+/* The score number itself */
 .ttt-score-value {
   font-family: var(--font-display);
   font-size: var(--fs-h3);
@@ -58,6 +62,7 @@
   color: var(--color-primary);
 }
 
+/* Muted color for the "draws" counter, if present */
 .ttt-score-draw .ttt-score-value {
   color: var(--color-text-muted);
 }
@@ -68,12 +73,14 @@
    width/height + object-fit — so the layout never shifts no matter
    the source image's native dimensions, or which fallback tier ends
    up rendering. */
+/* Centers whichever avatar tier (photo/svg/emoji) renders */
 .ttt-score-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* Photo/SVG avatar shown in the scoreboard */
 .ttt-score-avatar-img {
   width: 48px;
   height: 48px;
@@ -84,6 +91,7 @@
   flex-shrink: 0;
 }
 
+/* Emoji fallback variant of the scoreboard avatar */
 .ttt-score-avatar-img.ttt-avatar-emoji {
   display: flex;
   align-items: center;
@@ -95,6 +103,7 @@
   border-radius: 0;
 }
 
+/* Photo/SVG avatar shown inside a played board cell */
 .ttt-cell-avatar-img {
   width: 60%;
   height: 60%;
@@ -105,6 +114,7 @@
   object-position: center;
 }
 
+/* Emoji fallback variant of the in-cell avatar */
 .ttt-cell-avatar-img.ttt-avatar-emoji {
   display: flex;
   align-items: center;
@@ -135,6 +145,7 @@
   margin-inline: auto;
 }
 
+/* One playable square in the 3x3 board */
 .ttt-cell {
   aspect-ratio: 1 / 1;
   display: flex;
@@ -148,6 +159,7 @@
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
+/* Hover/focus feedback on an empty, still-playable cell */
 .ttt-cell:not([aria-disabled]):hover,
 .ttt-cell:not([aria-disabled]):focus-visible {
   transform: scale(1.04);
@@ -155,20 +167,24 @@
   background: var(--color-border);
 }
 
+/* X mark color */
 .ttt-cell-x {
   color: var(--color-primary);
 }
 
+/* O mark color */
 .ttt-cell-o {
   color: var(--color-accent);
 }
 
+/* Highlight for the 3 cells that make up the winning line */
 .ttt-cell-win {
   background: var(--color-primary);
   color: var(--color-white);
 }
 
 /* == ACTIONS == */
+/* Row of action buttons (Nieuw spel, etc.) below the board */
 .ttt-actions {
   display: flex;
   flex-wrap: wrap;
@@ -177,6 +193,7 @@
   margin-top: var(--space-7);
 }
 
+/* Tighter scoreboard spacing on narrow screens */
 @media (max-width: 480px) {
   .ttt-scoreboard {
     gap: var(--space-2);

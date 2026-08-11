@@ -12,11 +12,13 @@
   margin-bottom: var(--space-6);
 }
 
+/* "Woordlengte" label next to the length picker */
 .wordle-settings-label {
   font-weight: 600;
   color: var(--color-text-muted);
 }
 
+/* Row of selectable word-length pills */
 .wordle-length-picker {
   display: flex;
   flex-wrap: wrap;
@@ -24,6 +26,7 @@
   justify-content: center;
 }
 
+/* One selectable word-length number */
 .wordle-length-pill {
   width: 40px;
   height: 40px;
@@ -37,10 +40,12 @@
   transition: transform var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Slight pop on hover */
 .wordle-length-pill:hover {
   transform: scale(1.08);
 }
 
+/* Currently selected word length */
 .wordle-length-pill-active {
   background: var(--color-primary);
   border-color: var(--color-primary);
@@ -61,6 +66,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* One letter cell in the guess grid */
 .wordle-cell {
   aspect-ratio: 1 / 1;
   display: flex;
@@ -77,11 +83,13 @@
   transition: transform var(--transition-fast);
 }
 
+/* Slight pop once a letter has been typed into the cell */
 .wordle-cell-filled {
   border-color: var(--color-text-muted);
   transform: scale(1.03);
 }
 
+/* Shake animation on an incomplete/rejected guess row */
 .wordle-cell-shake {
   animation: wordle-shake 0.3s ease;
 }
@@ -100,6 +108,7 @@
   border-width: 2px;
 }
 
+/* Flip animation revealing a cell's correct/present/absent result */
 .wordle-cell-reveal {
   animation: wordle-flip 0.5s ease forwards;
 }
@@ -111,18 +120,21 @@
   100% { transform: rotateX(0deg); }
 }
 
+/* Letter is correct and in the right position */
 .wordle-cell-correct {
   background: var(--color-success);
   border-color: var(--color-success);
   color: var(--color-white);
 }
 
+/* Letter is in the word but the wrong position */
 .wordle-cell-present {
   background: var(--color-warning);
   border-color: var(--color-warning);
   color: var(--color-dark);
 }
 
+/* Letter is not in the word at all */
 .wordle-cell-absent {
   background: var(--gray-600);
   border-color: var(--gray-600);
@@ -137,6 +149,7 @@
   align-items: center;
 }
 
+/* One row of the on-screen keyboard */
 .wordle-key-row {
   display: flex;
   gap: var(--space-1);
@@ -144,6 +157,7 @@
   width: 100%;
 }
 
+/* One letter key on the on-screen keyboard */
 .wordle-key {
   min-width: 32px;
   flex: 1;
@@ -162,15 +176,18 @@
   transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
+/* Slight lift on hover */
 .wordle-key:hover {
   transform: translateY(-2px);
 }
 
+/* Bottom row holding the Enter/Backspace action keys */
 .wordle-key-row-actions {
   margin-top: var(--space-2);
   gap: var(--space-2);
 }
 
+/* Shared styling for the Enter and Backspace keys */
 .wordle-key-action {
   height: 60px;
   border-radius: var(--radius-full);
@@ -183,6 +200,7 @@
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color 0.15s ease;
 }
 
+/* Lift + shadow on hover */
 .wordle-key-action:hover {
   transform: scale(1.025) translateY(-2px);
   box-shadow: var(--shadow);
@@ -215,21 +233,25 @@
   75% { transform: translateX(4px); }
 }
 
+/* Keyboard letter marked correct after being guessed */
 .wordle-key-correct {
   background: var(--color-success);
   color: var(--color-white);
 }
 
+/* Keyboard letter marked present-but-wrong-position after being guessed */
 .wordle-key-present {
   background: var(--color-warning);
   color: var(--color-dark);
 }
 
+/* Keyboard letter marked absent after being guessed */
 .wordle-key-absent {
   background: var(--gray-700);
   color: var(--color-white);
 }
 
+/* Smaller keyboard keys on narrow screens */
 @media (max-width: 480px) {
   .wordle-key {
     height: 44px;
@@ -241,6 +263,7 @@
   }
 }
 
+/* Respect reduced-motion: no shake animation on invalid submit */
 @media (prefers-reduced-motion: reduce) {
   .wordle-key-enter-invalid {
     animation: none;

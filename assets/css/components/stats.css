@@ -4,7 +4,7 @@
     [data-target] number up from 0 the first time it scrolls into
     view.
     ============================================================= */
-
+/* The stats section is a grid of three counters, centered and spaced out */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -12,16 +12,19 @@
   text-align: center;
 }
 
+/* Each counter is a flex column, with the number on top and the label below */
 .counter h2 {
   font-size: var(--fs-h2);
   color: var(--color-primary);
 }
 
+/* Each counter is a flex column, with the number on top and the label below */
 .counter p {
   color: var(--color-text-muted);
   margin-bottom: 0;
 }
 
+/* Responsive adjustments for small screens: stack the counters vertically */
 @media (max-width: 768px) {
   .stats {
     grid-template-columns: 1fr;

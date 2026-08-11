@@ -4,9 +4,8 @@
 // Backs lijstje.html / assets/js/modules/lijstje.js. Stores one or
 // more named lists ("categories") in Cloudflare KV, under a single
 // index key holding id + name per list (order = array order), plus
-// one key per list holding its items. No login — see
-// STAPPENPLAN-LIJSTJE.md for why that's fine here (nothing
-// sensitive, the URL isn't public).
+// one key per list holding its items. No login required: nothing
+// sensitive is stored, and the Worker URL itself isn't public.
 //
 // BINDINGS (Settings -> Bindings on this Worker)
 //   LIST_KV       -> this Worker's own KV namespace (its data, see
@@ -35,11 +34,11 @@
 // "Lijsten wijzigen" view of the dropdown on the front end.
 //
 // MIGRATION: the first time /lists is called and no "lists" index
-// exists yet, this worker looks for an old single-list KV key (see
-// LEGACY_KEYS below) from the earlier "boodschappenlijst" version
-// and adopts it as the first list, so nobody's existing list
-// disappears on upgrade. If nothing legacy is found either, it
-// seeds one starter list instead.
+// exists yet, this worker checks for a legacy single-list KV key
+// (see LEGACY_KEYS below) and adopts it as the first list, so an
+// existing list from before the multi-list index was added doesn't
+// disappear. If nothing legacy is found either, it seeds one
+// starter list instead.
 // =================================================================
 
 const ALLOWED_ORIGINS = [
@@ -50,19 +49,17 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:5500',
 ];
 
-// Old single-list KV key names to check during migration, in order.
+// Legacy single-list KV key names to check during migration, in order.
 const LEGACY_KEYS = ['list', 'shopping-list', 'boodschappenlijst'];
 
 const DEFAULT_LIST_NAME = 'Boodschappen';
 
-// NOTE: this used to be a module-scope constant built with
-// crypto.randomUUID() calls at the top level. Workers' runtime
-// rejects any async I/O / timers / random-value generation that
-// happens outside a handler ("Disallowed operation called within
+// Built inside a function (not as a module-scope constant) since
+// Workers' runtime rejects any async I/O / timers / random-value
+// generation outside a handler ("Disallowed operation called within
 // global scope") — module-scope code runs once when the Worker
 // script is first evaluated, before any request/handler context
-// exists, so crypto.randomUUID() there throws. Built inside this
-// function instead, which only ever runs from within fetch().
+// exists. This function only ever runs from within fetch().
 function defaultItems() {
   return [
     { id: crypto.randomUUID(), text: 'Blikgroente', checked: false },

@@ -14,7 +14,7 @@
 // Set all three as Cloudflare "secrets" (never in this file, never in git).
 // Bind the R2 bucket to this worker as `PHOTOS_BUCKET`.
 //
-// Deploy instructions: see PHOTO-GALLERY.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   POST /login                  { passphrase } -> { token, who }
@@ -23,14 +23,14 @@
 //   GET  /travel?country=XX      (PUBLIC)       -> { cities: [...] }  (see below)
 //
 // CAPTIONS: captions.json (uploaded to the same private R2 bucket,
-// see PHOTO-GALLERY.md) maps each filename to a caption array:
+// see ACTION-EXPANSION-PLAN.md) maps each filename to a caption array:
 //   { "img.jpg": ["Short description", "Longer description..."] }
-// As of the "Onze Reizen" feature, TWO more optional fields can
-// follow — a country and a specific place within it:
+// Two more optional fields can follow — a country and a specific
+// place within it, used by the "Onze Reizen" travel map:
 //   { "img.jpg": ["Short", "Longer...", "Portugal", "Lissabon"] }
-// Not every photo needs them — entries with only 2 elements (or a
-// plain string, the old format) simply never show up on the travel
-// map, they still work exactly as before on photos.html.
+// Not every photo needs them — a plain string, or an array with only
+// 2 elements, simply never shows up on the travel map and still
+// works exactly the same on photos.html.
 //
 // /travel IS DELIBERATELY PUBLIC (no Authorization header, no
 // passphrase check) — it powers reizen/land.html's city-pin

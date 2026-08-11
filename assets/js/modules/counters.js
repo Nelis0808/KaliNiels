@@ -10,6 +10,7 @@ import { qsa, prefersReducedMotion } from './utils.js';
 const durationMs = 1500;
 const threshold  = 0.3;
 
+// Animates one counter element from 0 to its data-target over durationMs.
 function animateCounter(el) {
   const target = Number(el.dataset.target);
   if (Number.isNaN(target)) return;
@@ -31,6 +32,8 @@ function animateCounter(el) {
   requestAnimationFrame(tick);
 }
 
+// Watches every [data-target] element and animates it once, the first
+// time it scrolls into view.
 export function initCounters() {
   const counters = qsa('[data-target]');
   if (counters.length === 0) return;

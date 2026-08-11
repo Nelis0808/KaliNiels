@@ -1,7 +1,7 @@
 /*  =============================================================
     BUTTONS
     ============================================================= */
-/* Section begin: Button */
+/* Default button styles, shared by all button variants (primary/outline/etc) */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -14,25 +14,20 @@
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
+/* Hover/focus/active states, shared by all button variants (primary/outline/etc) */
 .btn:active {
   transform: scale(0.98);
 }
 
-/* Small size variant — used by the header's profile dropdown
-   (assets/partials/header.html) and available for any future
-   compact button; several pages (ticketmaster.css, blackjack.css,
-   spiderette.css) still keep their own page-scoped copy of this,
-   which is fine, this one just makes it available globally too. */
+/*  Small button variant, opt in with .btn-sm. Used for buttons that are
+    meant to be smaller than the default size, e.g. in a form */
 .btn-sm {
   min-height: 36px;
   padding: 8px 20px;
   font-size: var(--fs-sm);
 }
 
-/* Visibly-disabled state, shared by every .btn variant (primary/outline/etc).
-   Same look as .bj-chip:disabled in blackjack.css, kept in one place here
-   so any button anywhere in the site — not just BlackJack's — gets a
-   consistent "can't click this right now" treatment. */
+/* Disabled button state, shared by all button variants (primary/outline/etc) */
 .btn:disabled {
   opacity: 0.35;
   filter: grayscale(1);
@@ -41,53 +36,62 @@
   pointer-events: none;
 }
 
-.btn:disabled:hover,
-.btn:disabled:focus-visible,
-.btn:disabled:active {
+/* Disabled button hover/focus/active states, shared by all button variants (primary/outline/etc) */
+.btn:disabled:hover, .btn:disabled:focus-visible, .btn:disabled:active {
   transform: none;
 }
 
+/* Section begin: Button variants */
 .btn-primary {
   background: radial-gradient(circle at center, var(--color-tertiary) 0%, var(--color-primary) 150%);
   color: var(--color-white);
   box-shadow: var(--shadow);
 }
 
-.btn-primary:hover,
-.btn-primary:focus-visible {
+/* Hover/focus/active states for the primary button variant */
+.btn-primary:hover, .btn-primary:focus-visible {
   transform: scale(1.025);
   box-shadow: var(--shadow-lg);
 }
 
+/* Section begin: Outline button variant */
 .btn-outline {
   border: 2px solid var(--color-primary);
   color: var(--color-primary);
 }
 
+/* Hover/focus/active states for the outline button variant */
 .btn-outline:hover, .btn-outline:focus-visible {
   background: var(--color-primary);
   color: var(--color-white);
 }
 
+/* Large button variant, opt in with .btn-lg. Used for buttons that are
+    meant to be larger than the default size, e.g. hero section */
 .btn-lg {
   font-size: 1.25rem;
   padding: 18px 36px;
 }
-/* Section end: Button */
 
-/* Section begin: ROOT */
+/*  =============================================================
+    ROOT
+    ============================================================= */
+/*  Root-level styles for the buttons, including color theme overrides for dark mode. */
 :root[data-theme='dark'] .btn-outline {
   border-color: var(--color-white);
   color: var(--color-white);
 }
 
+/* Hover/focus/active states for the outline button variant in dark mode */
 :root[data-theme='dark'] .btn-outline:hover {
   background: var(--color-white);
   color: var(--color-dark);
 }
-/* Section end: ROOT */
 
-/* Section begin: BACK TO TOP */
+/*  =============================================================
+    BACK TO TOP
+    ============================================================= */
+/*  Back to top button, which appears when the user scrolls down the page. */
 #backToTop {
   position: fixed;
   right: var(--space-5);
@@ -107,24 +111,23 @@
   transition: opacity var(--transition), transform var(--transition);
 }
 
+/* Hover/focus/active states for the back to top button */
 #backToTop.show {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-#backToTop:hover,
-#backToTop:focus-visible {
+/* Hover/focus/active states for the back to top button */
+#backToTop:hover, #backToTop:focus-visible {
   box-shadow: var(--shadow-lg);
 }
-/* Section end: BACK TO TOP */
 
+/*  =============================================================
+    MEDIA QUERIES
+    ============================================================= */
+/*  Responsive styles for buttons, including a full-width button variant for small screens. */
 @media (max-width: 480px) {
-  /* Full-width buttons are easier to tap accurately on small phones,
-    but only for buttons that are meant to stand alone in a form/CTA
-    stack, opt in with .btn-block rather than making this global,
-    since some layouts (e.g. two hero buttons side by side) should
-    NOT stretch to 100% width. */
   .btn-block {
     width: 100%;
   }

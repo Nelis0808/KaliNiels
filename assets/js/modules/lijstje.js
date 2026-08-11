@@ -2,7 +2,7 @@
 // LIJSTJE (lijstje.html)
 // -----------------------------------------------------------------
 // Talks ONLY to the lijstje Cloudflare Worker (see
-// /cloudflare/cloudflare-worker-lijstje + STAPPENPLAN-LIJSTJE.md),
+// cloudflare/lijstje/ + ACTION-EXPANSION-PLAN.md),
 // which stores one or more named lists (categories) in Cloudflare
 // KV. No login — see the worker's top comment for why that's fine
 // here.
@@ -47,12 +47,13 @@ const ACTIVE_LIST_STORAGE_KEY = 'lijstje-active-list-id';
 // network error, 500, etc.) almost always means one thing: the
 // worker.js deployed on Cloudflare is still the older version that
 // only knew about items inside a single list, and doesn't have the
-// rename/delete/reorder routes yet — see STAPPENPLAN-LIJSTJE.md. Any
+// rename/delete/reorder routes yet — see cloudflare/lijstje/. Any
 // other status is a genuine runtime error and gets the plain message
 // instead.
+// Explains a 404/405 on the /lists API as an outdated Worker deploy
 function describeListsApiError(response) {
   if (response && (response.status === 404 || response.status === 405)) {
-    return 'moet je de Cloudflare Worker opnieuw deployen (zie STAPPENPLAN-LIJSTJE.md bovenaan)';
+    return 'moet je de Cloudflare Worker opnieuw deployen (zie cloudflare/lijstje/ bovenaan)';
   }
   return 'probeer het opnieuw';
 }
@@ -76,6 +77,7 @@ export function initLijstje() {
   const switcherLabel   = qs('#slListTriggerLabel', root);
   const switcherMenu    = qs('#slListMenu', root);
 
+  // True once config.js's shoppingList.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
@@ -98,12 +100,14 @@ export function initLijstje() {
   let lists = [];
   let activeListId = localStorage.getItem(ACTIVE_LIST_STORAGE_KEY) || null;
 
+  // Updates the status line, optionally styled as an error
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle('sl-status-error', isError);
     statusEl.classList.remove('hidden');
   }
 
+  // Redraws the whole item list from `items`, or the empty state if there are none
   function render() {
     const checkedCount = items.filter((item) => item.checked).length;
 
@@ -148,6 +152,7 @@ export function initLijstje() {
 
   // ---- Networking ------------------------------------------------
 
+  // Fetches the active list's items from the Worker
   async function loadList({ silent = false } = {}) {
     if (!activeListId) return;
     if (!silent) setStatus('Laden…');
@@ -197,6 +202,7 @@ export function initLijstje() {
   // dropdown closes, so it always reopens in the normal view.
   let listsEditMode = false;
 
+  // Closes the list-switcher dropdown and resets its "new list" form
   function closeSwitcher() {
     switcherEl.classList.remove('open');
     switcherTrigger.setAttribute('aria-expanded', 'false');
@@ -214,6 +220,7 @@ export function initLijstje() {
     renderSwitcher();
   }
 
+  // Opens/closes the list-switcher dropdown
   function toggleSwitcher() {
     const isOpen = switcherEl.classList.toggle('open');
     switcherTrigger.setAttribute('aria-expanded', String(isOpen));
@@ -226,6 +233,7 @@ export function initLijstje() {
     }
   }
 
+  // Renders the dropdown's normal (pick-a-list) view, or delegates to edit mode
   function renderSwitcher() {
     const active = lists.find((list) => list.id === activeListId);
     switcherLabel.textContent = active ? active.name : 'Lijstje';
@@ -301,6 +309,7 @@ export function initLijstje() {
     `;
   }
 
+  // Switches the active list and reloads its items
   async function switchToList(listId) {
     if (listId === activeListId) {
       closeSwitcher();
@@ -313,6 +322,7 @@ export function initLijstje() {
     await loadList();
   }
 
+  // Creates a new list on the Worker and switches to it
   async function createList(name) {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -332,6 +342,7 @@ export function initLijstje() {
     }
   }
 
+  // Fetches every list's name/id from the Worker
   async function loadLists() {
     try {
       const response = await fetch(`${workerUrl}/lists`);
@@ -353,6 +364,7 @@ export function initLijstje() {
     }
   }
 
+  // Renames a list (optimistically), rolling back on failure
   async function renameList(id, newName) {
     const trimmed = newName.trim();
     if (!trimmed) return;
@@ -378,6 +390,7 @@ export function initLijstje() {
     }
   }
 
+  // Deletes a list (optimistically), rolling back on failure
   async function deleteList(id) {
     if (lists.length <= 1) return; // worker rejects this too; guard here so the UI never even tries
     const previous = lists;
@@ -499,6 +512,7 @@ export function initLijstje() {
   // (that guard is specifically for item rows) — the switcher dropdown
   // has its own polling-independent lifecycle, so there's no refresh
   // racing this input while the dropdown is open.
+  // Swaps a list-edit row into an inline rename <input>
   function startListRename(row) {
     if (row.querySelector('.sl-list-rename-input')) return; // already editing this row
     const id = row.dataset.listId;
@@ -518,6 +532,7 @@ export function initLijstje() {
 
     let settled = false;
 
+    // Commits the typed rename
     function commit() {
       if (settled) return;
       settled = true;
@@ -528,6 +543,7 @@ export function initLijstje() {
       renameList(id, input.value); // renderSwitcher() rebuilds the row, replacing this input
     }
 
+    // Cancels the rename, restoring the plain name text
     function cancel() {
       if (settled) return;
       settled = true;
@@ -561,6 +577,7 @@ export function initLijstje() {
 
   // ---- Mutations ---------------------------------------------------
 
+  // Adds a new item (optimistically) and saves
   function addItem(text) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -569,18 +586,21 @@ export function initLijstje() {
     saveList();
   }
 
+  // Toggles an item's checked state (optimistically) and saves
   function toggleItem(id) {
     items = items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item));
     render();
     saveList();
   }
 
+  // Removes an item (optimistically) and saves
   function deleteItem(id) {
     items = items.filter((item) => item.id !== id);
     render();
     saveList();
   }
 
+  // Renames an item (optimistically) and saves
   function renameItem(id, newText) {
     const trimmed = newText.trim();
     if (!trimmed) return;
@@ -590,6 +610,7 @@ export function initLijstje() {
   }
 
   /** Moves the item with `id` to `targetIndex` in the list, then persists the new order. */
+  // Moves an item to a new position (optimistically) and saves
   function reorderItem(id, targetIndex) {
     const fromIndex = items.findIndex((item) => item.id === id);
     if (fromIndex === -1) return;
@@ -641,6 +662,7 @@ export function initLijstje() {
   // pre-filled with the current text and focused/selected so typing
   // immediately replaces it. Enter or clicking away saves; Escape
   // cancels and restores the original text untouched.
+  // Swaps an item row into an inline rename <input>
   function startRename(li) {
     if (li.querySelector('.sl-rename-input')) return; // already editing this row
     const id = li.dataset.id;
@@ -728,10 +750,12 @@ export function initLijstje() {
   let longPressTimer = null;
   let longPressStart = null; // { x, y, li, pointerId } while a hold is pending
 
+  // Every item <li> currently in the DOM, in order
   function itemElements() {
     return Array.from(listEl.querySelectorAll('.sl-item'));
   }
 
+  // Repositions the dragged item row to match a pointer's Y position
   function moveDraggedRowTo(clientY) {
     const siblings = itemElements().filter((el) => el !== draggingLi);
     for (const sibling of siblings) {
@@ -750,6 +774,7 @@ export function initLijstje() {
     }
   }
 
+  // Starts dragging an item row
   function beginDrag(li, pointerId) {
     draggingLi = li;
     dragPointerId = pointerId;
@@ -757,6 +782,7 @@ export function initLijstje() {
     listEl.classList.add('sl-list-reordering');
   }
 
+  // Ends the item drag, committing the new order if it changed
   function endDrag() {
     if (!draggingLi) return;
     draggingLi.classList.remove('sl-item-dragging');
@@ -774,6 +800,7 @@ export function initLijstje() {
     dragPointerId = null;
   }
 
+  // Cancels a pending long-press-to-drag timer for an item row
   function cancelPendingLongPress() {
     if (longPressTimer) clearTimeout(longPressTimer);
     longPressTimer = null;
@@ -867,10 +894,12 @@ export function initLijstje() {
   let listLongPressTimer = null;
   let listLongPressStart = null;
 
+  // Every list-edit row currently in the DOM, in order
   function listRowElements() {
     return Array.from(switcherMenu.querySelectorAll('.sl-list-edit-row'));
   }
 
+  // Repositions the dragged list row to match a pointer's Y position
   function moveDraggedListRowTo(clientY) {
     const siblings = listRowElements().filter((el) => el !== draggingListRow);
     for (const sibling of siblings) {
@@ -891,12 +920,14 @@ export function initLijstje() {
     }
   }
 
+  // Starts dragging a list row (in "Lijsten wijzigen" edit mode)
   function beginListDrag(row, pointerId) {
     draggingListRow = row;
     listDragPointerId = pointerId;
     draggingListRow.classList.add('sl-list-edit-row-dragging');
   }
 
+  // Ends the list drag, committing the new order if it changed
   function endListDrag() {
     if (!draggingListRow) return;
     draggingListRow.classList.remove('sl-list-edit-row-dragging');
@@ -909,6 +940,7 @@ export function initLijstje() {
     listDragPointerId = null;
   }
 
+  // Cancels a pending long-press-to-drag timer for a list row
   function cancelPendingListLongPress() {
     if (listLongPressTimer) clearTimeout(listLongPressTimer);
     listLongPressTimer = null;
@@ -998,6 +1030,7 @@ export function initLijstje() {
 
   // ---- Polling (picks up changes made on the other person's device) ----
 
+  // Starts the periodic background refresh, pausing while the tab is hidden
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
@@ -1016,6 +1049,7 @@ export function initLijstje() {
     }, POLL_INTERVAL_MS);
   }
 
+  // Stops the periodic background refresh
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

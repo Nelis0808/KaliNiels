@@ -4,6 +4,7 @@
    games.css — only the board + disc styling lives here.
    ============================================================= */
 
+/* Player-colored score numbers in the shared .ttt-scoreboard */
 .c4-score-blue .ttt-score-value { color: #7B68EE; }
 .c4-score-pink .ttt-score-value { color: #FF6B9D; }
 
@@ -27,6 +28,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* One empty/filled circular slot on the board */
 .c4-cell {
   aspect-ratio: 1 / 1;
   border-radius: 50%;
@@ -38,11 +40,13 @@
   transition: background var(--transition-fast);
 }
 
+/* Hover preview on an empty, still-playable cell */
 .c4-board:not(.c4-board-over) .c4-cell:not(.c4-cell-blue):not(.c4-cell-pink):hover {
   background: var(--color-border);
   cursor: pointer;
 }
 
+/* Drop-in animation played when a disc lands */
 .c4-cell-blue,
 .c4-cell-pink {
   animation: c4-drop 0.35s ease-out;
@@ -53,6 +57,7 @@
   to   { transform: translateY(0); opacity: 1; }
 }
 
+/* Highlight ring on the 4 cells that make up the winning line */
 .c4-cell-win {
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, .18), 0 0 0 3px var(--color-accent);
 }
@@ -70,6 +75,7 @@
   flex-shrink: 0;
 }
 
+/* Emoji fallback variant of the scoreboard avatar (no photo/svg available) */
 .c4-score-avatar-img.c4-avatar-emoji {
   display: flex;
   align-items: center;
@@ -79,6 +85,7 @@
   box-shadow: none;
 }
 
+/* Player avatar rendered inside a filled board cell */
 .c4-cell-avatar-img {
   width: 78%;
   height: 78%;
@@ -87,6 +94,7 @@
   object-position: center;
 }
 
+/* Emoji fallback variant of the in-cell avatar */
 .c4-cell-avatar-img.c4-avatar-emoji {
   display: flex;
   align-items: center;
@@ -96,6 +104,7 @@
   font-size: clamp(1.4rem, 5vw, 2rem);
 }
 
+/* Tighter spacing on narrow screens so the 7-column board still fits */
 @media (max-width: 480px) {
   .c4-board {
     gap: var(--space-1);

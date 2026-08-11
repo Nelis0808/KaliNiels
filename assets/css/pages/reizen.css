@@ -30,6 +30,7 @@
   padding-bottom: var(--space-8);
 }
 
+/* Back-to-map link shown at the top of the country page */
 .rz-back {
   display: flex;
   align-items: center;
@@ -38,6 +39,7 @@
   margin: 0 auto var(--space-5);
 }
 
+/* Short instructional hint text above the map */
 .rz-hint {
   text-align: center;
   color: var(--color-text-muted);
@@ -65,6 +67,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Individual +/-/reset zoom button */
 .rz-zoom-btn {
   width: 36px;
   height: 36px;
@@ -81,11 +84,13 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Hover/focus state for zoom buttons */
 .rz-zoom-btn:hover, .rz-zoom-btn:focus-visible {
   background: var(--color-primary);
   color: var(--color-white);
 }
 
+/* Slightly smaller label on the reset button (text, not a +/- glyph) */
 .rz-zoom-reset { font-size: 0.95rem; }
 
 /* == MAP VIEWPORT ==
@@ -122,6 +127,7 @@
   margin-inline: auto;
 }
 
+/* Caps the viewport's own height to the wrapper's height budget above */
 .rz-map-viewport-wrap--country .rz-map-viewport {
   max-height: var(--rz-map-max-h);
 }
@@ -131,8 +137,8 @@
   width: 100%;
   /* Fallback only — reizen.js / reizen-land.js set this inline to the
      exact projection's width/height ratio as soon as it's known, so
-     the SVG never gets letterboxed inside a differently-shaped box
-     (which used to throw pins out of alignment with the coastlines). */
+     the SVG never gets letterboxed inside a differently-shaped box —
+     that would throw pins out of alignment with the coastlines. */
   aspect-ratio: 360 / 141;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -144,11 +150,13 @@
   cursor: grab;
 }
 
+/* Grabbing cursor while actively panning */
 .rz-map-viewport-dragging,
 .rz-map-viewport:active {
   cursor: grabbing;
 }
 
+/* Inner frame that actually gets translated/scaled by pan-zoom.js */
 .rz-map-frame {
   position: absolute;
   inset: 0;
@@ -167,6 +175,7 @@
   will-change: transform;
 }
 
+/* Fills the frame, world map or single-country outline */
 .rz-world-svg,
 .rz-country-svg {
   position: absolute;
@@ -176,6 +185,7 @@
   display: block;
 }
 
+/* Individual country/region shape drawn on the SVG map */
 .rz-country-shape {
   fill: var(--color-surface);
   stroke: var(--color-text-muted);
@@ -184,10 +194,12 @@
   transition: fill var(--transition-fast);
 }
 
+/* Subtle highlight on hover, world map only */
 .rz-world-svg .rz-country-shape:hover {
   fill: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
 }
 
+/* Centered loading message shown while the map background image loads */
 .rz-map-bg-loading {
   position: absolute;
   inset: 0;
@@ -220,6 +232,7 @@
   pointer-events: none;
 }
 
+/* Hides the coord badge outside of hover */
 .rz-coord-badge.hidden {
   display: none;
 }
@@ -246,6 +259,7 @@
   text-overflow: ellipsis;
 }
 
+/* Hides the hover label when nothing is under the cursor */
 .rz-hover-label.hidden {
   display: none;
 }
@@ -267,6 +281,7 @@
   z-index: 4;
 }
 
+/* Hover/selected pop scale, kept separate from .rz-pin's own transform */
 .rz-pin-scaler {
   position: relative;
   display: flex;
@@ -291,15 +306,18 @@
   z-index: 40;
 }
 
+/* Suppress the default outline; a custom one is drawn on the dot below */
 .rz-pin:focus-visible {
   outline: none;
 }
 
+/* Custom focus ring drawn directly on the pin dot */
 .rz-pin:focus-visible .rz-pin-dot {
   outline: 3px solid var(--color-tertiary);
   outline-offset: 2px;
 }
 
+/* Teardrop-shaped pin marker, rotated square with one rounded corner */
 .rz-pin-dot {
   width: 18px;
   height: 18px;
@@ -309,10 +327,12 @@
   border: 2px solid var(--color-white);
 }
 
+/* Visited-country pin color */
 .rz-pin-visited .rz-pin-dot {
   background: var(--color-primary);
 }
 
+/* Wishlist-country pin color */
 .rz-pin-wishlist .rz-pin-dot {
   background: var(--color-accent);
 }
@@ -324,16 +344,19 @@
   background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-accent) 50%);
 }
 
+/* Smaller dot style used for city pins (reizen/land.html) */
 .rz-pin-city .rz-pin-dot {
   background: var(--color-secondary);
   width: 15px;
   height: 15px;
 }
 
+/* Visited-city pin color */
 .rz-pin-city.rz-pin-visited .rz-pin-dot {
   background: var(--color-success);
 }
 
+/* Name tooltip under a pin, hidden until hover/focus/selected */
 .rz-pin-label {
   position: absolute;
   top: 100%;
@@ -356,6 +379,7 @@
   z-index: 50;
 }
 
+/* Reveal the label and ring-highlight the pin */
 .rz-pin:hover .rz-pin-label,
 .rz-pin:focus-visible .rz-pin-label,
 .rz-pin-selected .rz-pin-label {
@@ -363,6 +387,7 @@
   box-shadow: 0 0 0 2px var(--color-primary), var(--shadow-sm);
 }
 
+/* Persistent highlight ring for the currently-selected pin */
 .rz-pin-selected .rz-pin-dot {
   outline: 3px solid var(--color-primary);
   outline-offset: 2px;
@@ -379,12 +404,14 @@
   color: var(--color-text-muted);
 }
 
+/* One legend row: colored dot + label */
 .rz-legend-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
+/* Base size/shape shared by every legend dot color variant below */
 .rz-legend-dot {
   width: 12px;
   height: 12px;
@@ -392,6 +419,7 @@
   flex-shrink: 0;
 }
 
+/* One color variant per pin status, matching the pin-dot colors above */
 .rz-legend-dot-visited { background: var(--color-primary); }
 .rz-legend-dot-wishlist { background: var(--color-accent); }
 .rz-legend-dot-both { background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-accent) 50%); }
@@ -413,10 +441,12 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Country/city name heading inside the summary card */
 .rz-selected-card h3 {
   margin-bottom: var(--space-1);
 }
 
+/* Supporting description text inside the summary card */
 .rz-selected-card p {
   margin: 0;
   color: var(--color-text-muted);
@@ -432,6 +462,7 @@
   padding-bottom: var(--space-6);
 }
 
+/* Country name heading on the country page */
 .rz-land-heading {
   text-align: center;
   margin-bottom: var(--space-2);
@@ -449,10 +480,12 @@
   text-align: center;
 }
 
+/* "Foto's" heading above the city photo strip */
 .rz-city-panel h3 {
   margin-bottom: var(--space-1);
 }
 
+/* Message shown when a country/city has no photos yet */
 .rz-city-panel-empty {
   text-align: center;
   color: var(--color-text-muted);
@@ -476,6 +509,7 @@
   text-align: left;
 }
 
+/* Individual photo tile in the strip */
 .rz-city-photo {
   margin: 0;
   flex: 1 1 160px;
@@ -487,6 +521,7 @@
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
+/* Lift effect on hover */
 .rz-city-photo:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
@@ -504,6 +539,7 @@
   cursor: pointer;
 }
 
+/* Keyboard focus ring for the photo trigger button */
 .rz-city-photo-trigger:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: -3px;
@@ -526,6 +562,7 @@
   display: block;
 }
 
+/* Caption text under each thumbnail */
 .rz-city-photo figcaption {
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-sm);
@@ -533,6 +570,7 @@
   text-align: center;
 }
 
+/* Shimmering placeholder background while a photo is still loading */
 .rz-city-photo-loading {
   background-image: linear-gradient(110deg, var(--color-border) 8%, var(--color-surface) 18%, var(--color-border) 33%);
   background-size: 200% 100%;
@@ -543,11 +581,13 @@
   to { background-position-x: -200%; }
 }
 
+/* Fallback background when a photo fails to load */
 .rz-city-photo-error {
   background-color: var(--color-border);
   position: relative;
 }
 
+/* Error message overlay shown on a failed photo */
 .rz-city-photo-error::after {
   content: '⚠️ kon niet laden';
   position: absolute;
@@ -577,10 +617,12 @@
   -webkit-backdrop-filter: blur(4px);
 }
 
+/* Locks page scroll behind the open lightbox */
 body.rz-photo-lightbox-locked {
   overflow: hidden;
 }
 
+/* Centered content wrapper inside the lightbox overlay */
 .rz-photo-lightbox-content {
   margin: 0;
   max-width: min(90vw, 1100px);
@@ -591,6 +633,7 @@ body.rz-photo-lightbox-locked {
   gap: var(--space-3);
 }
 
+/* The full-size photo itself */
 .rz-photo-lightbox-content img {
   max-width: 100%;
   max-height: 75vh;
@@ -599,6 +642,7 @@ body.rz-photo-lightbox-locked {
   object-fit: contain;
 }
 
+/* Full caption text shown below the enlarged photo */
 .rz-photo-lightbox-content figcaption {
   color: var(--color-white);
   text-align: center;
@@ -607,6 +651,7 @@ body.rz-photo-lightbox-locked {
   line-height: 1.5;
 }
 
+/* Close (×) button, top-right of the lightbox */
 .rz-photo-lightbox-close {
   position: absolute;
   top: var(--space-5);
@@ -622,6 +667,7 @@ body.rz-photo-lightbox-locked {
   transition: background var(--transition-fast);
 }
 
+/* Hover/focus state for the close button */
 .rz-photo-lightbox-close:hover, .rz-photo-lightbox-close:focus-visible {
   background: rgba(255, 255, 255, 0.3);
   outline: 2px solid var(--color-white);
@@ -638,6 +684,7 @@ body.rz-photo-lightbox-locked {
   margin-top: var(--space-3);
 }
 
+/* Login link inside the locked note */
 .rz-locked-note a {
   color: var(--color-primary);
   font-weight: 700;
@@ -654,18 +701,20 @@ body.rz-photo-lightbox-locked {
 }
 
 /* == LOCK SCREEN (whole-page auth gate, see assets/js/modules/page-gate.js) ==
-   Onze Reizen is fully private now — this replaces the map/app
-   entirely until the shared "👤 Profiel" session is active. */
+   Onze Reizen is fully private — this covers the map/app entirely
+   until the shared "👤 Profiel" session is active. */
 .rz-lockscreen {
   width: min(95%, 560px);
   padding-top: var(--space-8);
   padding-bottom: var(--space-8);
 }
 
+/* Hides the lock screen once the visitor is authenticated */
 .rz-lockscreen.hidden {
   display: none;
 }
 
+/* Centered card holding the lock icon, heading and login prompt */
 .rz-lockscreen-card {
   background: var(--color-surface);
   border-radius: var(--radius);
@@ -678,21 +727,25 @@ body.rz-photo-lightbox-locked {
   gap: var(--space-3);
 }
 
+/* Large lock emoji at the top of the card */
 .rz-lockscreen-emoji {
   font-size: 3rem;
   margin: 0;
 }
 
+/* Heading inside the lock screen card */
 .rz-lockscreen-card h2 {
   margin: 0;
 }
 
+/* Shows which shared account is currently signed in, if any */
 .rz-lockscreen-who {
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
   min-height: 1.2em;
 }
 
+/* Small screens: stack the summary card and shrink pin labels */
 @media (max-width: 600px) {
   .rz-selected-card {
     flex-direction: column;
@@ -705,6 +758,7 @@ body.rz-photo-lightbox-locked {
   }
 }
 
+/* Respect reduced-motion: no hover lift, no shimmer animation */
 @media (prefers-reduced-motion: reduce) {
   .rz-city-photo { transition: none; }
   .rz-city-photo-loading { animation: none; }

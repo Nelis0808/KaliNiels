@@ -1,11 +1,20 @@
 /*  =============================================================
     TYPOGRAPHY
+    All font sizes, line heights, and font families are defined
+    here as CSS custom properties, so they can be used consistently
+    throughout the site. The font sizes are based on a modular scale
+    with a ratio of 1.25. The base font size is 16px (1rem), 
+    and the font sizes are defined in rem units, so they scale with 
+    the user's font size preference. The line heights are defined as 
+    unitless values, so they scale with the font size.
     ============================================================= */
 
+/* Base font size for the body */
 body {
   font-size: var(--fs-base);
 }
 
+/* Headings */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   line-height: 1.15;
@@ -14,19 +23,23 @@ h1, h2, h3, h4, h5, h6 {
   text-wrap: balance;
 }
 
+/* Headings font sizes */
 h1 { font-size: var(--fs-h1); }
 h2 { font-size: var(--fs-h2); }
 h3 { font-size: var(--fs-h3); }
 h4 { font-size: var(--fs-lg); }
 
+/* Paragraphs */
 p {
   color: var(--color-text-muted);
   margin-bottom: var(--space-4);
   max-width: 65ch;
 }
 
+/* Small text */
 small { font-size: var(--fs-sm); }
 
+/* Logo */
 .logo {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
@@ -35,7 +48,7 @@ small { font-size: var(--fs-sm); }
   text-decoration: none;
 }
 
-/* Screen-reader-only text: visually hidden but still announced.
+/*  Screen-reader-only text: visually hidden but still announced.
     Use for context that sighted users don't need but assistive
     tech users do (e.g. "(opens in new tab)"). */
 .sr-only {

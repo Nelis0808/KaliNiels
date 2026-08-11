@@ -1,10 +1,10 @@
 // =================================================================
 // SNACK RATINGS — SYNC (Cloudflare Worker)
 // -----------------------------------------------------------------
-// Same "whole list" model as the shopping list / TODO Worker (see
-// their file headers) — one shared list, read-it-all/write-it-all-
-// back, polled every few seconds by snack-rating.js. No login (same
-// reasoning as the other small Workers on this site).
+// Same "whole list" model as the lijstje / TODO Worker (see their
+// file headers) — one shared list, read-it-all/write-it-all-back,
+// polled every few seconds by snack-rating.js. No login required
+// (same reasoning as the other small Workers on this site).
 //
 // Every item carries a `person` field ("a" = Niels, "b" = Kalina —
 // see config.js's `snackRatings.personLabels`), same two-column idea
@@ -24,7 +24,7 @@
 // holding ONE key ("snacks") whose value is the entire list as JSON:
 //   { items: [{ id, person, name, url, description, rating, photo, addedAt }, ...], updatedAt: <ms> }
 //
-// Deploy instructions: see STAPPENPLAN-TODO-SNACKS.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   GET  /snacks           -> { items, updatedAt }

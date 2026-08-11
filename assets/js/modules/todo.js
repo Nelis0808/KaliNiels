@@ -7,8 +7,7 @@
 // running index number per column.
 //
 // SYNC MODEL: identical to lijstje.js — talks to the todo
-// Cloudflare Worker (cloudflare/cloudflare-worker-todo +
-// STAPPENPLAN-TODO-SNACKS.md), one shared array in Cloudflare KV
+// Cloudflare Worker (cloudflare/todo/), one shared array in Cloudflare KV
 // covering BOTH columns (each item carries a `person` field), saved
 // optimistically on every change and polled every few seconds so a
 // change on the other person's device shows up here too. See
@@ -33,6 +32,7 @@ const LONG_PRESS_MS = 350;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 // Cycle order the priority swatch button on each row steps through.
+// Priority-dot emoji set, matching whichever color theme is active
 function getDots() {
   return localStorage.getItem('color-theme-preference').toLowerCase() === 'blue'
     ? ['🔴', '🟠', '🟡', '⚪']
@@ -41,6 +41,7 @@ function getDots() {
 
 let dots = getDots();
 
+// The 4 priority levels, each with its current-theme dot emoji
 function getPriorities() {
   return [
     { level: 'high',   label: 'Hoog',      dot: dots[0] },
@@ -52,6 +53,7 @@ function getPriorities() {
 
 let PRIORITIES = getPriorities();
 
+// PRIORITIES indexed by level, for quick lookup
 function getPriorityByLevel() {
   return Object.fromEntries(PRIORITIES.map((p) => [p.level, p]));
 }
@@ -59,6 +61,7 @@ function getPriorityByLevel() {
 let PRIORITY_BY_LEVEL = getPriorityByLevel();
 const DEFAULT_PRIORITY = 'none';
 
+// Recomputes the dot/priority lookups after a color-theme change
 function updateThemeDots() {
   dots = getDots();
   PRIORITIES = getPriorities();
@@ -72,6 +75,7 @@ export function initTodo() {
   const workerUrl = siteConfig.todo?.workerUrl || '';
   const personLabels = siteConfig.todo?.personLabels || { a: 'Niels', b: 'Kalina' };
 
+  // True once config.js's todo.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
@@ -98,6 +102,7 @@ export function initTodo() {
 
   const statusEl = qs('#todoStatus', root);
 
+  // Updates the status line, optionally styled as an error
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle('sl-status-error', isError);
@@ -106,6 +111,7 @@ export function initTodo() {
 
   // ---- Networking (identical shape to lijstje.js) ----------
 
+  // Fetches every item (both people) from the Worker
   async function loadItems({ silent = false } = {}) {
     if (!silent) setStatus('Laden…');
     try {
@@ -121,6 +127,7 @@ export function initTodo() {
     }
   }
 
+  // Pushes the current `items` array to the Worker, reloading on failure
   async function saveItems() {
     saveInFlight = true;
     try {
@@ -144,6 +151,7 @@ export function initTodo() {
 
   // ---- Mutations (operate on the whole `items` array by id) ----------
 
+  // Adds a new item for a person (optimistically) and saves
   function addItem(person, text, priority) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -152,18 +160,21 @@ export function initTodo() {
     saveItems();
   }
 
+  // Toggles an item's checked state (optimistically) and saves
   function toggleItem(id) {
     items = items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item));
     renderAll();
     saveItems();
   }
 
+  // Removes an item (optimistically) and saves
   function deleteItem(id) {
     items = items.filter((item) => item.id !== id);
     renderAll();
     saveItems();
   }
 
+  // Renames an item (optimistically) and saves
   function renameItem(id, newText) {
     const trimmed = newText.trim();
     if (!trimmed) return;
@@ -172,6 +183,7 @@ export function initTodo() {
     saveItems();
   }
 
+  // Steps an item's priority to the next level in the cycle
   function cyclePriority(id) {
     items = items.map((item) => {
       if (item.id !== id) return item;
@@ -216,6 +228,7 @@ export function initTodo() {
 
   // ---- Rendering -------------------------------------------------
 
+  // Renders one item row's HTML, including its priority swatch
   function renderRow(item, index) {
     const priority = PRIORITY_BY_LEVEL[item.priority] || PRIORITY_BY_LEVEL[DEFAULT_PRIORITY];
     return `
@@ -237,10 +250,12 @@ export function initTodo() {
 
   const columns = ['a', 'b'].map((person) => setupColumn(person));
 
+  // Re-renders both columns
   function renderAll() {
     columns.forEach((column) => column.render());
   }
 
+  // Wires up one person's column: add form, priority picker, drag-reorder, rendering
   function setupColumn(person) {
     const listEl = qs(`#todoList${person.toUpperCase()}`, root);
     const emptyStateEl = qs(`#todoEmpty${person.toUpperCase()}`, root);
@@ -251,10 +266,12 @@ export function initTodo() {
     const addError = qs('.todo-add-error', addForm);
     const priorityPicker = qs('.todo-priority-picker', addForm);
 
+    // This person's items, in their stored order
     function personItems() {
       return items.filter((item) => item.person === person);
     }
 
+    // Renders the priority pills in the add-item form
     function renderPriorityPicker() {
       priorityPicker.innerHTML = '';
       PRIORITIES.forEach(({ level, label, dot }) => {
@@ -272,6 +289,7 @@ export function initTodo() {
       });
     }
 
+    // Redraws this column's item list from personItems()
     function render() {
       const list = personItems();
 
@@ -330,6 +348,7 @@ export function initTodo() {
       }
     });
 
+    // Swaps an item row into an inline rename <input>
     function startRename(li) {
       if (li.querySelector('.sl-rename-input')) return;
       const id = li.dataset.id;
@@ -380,10 +399,12 @@ export function initTodo() {
     let longPressTimer = null;
     let longPressStart = null;
 
+    // Every item <li> currently in this column's DOM, in order
     function itemElements() {
       return Array.from(listEl.querySelectorAll('.sl-item'));
     }
 
+    // Repositions the dragged item row to match a pointer's Y position
     function moveDraggedRowTo(clientY) {
       const siblings = itemElements().filter((el) => el !== draggingLi);
       for (const sibling of siblings) {
@@ -401,6 +422,7 @@ export function initTodo() {
       }
     }
 
+    // Starts dragging an item row within this column
     function beginDrag(li, pointerId) {
       draggingLi = li;
       dragPointerId = pointerId;
@@ -408,6 +430,7 @@ export function initTodo() {
       listEl.classList.add('sl-list-reordering');
     }
 
+    // Ends the item drag, committing the new order if it changed
     function endDrag() {
       if (!draggingLi) return;
       draggingLi.classList.remove('sl-item-dragging');
@@ -421,6 +444,7 @@ export function initTodo() {
       dragPointerId = null;
     }
 
+    // Cancels a pending long-press-to-drag timer
     function cancelPendingLongPress() {
       if (longPressTimer) clearTimeout(longPressTimer);
       longPressTimer = null;
@@ -497,6 +521,7 @@ export function initTodo() {
 
   // ---- Polling (picks up changes made on the other person's device) ----
 
+  // Starts the periodic background refresh, pausing while the tab is hidden
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
@@ -508,6 +533,7 @@ export function initTodo() {
     }, POLL_INTERVAL_MS);
   }
 
+  // Stops the periodic background refresh
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

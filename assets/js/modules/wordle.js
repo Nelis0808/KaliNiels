@@ -44,6 +44,7 @@ const LENGTH_STORAGE_KEY = 'wordleLength';
 const LANG_STORAGE_KEY = 'wordleLang';
 const ENTER_FLASH_MS = 500;
 
+// Default language for a first-time visitor (NL)
 function detectDefaultLang() {
   return 'nl';
 }
@@ -57,6 +58,7 @@ const KEYBOARD_ROWS = [
 const wordsCache = {}; // loaded once per language, cached — { en: {...}, nl: {...} }
 
 /** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
+// Merges each length's per-letter word groups into one flat array
 function flattenWordData(raw) {
   const flat = {};
   for (const [length, byLetter] of Object.entries(raw)) {
@@ -65,6 +67,7 @@ function flattenWordData(raw) {
   return flat;
 }
 
+// Fetches (and caches) a language's word list, flattened
 async function loadWords(lang) {
   if (wordsCache[lang]) return wordsCache[lang];
   const response = await fetch(DATA_URLS[lang]);
@@ -74,6 +77,7 @@ async function loadWords(lang) {
   return wordsCache[lang];
 }
 
+// Picks a random word from a list
 function pickWord(words) {
   return words[Math.floor(Math.random() * words.length)];
 }
@@ -124,14 +128,17 @@ export function initWordle() {
   let validGuesses = new Set();
   let wordsByLength = null; // current language's flat arrays, keyed by length
 
+  // Clamps a requested word length to the supported MIN_LEN..MAX_LEN range
   function clampLength(len) {
     return Math.min(MAX_LEN, Math.max(MIN_LEN, len));
   }
 
+  // Updates the status line text
   function updateStatus(text) {
     statusEl.textContent = text;
   }
 
+  // Renders the NL/EN language pills
   function renderLangPicker() {
     if (!langPicker) return;
     langPicker.innerHTML = '';
@@ -165,6 +172,7 @@ export function initWordle() {
     });
   }
 
+  // Renders the word-length pills (4-10)
   function renderLengthPicker() {
     lengthPicker.innerHTML = '';
     for (let len = MIN_LEN; len <= MAX_LEN; len++) {
@@ -185,6 +193,7 @@ export function initWordle() {
     }
   }
 
+  // Builds the empty guess grid for the current word length/guess count
   function renderGrid() {
     grid.innerHTML = '';
     grid.style.setProperty('--wordle-cols', String(wordLength));
@@ -200,6 +209,7 @@ export function initWordle() {
     }
   }
 
+  // Builds the on-screen A-Z keyboard plus Enter/Backspace keys
   function renderKeyboard() {
     keyboard.innerHTML = '';
     KEYBOARD_ROWS.forEach((row) => {
@@ -251,14 +261,17 @@ export function initWordle() {
     keyboard.appendChild(actionRow);
   }
 
+  // Looks up a grid cell's DOM element by row/col
   function cellAt(row, col) {
     return grid.querySelector(`.wordle-cell[data-row="${row}"][data-col="${col}"]`);
   }
 
+  // Looks up the Enter key's DOM element
   function enterKeyEl() {
     return keyboard.querySelector('.wordle-key-enter');
   }
 
+  // Redraws the row being typed with the current guess's letters
   function updateCurrentRow() {
     for (let col = 0; col < wordLength; col++) {
       const cell = cellAt(guessRow, col);
@@ -267,6 +280,7 @@ export function initWordle() {
     }
   }
 
+  // Plays a one-off shake animation on the current row (e.g. too short)
   function shakeCurrentRow() {
     for (let col = 0; col < wordLength; col++) {
       const cell = cellAt(guessRow, col);
@@ -282,6 +296,7 @@ export function initWordle() {
     }
   }
 
+  // Clears the persistent invalid-word red border from the current row
   function clearInvalidRow() {
     for (let col = 0; col < wordLength; col++) {
       cellAt(guessRow, col).classList.remove('wordle-cell-invalid');
@@ -303,10 +318,12 @@ export function initWordle() {
     setTimeout(() => enterKey.classList.remove('wordle-key-enter-invalid'), ENTER_FLASH_MS);
   }
 
+  // Looks up an on-screen keyboard key's DOM element by letter
   function keyEl(letter) {
     return keyboard.querySelector(`.wordle-key[data-key="${letter}"]`);
   }
 
+  // Validates and scores the current guess, or rejects it with feedback
   function submitGuess() {
     if (gameOver) return;
     if (currentGuess.length !== wordLength) {
@@ -363,6 +380,7 @@ export function initWordle() {
     updateStatus(`Nog ${maxGuesses - guessRow} poging${maxGuesses - guessRow === 1 ? '' : 'en'}.`);
   }
 
+  // Routes one key press (letter, BACK, or ENTER) to the right handler
   function handleKey(key) {
     if (gameOver) {
       // Round is over — Enter starts the next one instead of doing nothing.
@@ -403,6 +421,7 @@ export function initWordle() {
     }
   }
 
+  // Maps a physical keyboard keydown onto the same handleKey() path
   function handlePhysicalKeydown(event) {
     if (!root.isConnected) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -420,6 +439,7 @@ export function initWordle() {
     if (/^[a-zA-Z]$/.test(key)) { event.preventDefault(); handleKey(key.toUpperCase()); }
   }
 
+  // Picks a new answer and resets the grid/keyboard/status for a fresh round
   function startNewGame() {
     const words = wordsByLength[String(wordLength)] || [];
     validGuesses = new Set(words);

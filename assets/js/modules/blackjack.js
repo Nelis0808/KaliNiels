@@ -26,10 +26,9 @@
 //   2. CHIP BALANCE: guests get a fixed local stack (GUEST_CHIPS)
 //      that resets on every page load — nothing is sent anywhere.
 //      Logging in loads/saves a real balance via the "blackjack"
-//      Cloudflare Worker (see cloudflare/cloudflare-worker-blackjack),
-//      so it persists across visits and devices, and can be
-//      manually topped up from the Cloudflare KV dashboard (see
-//      STAPPENPLAN-BLACKJACK.md).
+//      Cloudflare Worker (see cloudflare/chips/), so it persists
+//      across visits and devices, and can be manually topped up
+//      from the Cloudflare KV dashboard (see ACTION-EXPANSION-PLAN.md).
 //
 // CHIP SAFETY: the balance can NEVER go negative, in either the
 // guest or logged-in path. Doubling down is only offered (the button
@@ -49,7 +48,7 @@
 // for that shared session via onAuthChange().
 //
 // The chip balance itself still lives in its own "blackjack" Worker
-// + KV namespace (see cloudflare/cloudflare-worker-blackjack) — no
+// + KV namespace (see cloudflare/chips/) — no
 // reason to move real balance state into the identity Worker. For
 // that Worker to accept the shared session's token, its
 // TOKEN_SECRET / PASSPHRASE_A / PASSPHRASE_B secrets must be set to
@@ -108,6 +107,7 @@ function cardImageUrl(card, isLoggedIn) {
   return siteRootUrl(`${folder}/${file}`);
 }
 
+// Builds a fresh single deck and Fisher-Yates shuffles it
 function buildShuffledDeck() {
   const deck = [];
   for (let d = 0; d < DECK_COUNT; d++) {
@@ -137,6 +137,7 @@ function handValue(cards) {
   return total;
 }
 
+// True if a 2-card starting hand totals 21 (a natural blackjack)
 function isBlackjack(cards) {
   return cards.length === 2 && handValue(cards) === 21;
 }
@@ -186,6 +187,7 @@ export function initBlackjack() {
   let dealerHoleHidden = false;
   let previousBet = 0; // the bet from the hand that just finished, offered again by "Dezelfde inzet"
 
+  // True if the shared site session is active
   function isLoggedIn() {
     return Boolean(auth);
   }
@@ -196,10 +198,12 @@ export function initBlackjack() {
   // dropdown, not on this page — this just reacts when that session
   // changes, via onAuthChange() (see the bottom of this file).
   // -----------------------------------------------------------------
+  // Hides the "log in for real chips" notice once logged in
   function updateAuthUI() {
     authStatus.classList.toggle('hidden', isLoggedIn());
   }
 
+  // Reacts to the shared session changing: loads real chips, or resets to a guest stack
   async function syncWithAuth(nextAuth) {
     const wasLoggedIn = isLoggedIn();
     auth = nextAuth;
@@ -223,8 +227,9 @@ export function initBlackjack() {
   // Spiderette (assets/js/modules/spiderette.js) reads/writes the
   // exact same balance via the exact same Worker, and any future
   // chip-based game should too — see
-  // cloudflare/cloudflare-worker-blackjack/worker.js's file header.
+  // cloudflare/chips/chips_worker.js's file header.
   // -----------------------------------------------------------------
+  // Fetches the logged-in player's real chip balance from the Worker
   async function loadChips() {
     if (!isLoggedIn() || !workerUrl) return;
     try {
@@ -233,21 +238,20 @@ export function initBlackjack() {
       });
       if (!response.ok) {
         if (response.status === 401) {
-          // IMPORTANT: this does NOT clear the shared site session
-          // anymore (it used to call logout() here). The blackjack
-          // Worker isn't the source of truth for whether the SITE
-          // session is valid — that's the shared token's own `exp`,
-          // already checked client-side in auth.js before a token is
-          // ever used. A 401 specifically from THIS Worker's /chips
-          // essentially always means its TOKEN_SECRET doesn't match
-          // the identity ("photo-gallery") Worker's yet (see
-          // auth.js's file header for the exact fix) — a server
-          // misconfiguration, not an expired session. Logging out
-          // here used to force a fresh login that would get signed
-          // with the exact same (still-mismatched) secret and 401
-          // again next visit — a repeating "keeps logging me out"
-          // loop that fixed nothing. Now this just surfaces the
-          // failure locally, same as any other load failure, and
+          // IMPORTANT: this deliberately does NOT clear the shared
+          // site session. The blackjack Worker isn't the source of
+          // truth for whether the SITE session is valid — that's the
+          // shared token's own `exp`, already checked client-side in
+          // auth.js before a token is ever used. A 401 specifically
+          // from THIS Worker's /chips essentially always means its
+          // TOKEN_SECRET doesn't match the identity ("photo-gallery")
+          // Worker's yet (see auth.js's file header for the exact
+          // fix) — a server misconfiguration, not an expired session.
+          // Logging out here would force a fresh login that gets
+          // signed with the exact same (still-mismatched) secret and
+          // 401s again next visit — a repeating "keeps logging me
+          // out" loop that fixes nothing. Instead this just surfaces
+          // the failure locally, same as any other load failure, and
           // leaves the person's login for the rest of the site alone.
           console.error(`[blackjack] chip load got 401 — token was not accepted by ${workerUrl}. This almost always means the blackjack Worker's TOKEN_SECRET doesn't match the identity Worker's yet (see auth.js's file header) — not a real expired session, so this page is deliberately NOT logging you out site-wide over it.`);
         } else {
@@ -276,6 +280,7 @@ export function initBlackjack() {
     }
   }
 
+  // Best-effort save of the current balance back to the Worker
   async function saveChips() {
     if (!isLoggedIn() || !workerUrl) return;
     try {
@@ -290,6 +295,7 @@ export function initBlackjack() {
     }
   }
 
+  // Refreshes the balance/bet display and the deal button's enabled state
   function updateBalanceUI() {
     if (chipLoadFailed) {
       balanceEl.textContent = '?';
@@ -306,6 +312,7 @@ export function initBlackjack() {
   // -----------------------------------------------------------------
   // CHIP TRAY
   // -----------------------------------------------------------------
+  // Builds the clickable chip-value buttons
   function renderChipTray() {
     chipTray.innerHTML = CHIP_VALUES.map((value) => `
       <button type="button" class="bj-chip" data-value="${value}" aria-label="Zet ${value} chips in">
@@ -323,6 +330,7 @@ export function initBlackjack() {
     });
   }
 
+  // Disables chips that would push the bet past the current balance
   function updateChipTrayState() {
     chipTray.querySelectorAll('.bj-chip').forEach((chipBtn) => {
       const value = Number(chipBtn.dataset.value);
@@ -330,6 +338,7 @@ export function initBlackjack() {
     });
   }
 
+  // Adds a chip's value to the current bet, if affordable
   function placeBet(value) {
     if (value <= 0) return;
     // Never let the bet exceed what's actually in the balance — chips
@@ -341,6 +350,7 @@ export function initBlackjack() {
     updateBalanceUI();
   }
 
+  // Resets the current bet to 0
   function clearBet() {
     if (handInProgress) return;
     bet = 0;
@@ -355,6 +365,7 @@ export function initBlackjack() {
   // -----------------------------------------------------------------
   // CARD RENDERING
   // -----------------------------------------------------------------
+  // Builds one face-up card's <img>
   function buildCardImg(card) {
     const img = document.createElement('img');
     img.src = cardImageUrl(card, isLoggedIn());
@@ -363,6 +374,7 @@ export function initBlackjack() {
     return img;
   }
 
+  // Builds the card-back <img> for the dealer's hidden hole card
   function buildHiddenCardImg() {
     const img = document.createElement('img');
     img.src = siteRootUrl('assets/icons/playing-cards/card-back-blue.png');
@@ -371,6 +383,7 @@ export function initBlackjack() {
     return img;
   }
 
+  // Redraws both hands' cards and running score totals
   function renderHands() {
     playerCardsEl.replaceChildren(...playerHand.map(buildCardImg));
 
@@ -394,10 +407,12 @@ export function initBlackjack() {
   // -----------------------------------------------------------------
   // GAME FLOW
   // -----------------------------------------------------------------
+  // Updates the status line text
   function setStatus(text) {
     statusEl.textContent = text;
   }
 
+  // Enables/disables Hit/Stand/Double for the current decision point
   function setActionButtonsEnabled(enabled) {
     hitBtn.disabled = !enabled;
     standBtn.disabled = !enabled;
@@ -414,6 +429,7 @@ export function initBlackjack() {
     });
   }
 
+  // Shuffles a fresh deck, deals both hands, and checks for an instant blackjack
   function dealHand() {
     if (bet <= 0 || bet > balance) return;
 
@@ -450,6 +466,7 @@ export function initBlackjack() {
     setStatus('Hit, Stand, of Verdubbel?');
   }
 
+  // Deals the player one more card, busting the hand if it goes over 21
   function hit() {
     if (!handInProgress) return;
     playerHand.push(deck.pop());
@@ -463,6 +480,7 @@ export function initBlackjack() {
     }
   }
 
+  // Doubles the bet, deals exactly one more card, then plays out the dealer
   function double() {
     if (!handInProgress || !canAffordDouble()) return;
     bet *= 2;
@@ -477,11 +495,13 @@ export function initBlackjack() {
     }
   }
 
+  // Locks in the player's hand and plays out the dealer
   function stand() {
     if (!handInProgress) return;
     dealerPlaysOutAndFinish();
   }
 
+  // Reveals the hole card, draws for the dealer until 17+, then settles the hand
   function dealerPlaysOutAndFinish() {
     dealerHoleHidden = false;
     setActionButtonsEnabled(false);
@@ -505,6 +525,7 @@ export function initBlackjack() {
     }
   }
 
+  // Settles the balance for a win/loss/blackjack/push and shows the result
   function finishHand(outcome, message) {
     handInProgress = false;
     setActionButtonsEnabled(false);

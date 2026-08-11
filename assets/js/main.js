@@ -9,9 +9,7 @@
 // means this same file safely runs on every page regardless of
 // which components that page actually uses — no per-page script
 // list to maintain, and no risk of one page's missing element
-// crashing a totally unrelated feature on another page (see the
-// README's "What changed from the original" section for the bug
-// this specifically fixes).
+// crashing a totally unrelated feature on another page.
 //
 // EXTENDING: adding a new interactive feature almost always means:
 //   1. Create assets/js/modules/your-feature.js exporting an
@@ -84,20 +82,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   initFooterYear();
 
   // Page-specific features (each one bails out if not on that page)
-  initDaysCounter();  // index.html
-  initHomeCards();    // index.html
-  initDatePicker();   // date.html
-  initTournament();   // tournament.html
-  initTicketmaster(); // ticketmaster.html
-  initPhotoGallery(); // photos.html
-  initLijstje(); // lijstje.html
-  initTodo();               // todo.html
-  initSnackRating();        // snack-rating.html
-  initClothing();            // clothing.html
-  initGifts();          // gifts.html
-  initPageGate();        // reizen.html + reizen/land.html — hides the whole page until logged in
-  initReizen();          // reizen.html
-  initReizenLand();      // reizen/land.html
+  initDaysCounter();   // index.html
+  initHomeCards();     // index.html
+  initDatePicker();    // date.html
+  initTournament();    // tournament.html
+  initTicketmaster();  // ticketmaster.html
+  initPhotoGallery();  // photos.html
+  initLijstje();       // lijstje.html
+  initTodo();          // todo.html
+  initSnackRating();   // snack-rating.html
+  initClothing();      // clothing.html
+  initGifts();         // gifts.html
+  initPageGate();      // reizen.html + reizen/land.html — hides the whole page until logged in
+  initReizen();        // reizen.html
+  initReizenLand();    // reizen/land.html
   initGamesHub();      // games-hub.html
   initTicTacToe();     // tictactoe.html
   initConnect4();      // connect4.html

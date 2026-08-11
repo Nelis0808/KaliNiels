@@ -9,7 +9,7 @@
 // The site calls THIS worker's URL; this worker calls Ticketmaster
 // with the real key attached server-side, and returns the JSON back.
 //
-// Deploy instructions: see STAPPENPLAN.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 // =================================================================
 
 const TICKETMASTER_EVENTS_URL = 'https://app.ticketmaster.com/discovery/v2/events.json';

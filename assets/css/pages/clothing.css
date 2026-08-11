@@ -10,17 +10,20 @@
    size badge shown on each card live here.
    ============================================================= */
 
+/* Page wrapper */
 #clothingApp {
   width: min(92%, var(--container));
   margin-inline: auto;
   text-align: center;
 }
 
+/* Hides the shared form/list when config.js still has the placeholder worker URL */
 .sl-disabled .snack-add-form,
 .sl-disabled .snack-list {
   display: none;
 }
 
+/* Size text input in the add/edit form, borrowed from snack-rating's shared form */
 .clothing-add-size {
   font: inherit;
 }

@@ -1,20 +1,18 @@
-/* =============================================================
-   DESIGN TOKENS
-   -------------------------------------------------------------
-   Every color, spacing value, radius, shadow, etc. used anywhere
-   on the site is defined ONCE here as a CSS custom property.
-   ============================================================= */
+/*  =============================================================
+    DESIGN TOKENS
+    Every color, spacing value, radius, shadow, etc. used anywhere
+    on the site is defined ONCE here as a CSS custom property.
+    ============================================================= */
 
+/*  Color palette, light theme (default)
+    The 7 "brand hue" tokens just below (--color-primary through
+    --color-accent) are the ONLY tokens that change between the
+    "blauw" and "roze" color themes (see the [data-color-theme]
+    blocks further down). Everything else here (neutrals, spacing,
+    radius, shadow, type) is shared by both themes and both light
+    and dark mode. */
 :root {
-  /* ---------------------------------------------------------
-     COLOR PALETTE, light theme (default)
-     The 7 "brand hue" tokens just below (--color-primary through
-     --color-accent) are the ONLY tokens that change between the
-     "blauw" and "roze" color themes (see the [data-color-theme]
-     blocks further down). Everything else here (neutrals, spacing,
-     radius, shadow, type) is shared by both themes and both light
-     and dark mode.
-     --------------------------------------------------------- */
+
   --color-primary:        #3867d6;
   --color-secondary:      #6495ED;
   --color-tertiary:       #00BFFF;
@@ -23,33 +21,31 @@
   --color-tertiary-dark:  #5F9EA0;
   --color-accent:         #FF69B4;
 
-  --color-success: #32CD32;
-  --color-warning: #FFD700;
-  --color-danger:  #FF6347;
-  --color-dark:    #191970;
+  --color-success:        #32CD32;
+  --color-warning:        #FFD700;
+  --color-danger:         #FF6347;
+  --color-dark:           #191970;
 
   /* Neutral / gray scale, light -> dark */
-  --gray-100: #FFFAFA; /* snow       */
-  --gray-200: #F5F5F5; /* whitesmoke */
-  --gray-300: #DCDCDC; /* gainsboro  */
-  --gray-400: #D3D3D3; /* lightgray  */
-  --gray-500: #A9A9A9; /* darkgray   */
-  --gray-600: #808080; /* gray       */
-  --gray-700: #708090; /* slategray  */
-  --gray-800: #696969; /* dimgray    */
+  --color-white: #FFFFFF;
+  --gray-100: #FFFAFA; /* snow          */
+  --gray-200: #F5F5F5; /* whitesmoke    */
+  --gray-300: #DCDCDC; /* gainsboro     */
+  --gray-400: #D3D3D3; /* lightgray     */
+  --gray-500: #A9A9A9; /* darkgray      */
+  --gray-600: #808080; /* gray          */
+  --gray-700: #708090; /* slategray     */
+  --gray-800: #696969; /* dimgray       */
   --gray-900: #2F4F4F; /* darkslategray */
 
-  --color-white: #FFFFFF;
-
-  /* Semantic aliases, components should prefer these names over
-      raw color tokens above, so a theme swap only touches this block */
+  /* Semantic aliases for the neutral colors, so we can use them in a more meaningful way */
   --color-bg:          var(--gray-200);
   --color-surface:     var(--color-white);
   --color-text:        var(--color-dark);
   --color-text-muted:  var(--gray-800);
   --color-border:      rgba(0, 0, 0, 0.08);
 
-  /* SPACING SCALE (rem based, respects the user's font-size) */
+  /* Spacing scale (rem based, respects the user's font-size) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -60,7 +56,7 @@
   --space-8: 4rem;
   --space-9: 6rem;
 
-  /* RADIUS / SHADOW / TRANSITION */
+  /* Radius */
   --radius-sm:   8px;
   --radius:      16px;
   --radius-lg:   24px;
@@ -68,20 +64,21 @@
   --radius-full: 999px;
   --radius-card: 1px;
 
+  /* Shadows, light -> dark */
   --shadow-sm: 0 2px  6px  rgba(0, 0, 0, .06);
   --shadow:    0 10px 30px rgba(0, 0, 0, .10);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, .16);
 
+  /* Transition timing functions */
   --transition-fast: 0.15s ease;
   --transition:       0.3s ease;
   --transition-slow:  0.6s ease;
 
-  /* TYPOGRAPHY */
+  /* Typography */
   --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
-  /* Fluid type scale, scales smoothly between mobile and desktop
-     instead of jumping at breakpoints. */
+  /* Font sizes, based on a modular scale with a ratio of 1.25 */
   --fs-sm:   clamp(0.85rem, 0.8rem  + 0.2vw, 0.95rem);
   --fs-base: clamp(1rem   , 0.95rem + 0.2vw, 1.05rem);
   --fs-lg:   clamp(1.15rem, 1.05rem + 0.4vw, 1.35rem);
@@ -89,7 +86,7 @@
   --fs-h2:   clamp(2rem   , 1.5rem  + 2vw  , 3.2rem);
   --fs-h1:   clamp(2.4rem , 1.8rem  + 3vw  , 4.6rem);
 
-  /* LAYOUT */
+  /* Layout */
   --container: 1200px;
   --container-narrow: 720px;
 
@@ -101,16 +98,17 @@
    --bp-lg: 992px;   /* (small laptops) */
    --bp-xl: 1200px;  /* (desktop) */
 
-  /* Z-INDEX SCALE */
+  /* Z-index scale */
   --z-navbar: 900;
   --z-overlay: 950;
   --z-back-to-top: 800;
   --z-lightbox: 1000;
 
+  /* Color theme: either light or dark */
   color-scheme: light;
 }
 
-/* COLOR THEME */
+/* BLUE colour theme */
 [data-color-theme='blue'] {
   --color-primary:        #2d60c5;
   --color-secondary:      #6495ED;
@@ -121,6 +119,7 @@
   --color-accent:         #FF69B4;
 }
 
+/* PINK colour theme */
 [data-color-theme='pink'] {
   --color-primary:        #D6467A;
   --color-secondary:      #FF6FA5;
@@ -138,6 +137,5 @@
   --color-text:       var(--color-white);
   --color-text-muted: var(--gray-400);
   --color-border:     rgba(255, 255, 255, 0.08);
-
   color-scheme: dark;
 }

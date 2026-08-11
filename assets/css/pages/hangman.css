@@ -6,6 +6,7 @@
    used only by the custom-word variant).
    ============================================================= */
 
+/* SVG gallows/figure illustration, updates as wrong guesses accumulate */
 .hangman-drawing {
   display: block;
   width: min(100%, 220px);
@@ -13,6 +14,7 @@
   margin-bottom: var(--space-3);
 }
 
+/* List of previously-guessed wrong letters */
 .hangman-wrong-letters {
   min-height: 1.5em;
   text-align: center;
@@ -31,6 +33,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* One underscore/letter slot in the word display */
 .hangman-letter-box {
   width: 40px;
   height: 48px;
@@ -45,6 +48,7 @@
   color: var(--color-text);
 }
 
+/* Reveals the correct word in red once the game is lost */
 .hangman-letter-box-revealed {
   color: var(--color-danger);
   border-bottom-color: var(--color-danger);
@@ -61,6 +65,7 @@
 }
 
 /* == A-Z KEYBOARD == */
+/* A-Z on-screen keyboard */
 .hangman-keyboard {
   display: flex;
   flex-wrap: wrap;
@@ -70,6 +75,7 @@
   margin-inline: auto;
 }
 
+/* One letter key */
 .hangman-key {
   width: 40px;
   height: 44px;
@@ -83,19 +89,23 @@
   transition: transform var(--transition-fast), background var(--transition-fast);
 }
 
+/* Slight lift on hover for not-yet-guessed keys */
 .hangman-key:hover:not(:disabled) {
   transform: translateY(-2px);
 }
 
+/* No pointer cursor once a letter has already been guessed */
 .hangman-key:disabled {
   cursor: default;
 }
 
+/* Correct-guess key color */
 .hangman-key-correct {
   background: var(--color-success);
   color: var(--color-white);
 }
 
+/* Wrong-guess key color, dimmed */
 .hangman-key-wrong {
   background: var(--gray-700);
   color: var(--color-white);
@@ -103,6 +113,7 @@
 }
 
 /* == CUSTOM-WORD SETUP SCREEN (games/hangman-custom.html only) == */
+/* Instructional banner on the custom-word setup screen */
 .hc-setup-notice {
   text-align: center;
   background: var(--color-surface);
@@ -113,17 +124,20 @@
   margin-bottom: var(--space-6);
 }
 
+/* Row holding the word-length range slider and its value */
 .hc-stepper {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
+/* The range slider itself, tinted to the active theme color */
 .hc-stepper input[type='range'] {
   width: 160px;
   accent-color: var(--color-primary);
 }
 
+/* Numeric readout next to the slider */
 .hc-stepper-value {
   min-width: 1.5em;
   text-align: center;
@@ -132,6 +146,7 @@
   color: var(--color-primary);
 }
 
+/* Text input for typing the custom word/phrase to be guessed */
 .hc-word-input {
   display: block;
   width: 100%;
@@ -147,6 +162,7 @@
   letter-spacing: 0.3em;
 }
 
+/* Smaller keys/letter boxes on narrow screens */
 @media (max-width: 480px) {
   .hangman-key {
     width: 32px;

@@ -4,7 +4,8 @@
     inline; below 768px they collapse behind a hamburger button
     (wired up in assets/js/modules/navbar.js).
     ============================================================= */
-
+/*  Navbar styles, including sticky positioning, backdrop filter,
+    background color, border, and transition effects. */
 .navbar {
   position: sticky;
   top: 0;
@@ -16,14 +17,17 @@
   transition: box-shadow var(--transition);
 }
 
+/*  Dark mode navbar styles, including background color. */
 :root[data-theme='dark'] .navbar {
   background: rgba(18, 18, 18, .85);
 }
 
+/*  Navbar styles when scrolled, including box shadow. */
 .navbar.scrolled {
   box-shadow: var(--shadow-sm);
 }
 
+/*  Navbar container styles, including flexbox layout, alignment, and spacing. */
 .nav {
   display: flex;
   justify-content: space-between;
@@ -32,26 +36,31 @@
   gap: var(--space-4);
 }
 
+/* Row of nav links, desktop-only (hidden/collapsed below 768px, see media query) */
 .nav-links {
   display: flex;
   align-items: center;
   gap: var(--space-6);
 }
 
+/* Individual nav link, relatively positioned so the ::after underline can be absolutely placed */
 .nav-links a {
   position: relative;
   padding-block: var(--space-1);
   transition: color var(--transition-fast);
 }
 
+/* Hover/focus color for nav links */
 .nav-links a:hover, .nav-links a:focus-visible {
   color: var(--color-primary);
 }
 
+/* Highlight color for the link matching the current page (set by navbar.js) */
 .nav-links a.active {
   color: var(--color-primary);
 }
 
+/* Animated underline, starts at width 0 and grows in on hover/focus */
 .nav-links a::after {
   content: "";
   position: absolute;
@@ -63,16 +72,19 @@
   transition: width var(--transition-fast);
 }
 
+/* Expand the underline to full width on hover/focus */
 .nav-links a:hover::after, .nav-links a:focus-visible::after {
   width: 100%;
 }
 
+/* Right-hand cluster of icon buttons (theme toggle, settings, profile, hamburger) */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
+/* Shared circular tap target for icon-only buttons in .nav-actions */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -84,14 +96,17 @@
   transition: background var(--transition-fast);
 }
 
+/* Hover state for icon buttons */
 .icon-btn:hover {
   background: var(--color-border);
 }
 
+/* Hamburger button, hidden on desktop and revealed by the media query below */
 #menuBtn {
   display: none;
 }
 
+/* Mobile nav collapse: hamburger appears, inline links become a dropdown panel */
 @media (max-width: 768px) {
   #menuBtn {
     display: inline-flex;
@@ -124,6 +139,7 @@
     transition: max-height var(--transition);
   }
 
+  /* Opened state, toggled by navbar.js's initMobileMenu() */
   .nav-links.show {
     /* Leaves room under the sticky header so the panel doesn't run
         off the bottom of short mobile viewports; scrolls internally
@@ -131,11 +147,13 @@
     max-height: calc(100vh - 72px);
   }
 
+  /* Full-width rows with dividers instead of the desktop inline layout */
   .nav-links a {
     padding: var(--space-4) var(--space-5);
     border-top: 1px solid var(--color-border);
   }
 
+  /* No underline animation needed in the stacked mobile layout */
   .nav-links a::after {
     display: none;
   }

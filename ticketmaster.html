@@ -8,12 +8,12 @@
   contains the toolbar (tabs + filters) and the results container.
 
   "Favorieten" tab: a SECOND, separate Worker
-  (cloudflare/cloudflare-worker-favorite-artists) stores a shared list
+  (cloudflare/ticketmaster_favorite-artists/) stores a shared list
   of artist names in its own KV namespace, synced across every device
   — add "Coldplay" on your phone, it shows up on the laptop too. That
   Worker only stores names; ticketmaster.js still uses the existing
   proxy above (one search call per saved artist) to fetch the actual
-  concert data. See STAPPENPLAN-TICKETMASTER-FAVORIETEN.md.
+  concert data. See ACTION-EXPANSION-PLAN.md.
 -->
 <html lang="nl">
 <head>

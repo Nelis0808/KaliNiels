@@ -1,13 +1,12 @@
 // =================================================================
 // PAGE GATE — hide an entire page's content until logged in
 // -----------------------------------------------------------------
-// Some features aren't OK to show even a public "teaser" of (unlike
-// Onze Reizen's old behaviour, where the map/city pins were public
-// and only the actual photo thumbnails were gated — see
-// reizen-cities.js). "Onze Reizen" as a whole is now one of those:
-// the ENTIRE page (map, pins, everything) stays behind a lock
-// screen until you're logged in via the shared "👤 Profiel" session
-// (assets/js/modules/auth.js).
+// For features where even a public "teaser" isn't appropriate (unlike
+// gated features that show a public map/list with only the sensitive
+// details behind login — see reizen-cities.js). "Onze Reizen" as a
+// whole uses this: the ENTIRE page (map, pins, everything) stays
+// behind a lock screen until you're logged in via the shared
+// "👤 Profiel" session (assets/js/modules/auth.js).
 //
 // USAGE — on any page that needs this:
 //   1. Wrap the real content in a container with a `data-gate-content`
@@ -27,11 +26,11 @@
 // world-map.json, countries/<ISO>.json) from being requested — those
 // are static files with no secrets in them (country names, borders,
 // city names), same trust level as the rest of the static site. The
-// actual sensitive bytes (real photo thumbnails) were already, and
-// remain, behind the photo-gallery Worker's token check server-side
-// — see cloudflare-worker-photos/worker.js. This gate's job is
-// purely to stop a logged-out visitor from casually browsing the
-// map/city names at all, per the "beveilig Onze Reizen" requirement.
+// actual sensitive bytes (real photo thumbnails) are behind the
+// photo-gallery Worker's token check server-side — see
+// cloudflare/gallery/gallery_worker.js. This gate's job is purely to
+// stop a logged-out visitor from casually browsing the map/city
+// names at all.
 // =================================================================
 
 import { getAuth, onAuthChange, currentPersonLabel } from './auth.js';
@@ -43,6 +42,7 @@ export function initPageGate({ contentSelector = '[data-gate-content]', lockscre
 
   const whoNote = lockscreen.querySelector('[data-gate-who]');
 
+  // Shows the real content when logged in, the lock screen otherwise
   function render(auth) {
     if (auth) {
       lockscreen.classList.add('hidden');

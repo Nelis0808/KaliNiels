@@ -1,19 +1,18 @@
-/**
- * valentine.js
- * -----------------------------------------------------------------------
- * Logica voor de Valentijn-pagina:
- * - "Nee" ontwijkt de cursor zodra je 'm probeert aan te raken/hoveren.
- * - De eerste keer dat "Nee" beweegt, springt "Ja" naar het midden van
- *   het scherm (en wordt groter, als een soort "hoofdknop").
- * - Na een willekeurig aantal ontwijkingen (3-10) verstopt "Nee" zich
- *   precies achter "Ja", zodat hij niet meer aan te klikken is.
- * - Klikken op "Ja" toont het bedankbericht, wisselt de foto, en laat
- *   hartjes/sterren over het scherm vallen.
- *
- * Volgt hetzelfde patroon als de andere modules: de functie checkt zelf
- * of de benodigde elementen bestaan en stopt vroeg als dat niet zo is,
- * zodat main.js 'm veilig op elke pagina kan aanroepen.
- */
+// =================================================================
+// VALENTINE (valentine.html) — "coming soon" surprise page
+// -----------------------------------------------------------------
+// - "Nee" ontwijkt de cursor zodra je 'm probeert aan te raken/hoveren.
+// - De eerste keer dat "Nee" beweegt, springt "Ja" naar het midden van
+//   het scherm (en wordt groter, als een soort "hoofdknop").
+// - Na een willekeurig aantal ontwijkingen (3-10) verstopt "Nee" zich
+//   precies achter "Ja", zodat hij niet meer aan te klikken is.
+// - Klikken op "Ja" toont het bedankbericht, wisselt de foto, en laat
+//   hartjes/sterren over het scherm vallen.
+//
+// Volgt hetzelfde patroon als de andere modules: de functie checkt zelf
+// of de benodigde elementen bestaan en stopt vroeg als dat niet zo is,
+// zodat main.js 'm veilig op elke pagina kan aanroepen.
+// =================================================================
 export function initValentine() {
   const stage = document.getElementById('val-stage');
   const container = document.getElementById('valContainer');
@@ -35,16 +34,21 @@ export function initValentine() {
   let moveCount = 0;
   const vanishAfter = 3 + Math.floor(Math.random() * 8); // random 3-10 inclusive
 
+  // Freezes a button's current on-screen position as inline left/top,
+  // so it can be detached from normal flow without jumping.
   function fixToCurrentPosition(btn) {
     const rect = btn.getBoundingClientRect();
     btn.style.left = `${rect.left}px`;
     btn.style.top = `${rect.top}px`;
   }
 
+  // Standard clamp helper
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
 
+  // Picks a random on-screen point at least MIN_DISTANCE_FROM_CURSOR away
+  // from the cursor, within the viewport minus EDGE_MARGIN.
   function randomFarPoint(cursorX, cursorY, width, height) {
     const maxX = Math.max(EDGE_MARGIN, window.innerWidth - width - EDGE_MARGIN);
     const maxY = Math.max(EDGE_MARGIN, window.innerHeight - height - EDGE_MARGIN);
@@ -68,6 +72,7 @@ export function initValentine() {
     };
   }
 
+  // First dodge only: detaches both buttons from flow and slides "Ja" to center.
   function startChase() {
     if (hasStarted) return;
     hasStarted = true;
@@ -92,6 +97,7 @@ export function initValentine() {
     });
   }
 
+  // Final move: slides "Nee" to sit exactly behind "Ja" and disables it.
   function hideNeeUnderJa() {
     settled = true; // geen nieuwe ontwijk-pogingen meer terwijl 'ie wegglijdt
 
@@ -125,6 +131,8 @@ export function initValentine() {
     window.setTimeout(finalizeHidden, 900);
   }
 
+  // Runs one dodge: starts the chase if needed, then either hides "Nee"
+  // for good or jumps it to a new random spot.
   function dodge(cursorX, cursorY) {
     if (settled) return;
 
@@ -150,6 +158,7 @@ export function initValentine() {
     }
   }
 
+  // Normalizes mouse/touch/keyboard events into an {x, y} point.
   function pointFromEvent(e) {
     if (e.touches && e.touches[0]) {
       return { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -161,11 +170,13 @@ export function initValentine() {
     };
   }
 
+  // Mouse hover triggers a dodge
   noBtn.addEventListener('mouseenter', (e) => {
     const { x, y } = pointFromEvent(e);
     dodge(x, y);
   });
 
+  // Touch triggers a dodge too, before the tap can land
   noBtn.addEventListener(
     'touchstart',
     (e) => {
@@ -192,6 +203,7 @@ export function initValentine() {
 
   yesBtn.addEventListener('click', sayYes);
 
+  // Handles the "Ja" click: swaps photo, shows the message, spawns hearts.
   function sayYes() {
     yesBtn.removeEventListener('click', sayYes);
     yesBtn.disabled = true;
@@ -219,6 +231,7 @@ export function initValentine() {
     if (!reduceMotion) spawnHearts();
   }
 
+  // Spawns a burst of falling heart/star emoji particles.
   function spawnHearts() {
     if (!heartsLayer) return;
     const symbols = ['💕', '💖', '💗', '✨', '⭐', '💘'];

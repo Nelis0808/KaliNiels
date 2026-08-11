@@ -1,25 +1,25 @@
 // =================================================================
 // TODO LIJST — SYNC (Cloudflare Worker)
 // -----------------------------------------------------------------
-// Same shape as the boodschappenlijst Worker (see
-// cloudflare/cloudflare-worker-boodschappen/worker.js) — one shared
-// list, read-it-all/write-it-all-back, polled every few seconds by
-// todo.js so a change either of you makes shows up for the other one
-// soon after. No login (same reasoning as the shopping list Worker).
+// Same shape as the lijstje Worker (see cloudflare/lijstje/) — one
+// shared list, read-it-all/write-it-all-back, polled every few
+// seconds by todo.js so a change either of you makes shows up for
+// the other one soon after. No login required (same reasoning as
+// the lijstje Worker).
 //
-// The one difference from the shopping list: every item also carries
-// a `person` field ("a" = Niels, "b" = Kalina — see config.js's
+// The one difference from lijstje: every item also carries a
+// `person` field ("a" = Niels, "b" = Kalina — see config.js's
 // `todo.personLabels`) and a `priority` level, so this one list
 // serves BOTH of the page's columns — todo.js filters client-side by
 // `person` for rendering, but every save PUTs the combined array for
-// both of you at once (same "whole list" model as the shopping list;
-// simplest option for two people and a handful of tasks).
+// both of you at once (same "whole list" model as lijstje; simplest
+// option for two people and a handful of tasks).
 //
 // Storage: a single Cloudflare KV namespace, bound as `TODO_KV`,
 // holding ONE key ("todos") whose value is the entire list as JSON:
 //   { items: [{ id, person, text, priority, checked }, ...], updatedAt: <ms> }
 //
-// Deploy instructions: see STAPPENPLAN-TODO-SNACKS.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   GET  /todos          -> { items, updatedAt }

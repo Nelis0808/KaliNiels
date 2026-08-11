@@ -4,7 +4,7 @@
 // Powers gifts.html: two synced lists of gift ideas ("voor Kalina" /
 // "voor Niels"), each entry a link + a title + an optional note, and
 // now an optional custom photo (see /gifts/upload below). No login
-// here (same reasoning as the boodschappenlijst Worker) — a
+// here (same reasoning as the lijstje Worker) — a
 // gift-idea list just isn't sensitive enough to be worth the extra
 // friction.
 //
@@ -17,8 +17,8 @@
 //     photos, same idea as the private photo gallery's bucket, but
 //     public/no-login (it only ever holds pictures of gift *ideas*,
 //     never anything private). Filename convention: `<gift id>.<ext>`
-//     — see STAPPENPLAN-GIFTS.md. Can be uploaded either by hand via
-//     the R2 dashboard, OR now directly from gifts.html's add/edit
+//     — see ACTION-EXPANSION-PLAN.md. Can be uploaded either by hand
+//     via the R2 dashboard, or directly from gifts.html's add/edit
 //     form via POST /gifts/upload (see below).
 //
 // IMAGE RESOLUTION ORDER for a given gift (GET /gifts/image), this
@@ -32,13 +32,12 @@
 //   3. Otherwise: 404, and the site just shows a plain gift-box icon.
 //
 // EDITING: PATCH /gifts/:id updates title/url/note/person on an
-// existing entry in place (keeping its id and addedAt), instead of
-// the old "delete + re-add" being the only option. Deleting an old
-// custom photo when a gift's id is removed, or replacing one on
+// existing entry in place, keeping its id and addedAt. Deleting an
+// old custom photo when a gift's id is removed, or replacing one on
 // edit, is handled by /gifts/upload simply overwriting/removing
 // whatever's stored under that id — see below.
 //
-// Deploy instructions: see STAPPENPLAN-GIFTS.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   GET   /gifts                          -> { gifts, updatedAt }

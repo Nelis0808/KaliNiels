@@ -1,12 +1,8 @@
 /*  =============================================================
     CARDS
+    Styles for card components, including grid layout, hover effects, and reveal animations.
     ============================================================= */
-
-/*  == CARDS GRID ==
-    Uses CSS Grid auto-fill/minmax instead of the original
-    flex-wrap layout. Benefit: it reflows to however many columns
-    fit at the current viewport width with NO media queries needed,
-    one rule that works from a small phone up to an ultra-wide monitor. */
+/*  Card grid layout, using CSS Grid to create a responsive grid of cards. */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -14,6 +10,7 @@
   margin-top: var(--space-5);
 }
 
+/*  Card component styles, including hover effects and disabled state. */
 .card {
   display: flex;
   flex-direction: column;
@@ -27,21 +24,25 @@
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
+/* Hover/focus/active states for the card component */
 .card:hover, .card:focus-visible {
   transform: scale(1.05);
   box-shadow: var(--shadow-lg);
 }
 
+/* Disabled state for the card component */
 .card-disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
+/* Hover/focus/active states for the disabled card component */
 .card-disabled:hover, .card-disabled:focus-visible {
   transform: none;
   box-shadow: var(--shadow-sm);
 }
 
+/*  Card image styles, including size, border radius, and margin. */
 .card-img {
   width: 96px;
   height: 96px;
@@ -50,6 +51,7 @@
   margin-bottom: var(--space-4);
 }
 
+/*  Card icon styles, including size, line height, margin, and flexbox alignment. */
 .card-icon {
   font-size: 2.75rem;
   line-height: 1;
@@ -60,10 +62,13 @@
   gap: 0.15em;
 }
 
+/*  Card title styles, including font size, weight, and margin. */
 .card h4 {
   margin-bottom: var(--space-2);
 }
 
+/*  Card badge styles, including display, margin, padding, border radius, 
+    font size, weight, background color, and text color. */
 .card .badge {
   display: inline-block;
   margin-top: var(--space-2);
@@ -75,21 +80,24 @@
   color: var(--color-text-muted);
 }
 
-/* == HORIZONTAL FEATURE CARDS == */
+/*  Horizontal card styles, including background color, border radius, 
+    padding, box shadow, and transition. */
 .card-hor {
   background: var(--color-surface);
-  border-radius: 3px; /* was var(--radius) — matches .card's fixed corner radius */
+  border-radius: 3px;
   padding: var(--space-6);
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
+/* Hover/focus/active states for the horizontal card component */
 .card-hor:hover {
   transform: translateY(-10px);
   box-shadow: var(--shadow-lg);
 }
 
-/* == REVEAL CARD == */
+/*  Reveal card styles, including initial opacity, transform, filter, 
+    and transition for smooth reveal animations. */
 .reveal-card {
   opacity: 0;
   transform: translateY(20px) scale(0.98);
@@ -99,6 +107,7 @@
     filter var(--transition-slow);
 }
 
+/* Hover/focus/active states for the reveal card component */
 .reveal-card.show {
   opacity: 1;
   transform: translateY(0) scale(1);

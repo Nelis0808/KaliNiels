@@ -1,11 +1,13 @@
-/* ==========================================================================
-   Valentijn pagina — thema kleuren
-   --------------------------------------------------------------------------
-   Deze vallen automatisch terug op je bestaande site-tokens als die
-   bestaan (--color-primary etc. uit assets/css/base). Wil je liever de
-   blauwe variant van je thema? Zet --v-primary hieronder op je blauwe
-   accentkleur, bv. #4dabf7 / #1c7ed6.
-   ========================================================================== */
+/* =============================================================
+   PAGE: VALENTINE (valentine.html) — "coming soon" surprise page
+   -------------------------------------------------------------
+   Its own small theme-color palette (--v-*), falling back to the
+   site's existing tokens (--color-primary etc.) where they exist.
+   Prefer the blue theme variant? Set --v-primary below to a blue
+   accent, e.g. #4dabf7 / #1c7ed6.
+   ============================================================= */
+
+/* Theme tokens local to this page, light mode */
 #val-stage {
   --v-primary: var(--color-primary, #ff5c8a);
   --v-primary-dark: var(--color-primary-dark, #c2255c);
@@ -14,6 +16,7 @@
   --v-text: var(--color-heading, #3a1f2b);
 }
 
+/* Theme tokens local to this page, dark mode */
 @media (prefers-color-scheme: dark) {
   #val-stage {
     --v-bg-1: #241019;
@@ -22,6 +25,7 @@
   }
 }
 
+/* Full-height centered stage with a radial background gradient */
 .val-stage {
   position: relative;
   min-height: calc(100vh - var(--header-height, 72px));
@@ -34,6 +38,7 @@
   text-align: center;
 }
 
+/* Centered content column */
 .val-container {
   max-width: 640px;
   display: flex;
@@ -42,6 +47,7 @@
   gap: 0.75rem;
 }
 
+/* Small uppercase label above the title */
 .val-eyebrow {
   margin: 0;
   font-weight: 700;
@@ -51,6 +57,7 @@
   color: var(--v-primary-dark);
 }
 
+/* Main question heading */
 .val-title {
   margin: 0;
   font-family: 'Fraunces', serif;
@@ -71,6 +78,7 @@
   }
 }
 
+/* Supporting subtitle text */
 .val-subtitle {
   margin: 0 0 0.5rem;
   color: var(--v-text);
@@ -78,6 +86,7 @@
 }
 
 /* -------------------------------- foto ---------------------------------- */
+/* Row holding the twinkling emoji either side of the photo */
 .val-photo-row {
   display: flex;
   align-items: center;
@@ -86,15 +95,18 @@
   margin: 0.5rem 0 1rem;
 }
 
+/* Twinkling decorative emoji */
 .val-emoji {
   font-size: clamp(1.5rem, 4vw, 2.5rem);
   animation: val-twinkle 2.4s ease-in-out infinite;
 }
 
+/* Stagger the second emoji's twinkle so they don't sync */
 .val-emoji:nth-child(3) {
   animation-delay: 1.2s;
 }
 
+/* Circular-ish floating photo */
 .val-photo {
   width: min(280px, 60vw);
   height: min(280px, 60vw);
@@ -105,11 +117,13 @@
   transition: transform 0.4s ease;
 }
 
+/* Little pop animation once "Ja" is clicked */
 .val-stage--yes .val-photo {
   animation: val-pop 0.6s ease;
 }
 
 /* -------------------------------- bericht -------------------------------- */
+/* Response message bubble shown after answering */
 .val-message {
   max-width: 32rem;
   margin: 0.25rem 0 0.5rem;
@@ -122,11 +136,13 @@
   animation: val-fade-up 0.5s ease;
 }
 
+/* Hides the message until it's set */
 .val-message[hidden] {
   display: none;
 }
 
 /* -------------------------------- knoppen -------------------------------- */
+/* Row holding the Ja/Nee buttons */
 .val-buttons {
   position: relative;
   display: flex;
@@ -176,6 +192,7 @@
 }
 
 /* -------------------------------- hartjes -------------------------------- */
+/* Full-viewport layer that falling heart particles render into */
 .val-hearts {
   position: fixed;
   inset: 0;
@@ -184,6 +201,7 @@
   z-index: 10;
 }
 
+/* One falling heart particle */
 .val-heart {
   position: fixed;
   top: -10vh;

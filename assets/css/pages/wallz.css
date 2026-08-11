@@ -26,9 +26,9 @@
    the resulting elements.
    ============================================================= */
 
-/* FIXED PLAYER COLORS, shared scope: these used to live only inside
-   .wallz-board's own rule, but .wallz-walls-chip / .ttt-score sit
-   BEFORE .wallz-board in the DOM (siblings, not descendants) — CSS
+/* FIXED PLAYER COLORS, shared scope: declared at the wrapper level
+   (not just inside .wallz-board) because .wallz-walls-chip / .ttt-score
+   sit BEFORE .wallz-board in the DOM (siblings, not descendants) — CSS
    custom properties only inherit downward, so every var(--wallz-p1)
    / var(--wallz-p2) reference outside the board (walls chips, score
    numbers, the active-turn ring) was silently failing to resolve and
@@ -43,9 +43,11 @@
 /* Score numbers otherwise share games.css's generic .ttt-score-value
    color for every game — here each player's score is tinted to match
    their own piece color instead. */
+/* Player-colored score numbers */
 #wallzScoreP1 { color: var(--wallz-p1); }
 #wallzScoreP2 { color: var(--wallz-p2); }
 
+/* Row of "walls remaining" chips, one per player */
 .wallz-walls-left {
   display: flex;
   justify-content: center;
@@ -54,6 +56,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* One player's remaining-walls chip */
 .wallz-walls-chip {
   display: inline-flex;
   align-items: center;
@@ -65,6 +68,7 @@
   font-weight: 700;
 }
 
+/* Player-colored chip text */
 .wallz-walls-chip-p1 { color: var(--wallz-p1); }
 .wallz-walls-chip-p2 { color: var(--wallz-p2); }
 
@@ -83,10 +87,12 @@
   box-shadow: var(--shadow-sm), 0 0 0 5px color-mix(in srgb, var(--wallz-turn-color, var(--color-primary)) 22%, transparent);
 }
 
+/* Extra top margin so the "AAN DE BEURT" label above has room */
 #wallzApp .ttt-scoreboard {
   margin-top: var(--space-4);
 }
 
+/* "AAN DE BEURT" label floating above the active player's chip/score */
 .wallz-chip-active::before {
   content: 'AAN DE BEURT';
   position: absolute;
@@ -113,6 +119,7 @@
    The single control that decides whether the next wall placed will
    be vertical or horizontal — replaces the old auto-snap-by-cursor
    behavior with something predictable and explicit. */
+/* Row holding the ↕️/↔️ wall-orientation toggle */
 .wallz-orientation-row {
   display: flex;
   align-items: center;
@@ -122,6 +129,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Horizontal-scroll container for the board on narrow screens */
 .wallz-board-wrap {
   width: 100%;
   overflow-x: auto;
@@ -163,20 +171,24 @@
   transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
+/* Faint player-colored tint on each player's home row */
 .wallz-cell-p1-home { background: color-mix(in srgb, var(--wallz-p1) 16%, var(--color-surface)); }
 .wallz-cell-p2-home { background: color-mix(in srgb, var(--wallz-p2) 16%, var(--color-surface)); }
 
+/* Highlight ring on a cell the current player can legally move into */
 .wallz-cell-legal-move {
   cursor: pointer;
   box-shadow: inset 0 0 0 3px var(--color-tertiary);
 }
 
+/* Hover/focus feedback on a legal-move cell */
 .wallz-cell-legal-move:hover,
 .wallz-cell-legal-move:focus-visible {
   background: var(--color-border);
   transform: scale(1.05);
 }
 
+/* Player avatar image filling most of its home cell */
 .wallz-head-img {
   width: 76%;
   height: 76%;
@@ -205,6 +217,7 @@
   height: 56%;
 }
 
+/* Offsets the two overlapping avatars to opposite corners */
 .wallz-head-img-both-a { left: 6%; bottom: 8%; }
 .wallz-head-img-both-b { right: 6%; top: 8%; }
 
@@ -225,6 +238,7 @@
   cursor: pointer;
 }
 
+/* The visible dot/preview shape for a joint, grown via ::after so hover can resize it */
 .wallz-joint::after {
   content: '';
   position: absolute;
@@ -236,6 +250,7 @@
     border-radius var(--transition-fast), inset var(--transition-fast);
 }
 
+/* Brighten the joint dot on hover/focus */
 .wallz-joint:hover::after,
 .wallz-joint:focus-visible::after {
   opacity: 0.85;
@@ -244,16 +259,19 @@
 /* Snapped preview shape: stretches into a short bar along the axis
    the wall would occupy, so the orientation is obvious before it's
    placed, not just a color change on a dot. */
+/* Horizontal wall preview shape */
 .wallz-joint-preview-h::after {
   inset: -6px -22px;
   border-radius: var(--radius-sm);
 }
 
+/* Vertical wall preview shape */
 .wallz-joint-preview-v::after {
   inset: -22px -6px;
   border-radius: var(--radius-sm);
 }
 
+/* Green/red preview tint depending on whether the wall placement is legal */
 .wallz-joint-preview-ok::after { background: var(--color-success) !important; opacity: 0.9 !important; }
 .wallz-joint-preview-bad::after { background: var(--color-danger) !important; opacity: 0.9 !important; }
 
@@ -270,14 +288,17 @@
   pointer-events: none;
 }
 
+/* One placed wall bar */
 .wallz-wall {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
 }
 
+/* Player-colored wall bar */
 .wallz-wall-p1 { background: var(--wallz-p1); }
 .wallz-wall-p2 { background: var(--wallz-p2); }
 
+/* Tighter wall-gap spacing on narrow screens */
 @media (max-width: 600px) {
   .wallz-board {
     --wallz-gap: 8px;

@@ -5,8 +5,8 @@
   assets/js/modules/lijstje.js — this file only contains
   the markup (status line, list, add-form) that the module fills in
   and wires up. Data is stored in Cloudflare KV via a small Worker
-  (cloudflare/cloudflare-worker-lijstje), so both of you see the
-  same list — see STAPPENPLAN-LIJSTJE.md for how to deploy it.
+  (cloudflare/lijstje/), so both of you see the
+  same list — see ACTION-EXPANSION-PLAN.md for how to deploy it.
 -->
 <html lang="nl">
 <head>
@@ -50,7 +50,7 @@
     <section class="container" id="shoppingListApp">
       <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
       <div id="slConfigWarning" class="sl-config-warning hidden">
-        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-LIJSTJE.md</strong>
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>ACTION-EXPANSION-PLAN.md</strong>
         om de sync tussen jullie twee werkend te krijgen.
       </div>
 

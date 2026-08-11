@@ -97,6 +97,8 @@ const games = [
   },
 ];
 
+// Builds an <img> icon tag for a game, falling back from a PNG to an SVG
+// (or no fallback at all) if the primary asset 404s.
 function get_emoji(local_path, local_backup = '') {
   const path    = 'assets/icons/' + local_path
   const primary = siteRootUrl(path);
@@ -112,6 +114,8 @@ function get_emoji(local_path, local_backup = '') {
       onerror="this.onerror=null;this.src='${fallback}'">`;
 }
 
+// Renders one game card: a real link if available, else a disabled
+// "Binnenkort" card.
 function renderCard(game) {
   const isAvailable = game.status === 'available' && game.href;
 
@@ -131,6 +135,7 @@ function renderCard(game) {
   return `<div class="card card-disabled" aria-disabled="true">${inner}</div>`;
 }
 
+// Renders the full games grid on games-hub.html from the `games` array above.
 export function initGamesHub() {
   const grid = document.getElementById('gamesGrid');
   if (!grid) return; // not on the games hub page

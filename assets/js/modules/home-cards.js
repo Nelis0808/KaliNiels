@@ -10,6 +10,7 @@
 import { siteConfig } from '../config.js';
 import { escapeHtml } from './utils.js';
 
+// Renders one page card: a real link if available, else a disabled "Komt nog" card.
 function renderCard(page) {
   const isAvailable = page.status === 'available';
 
@@ -29,6 +30,7 @@ function renderCard(page) {
   return `<div class="card card-disabled" aria-disabled="true">${inner}</div>`;
 }
 
+// Renders the full page-cards grid on index.html from siteConfig.pages.
 export function initHomeCards() {
   const grid = document.getElementById('pageCardsGrid');
   if (!grid) return; // not on the home page

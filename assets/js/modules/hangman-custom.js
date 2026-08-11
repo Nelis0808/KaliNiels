@@ -97,6 +97,7 @@ export function initHangmanCustom() {
   let gameOver = false;
 
   // ---- SETUP SCREEN ----
+  // Updates the mistakes-stepper's numeric readout
   function updateMistakesDisplay() {
     mistakesDisplay.textContent = String(maxMistakes);
   }
@@ -111,6 +112,7 @@ export function initHangmanCustom() {
     updateMistakesDisplay();
   });
 
+  // Switches to the setup screen (Player 1 types the word)
   function showSetup() {
     setupView.classList.remove('hidden');
     playView.classList.add('hidden');
@@ -119,6 +121,7 @@ export function initHangmanCustom() {
     wordInput.focus();
   }
 
+  // Switches to the play screen (Player 2 guesses)
   function showPlay() {
     setupView.classList.add('hidden');
     playView.classList.remove('hidden');
@@ -151,10 +154,12 @@ export function initHangmanCustom() {
   });
 
   // ---- PLAY SCREEN (same rendering approach as hangman.js) ----
+  // Updates the status line text
   function updateStatus(text) {
     statusEl.textContent = text;
   }
 
+  // Draws the gallows plus whichever resampled stage matches the wrong-guess count
   function renderDrawing() {
     drawing.innerHTML = `
       <g stroke="var(--color-text-muted)" stroke-width="4" stroke-linecap="round" fill="none">${GALLOWS_BASE}</g>
@@ -182,6 +187,7 @@ export function initHangmanCustom() {
     });
   }
 
+  // Reveals the full word (marking never-guessed letters) after a loss
   function renderWordRevealed() {
     wordDisplay.innerHTML = '';
     answer.split('').forEach((char) => {
@@ -199,11 +205,13 @@ export function initHangmanCustom() {
     });
   }
 
+  // Updates the "foute letters" list
   function renderWrongLetters() {
     const wrong = [...guessedLetters].filter((l) => !answer.includes(l));
     wrongLettersEl.textContent = wrong.length ? `Foute letters: ${wrong.join(', ')}` : '';
   }
 
+  // Builds the on-screen A-Z keyboard
   function renderKeyboard() {
     keyboard.innerHTML = '';
     ALPHABET.forEach((letter) => {
@@ -220,6 +228,7 @@ export function initHangmanCustom() {
     });
   }
 
+  // Looks up an on-screen keyboard key's DOM element by letter
   function keyEl(letter) {
     return keyboard.querySelector(`.hangman-key[data-key="${letter}"]`);
   }
@@ -229,6 +238,7 @@ export function initHangmanCustom() {
     return answer.split('').every((char) => char === ' ' || guessedLetters.has(char));
   }
 
+  // Handles one letter guess: marks it correct/wrong and checks win/loss
   function guessLetter(letter) {
     if (gameOver || guessedLetters.has(letter)) return;
 
@@ -261,6 +271,7 @@ export function initHangmanCustom() {
     if (key) key.disabled = true;
   }
 
+  // Maps a physical A-Z keypress onto guessLetter(), only during play
   function handlePhysicalKeydown(event) {
     if (!root.isConnected) return;
     if (playView.classList.contains('hidden')) return; // don't hijack typing on the setup screen
@@ -268,6 +279,7 @@ export function initHangmanCustom() {
     if (/^[a-zA-Z]$/.test(event.key)) guessLetter(event.key.toUpperCase());
   }
 
+  // Starts a round with Player 1's chosen word/phrase
   function startRound(word) {
     answer = word;
     guessedLetters = new Set();

@@ -2,10 +2,12 @@
     PAGE: HOME (index.html)
     ============================================================= */
 
+/* "Ons overzicht" section listing every page/feature card */
 #page-guide {
   padding-top: var(--space-8);
 }
 
+/* Section heading size */
 #page-guide h1 {
   font-size: var(--fs-h2);
 }

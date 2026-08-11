@@ -6,6 +6,7 @@
    gifts.css) plus its own card grid + star-rating styling below.
    ============================================================= */
 
+/* Page wrapper */
 #snackApp {
   width: min(92%, var(--container));
   margin-inline: auto;
@@ -19,6 +20,7 @@
   text-align: left;
 }
 
+/* Hides the form/list when config.js still has the placeholder worker URL */
 .sl-disabled .snack-add-form,
 .sl-disabled .snack-list {
   display: none;
@@ -64,11 +66,13 @@
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
+/* Lift effect on hover */
 .snack-card:hover {
   box-shadow: var(--shadow);
   transform: translateY(-2px);
 }
 
+/* Thumbnail container at the top of each card */
 .snack-card-image {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -77,6 +81,7 @@
   overflow: hidden;
 }
 
+/* The thumbnail image itself, cropped to fill the box */
 .snack-card-image img {
   width: 100%;
   height: 100%;
@@ -85,9 +90,8 @@
 }
 
 /* Fallback (no photo added yet): a small centered icon, NOT sized to
-   fill the whole image box — it used to inherit a large font-size
-   which made the placeholder emoji look enormous compared to a real
-   thumbnail. */
+   fill the whole image box — an inherited large font-size would make
+   the placeholder emoji look enormous compared to a real thumbnail. */
 .snack-card-fallback {
   display: flex;
   align-items: center;
@@ -96,6 +100,7 @@
   opacity: 0.5;
 }
 
+/* Text content below the thumbnail: name, description, stars */
 .snack-card-body {
   padding: var(--space-4);
   flex: 1;
@@ -104,10 +109,12 @@
   gap: var(--space-2);
 }
 
+/* Wraps the snack name so it can shrink/wrap correctly */
 .snack-card-title-row {
   min-width: 0;
 }
 
+/* Snack name, doubles as a link if one was provided */
 .snack-card-name {
   font-weight: 700;
   font-size: var(--fs-lg);
@@ -116,16 +123,19 @@
   overflow-wrap: anywhere;
 }
 
+/* Underline the name on hover when it's a real link */
 a.snack-card-name:hover {
   text-decoration: underline;
 }
 
+/* Optional description text */
 .snack-card-desc {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;
 }
 
+/* Edit/delete icon buttons, top-right of the card */
 .snack-card-actions {
   position: absolute;
   top: var(--space-2);
@@ -134,6 +144,7 @@ a.snack-card-name:hover {
   gap: var(--space-1, 4px);
 }
 
+/* Shared circular sizing for the edit and delete buttons */
 .snack-edit,
 .snack-delete {
   width: 34px;
@@ -147,12 +158,14 @@ a.snack-card-name:hover {
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Delete button turns red on hover/focus as a warning */
 .snack-delete:hover,
 .snack-delete:focus-visible {
   background: var(--color-danger);
   color: var(--color-white);
 }
 
+/* Edit button turns primary-colored on hover/focus */
 .snack-edit:hover,
 .snack-edit:focus-visible {
   background: var(--color-primary);
@@ -166,22 +179,26 @@ a.snack-card-name:hover {
   gap: 2px;
 }
 
+/* One star glyph, empty/unfilled by default */
 .snack-star {
   font-size: 1.2rem;
   line-height: 1;
   color: var(--gray-500);
 }
 
+/* Filled star color */
 .snack-star-filled {
   color: var(--todo-low, #FFD700); /* same gold as the TODO "laag" tint, if todo.css happens to be loaded too */
 }
 
+/* Clickable star in the rating picker (add/edit form) */
 .snack-star-button {
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: transform var(--transition-fast);
 }
 
+/* Slight pop on hover/focus */
 .snack-star-button:hover,
 .snack-star-button:focus-visible {
   transform: scale(1.15);
@@ -204,27 +221,32 @@ a.snack-card-name:hover {
   padding: var(--space-4);
 }
 
+/* Description textarea in the add/edit form */
 .snack-add-desc {
   font: inherit;
   resize: vertical;
 }
 
+/* Row holding the label + clickable star picker */
 .snack-add-star-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
+/* "Beoordeling" label next to the star picker */
 .snack-add-star-label {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   font-weight: 600;
 }
 
+/* Aligns the photo-upload control to the left within the form */
 .snack-add-photo-label {
   align-self: flex-start;
 }
 
+/* Inline validation/error message under the form */
 #snackAddError {
   max-width: 480px;
   margin-inline: auto;

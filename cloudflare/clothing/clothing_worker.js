@@ -1,33 +1,33 @@
 // =================================================================
 // CLOTHING RATINGS — SYNC (Cloudflare Worker)
 // -----------------------------------------------------------------
-// Same "whole list" model as the snack-ratings / shopping list / TODO
-// Worker (see their file headers) — one shared list, read-it-all/
-// write-it-all-back, polled every few seconds by clothing.js. No
-// login (same reasoning as the other small Workers on this site).
+// Same "whole list" model as the rating / lijstje / TODO Worker
+// (see their file headers) — one shared list, read-it-all/write-it-
+// all-back, polled every few seconds by clothing.js. No login
+// required (same reasoning as the other small Workers on this site).
 //
 // Every item carries a `person` field ("a" = Niels, "b" = Kalina —
 // see config.js's `clothing.personLabels`), same two-column idea as
 // gifts.html/todo.html/snack-rating.html.
 //
-// The one difference from the snack-ratings Worker this was copied
-// from: every item also carries a manually-typed `size` field (e.g.
-// "M", "42", "32/34") — free text, so it's just length-capped like
-// the other text fields, not validated against a fixed list.
+// The one difference from the rating Worker: every item also carries
+// a manually-typed `size` field (e.g. "M", "42", "32/34") — free
+// text, so it's just length-capped like the other text fields, not
+// validated against a fixed list.
 //
-// PHOTOS: same as the snack-ratings Worker — no R2 bucket / image
-// scraping here, clothing.js already downscales+JPEG-compresses a
-// chosen photo client-side into a smallish data URL (see its
-// resizePhoto()) BEFORE it ever reaches this Worker, and that data
-// URL is stored directly as a field on the item, right in KV. This
-// Worker still enforces MAX_PHOTO_LENGTH below as a sanity backstop
-// in case something client-side ever sends an oversized one.
+// PHOTOS: same as the rating Worker — no R2 bucket / image scraping
+// here, clothing.js already downscales+JPEG-compresses a chosen
+// photo client-side into a smallish data URL (see its resizePhoto())
+// BEFORE it ever reaches this Worker, and that data URL is stored
+// directly as a field on the item, right in KV. This Worker still
+// enforces MAX_PHOTO_LENGTH below as a sanity backstop in case
+// something client-side ever sends an oversized one.
 //
 // Storage: a single Cloudflare KV namespace, bound as `CLOTHING_KV`,
 // holding ONE key ("clothing") whose value is the entire list as JSON:
 //   { items: [{ id, person, name, url, size, description, rating, photo, addedAt }, ...], updatedAt: <ms> }
 //
-// Deploy instructions: see STAPPENPLAN-CLOTHING.md at the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 //
 // Routes:
 //   GET  /clothing            -> { items, updatedAt }

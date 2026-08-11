@@ -14,6 +14,7 @@ import { EXCLUSIVE_DROPDOWN_EVENT, announceDropdownOpen } from './utils.js';
 
 const DROPDOWN_ID = 'profile';
 
+// Builds and wires up the profile dropdown: login form, logged-in view, open/close.
 export function initProfileDropdown() {
   const dropdown = document.getElementById('navProfileDropdown');
   const trigger = document.getElementById('navProfileBtn');
@@ -29,6 +30,7 @@ export function initProfileDropdown() {
   const logoutBtn = document.getElementById('profileLogoutBtn');
   const triggerIcon = document.getElementById('navProfileIcon');
 
+  // Swaps between the logged-out (login form) and logged-in views
   function render() {
     const auth = getAuth();
     if (auth) {
@@ -45,11 +47,13 @@ export function initProfileDropdown() {
     }
   }
 
+  // Closes the dropdown and updates aria-expanded
   function closeMenu() {
     dropdown.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
   }
 
+  // Toggles the dropdown open/closed, focusing the passphrase field when opening logged-out
   function toggleMenu() {
     const isOpen = dropdown.classList.toggle('open');
     trigger.setAttribute('aria-expanded', String(isOpen));
@@ -85,6 +89,7 @@ export function initProfileDropdown() {
     }
   });
 
+  // Handles the login form submit: calls login(), shows any error, closes on success
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const submitBtn = loginForm.querySelector('button[type="submit"]');
@@ -102,6 +107,7 @@ export function initProfileDropdown() {
     closeMenu();
   });
 
+  // Logs out and closes the menu
   logoutBtn.addEventListener('click', () => {
     logout();
     closeMenu();

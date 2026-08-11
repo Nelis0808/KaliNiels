@@ -7,8 +7,8 @@
   Logic lives in assets/js/modules/snack-rating.js.
 
   SYNC: like lijstje.html/todo.html, backed by a small
-  Cloudflare Worker (cloudflare/cloudflare-worker-snacks) — see
-  STAPPENPLAN-TODO-SNACKS.md for how to deploy it. Photos are
+  Cloudflare Worker (cloudflare/rating/) — see
+  ACTION-EXPANSION-PLAN.md for how to deploy it. Photos are
   downscaled + compressed client-side before being sent to the
   Worker, to keep the shared list small and fast to sync.
 -->
@@ -56,7 +56,7 @@
     <section class="container" id="snackApp">
       <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
       <div id="snackConfigWarning" class="gf-config-warning hidden">
-        ⚠️ Nog geen Worker gekoppeld. Zie <strong>STAPPENPLAN-TODO-SNACKS.md</strong>
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>ACTION-EXPANSION-PLAN.md</strong>
         om deze pagina werkend te krijgen.
       </div>
 

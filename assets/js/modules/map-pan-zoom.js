@@ -48,10 +48,13 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
   let lastTapPos = null;
   let idleLayerTimer = null;
 
+  // Standard clamp helper
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
 
+  // Writes the current scale/tx/ty to the DOM as a transform, and
+  // briefly flags the frame as actively transforming (see GPU LAYER TOGGLE above).
   function apply() {
     frame.classList.add('rz-map-frame-active');
     clearTimeout(idleLayerTimer);
@@ -62,6 +65,7 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
     viewport.classList.toggle('rz-map-viewport-zoomed', scale > minScale + 0.001);
   }
 
+  // Keeps tx/ty within bounds so the frame can't be panned past its edges
   function clampPan() {
     const rect = viewport.getBoundingClientRect();
     const minTx = rect.width * (1 - scale);
@@ -70,6 +74,7 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
     ty = scale <= minScale ? 0 : clamp(ty, minTy, 0);
   }
 
+  // Zooms by `factor`, keeping the point under (clientX, clientY) fixed on screen
   function zoomAt(clientX, clientY, factor) {
     const rect = viewport.getBoundingClientRect();
     const localX = clientX - rect.left;
@@ -84,11 +89,13 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
     apply();
   }
 
+  // Zooms by `factor`, anchored to the viewport's center (used by the +/- buttons)
   function zoomAtCenter(factor) {
     const rect = viewport.getBoundingClientRect();
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor);
   }
 
+  // Resets pan/zoom back to the default view
   function reset() {
     scale = minScale;
     tx = 0;
@@ -162,6 +169,8 @@ export function initPanZoom(viewport, frame, { onTap, minScale = MIN_SCALE, maxS
     }
   });
 
+  // Handles pointerup/cancel/leave: ends any drag/pinch, and detects a
+  // tap or double-tap if the pointer barely moved.
   function endPointer(event) {
     const wasSinglePan = pointers.size === 1 && dragStart;
     pointers.delete(event.pointerId);

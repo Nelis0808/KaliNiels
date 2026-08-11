@@ -1,10 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="104" height="104" viewBox="12 12 104 104">
-  <defs>
-    <radialGradient id="pinkBall" cx="35%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#b6ccff"/>
-      <stop offset="55%" stop-color="#6971ff"/>
-      <stop offset="100%" stop-color="#1b57d8"/>
-    </radialGradient>
-  </defs>
-  <circle cx="64" cy="64" r="52" fill="url(#pinkBall)" />
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Speler Blauw avatar">
+  <circle cx="50" cy="50" r="48" fill="#7B68EE"/>
+  <circle cx="50" cy="50" r="30" fill="none" stroke="#FFFFFF" stroke-width="8"/>
 </svg>

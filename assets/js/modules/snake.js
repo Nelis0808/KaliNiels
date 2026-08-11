@@ -8,11 +8,6 @@
 // draw. Player 1 = blue (WASD), Player 2 = pink (arrow keys),
 // matching Connect 4's blue/pink pairing and avatar assets.
 //
-// NOTE: this file used to be assets/js/modules/wallz.js. It was
-// renamed to Snake because that's what this game actually is — the
-// "wallz" name/module now belongs to the real Wallz game (a 9x9
-// Quoridor-style wall-blocking game), see wallz.js.
-//
 // GRID/RENDERING: a plain CSS-grid board of divs (same technique as
 // connect4.js), redrawn each tick rather than using <canvas> — the
 // grid here (default 30x20) is small enough that this stays cheap
@@ -55,6 +50,7 @@ const KEY_MAP = {
   ArrowRight: { player: 2, dir: 'right' },
 };
 
+// True if two directions are exact opposites (a 180-degree reversal)
 function isOpposite(dirA, dirB) {
   const a = DIRECTIONS[dirA];
   const b = DIRECTIONS[dirB];
@@ -84,10 +80,12 @@ export function initSnake() {
     cells.push(cell);
   }
 
+  // Flat array index for a grid coordinate
   function cellIndex(x, y) {
     return y * COLS + x;
   }
 
+  // True if a coordinate is within the arena
   function inBounds(x, y) {
     return x >= 0 && x < COLS && y >= 0 && y < ROWS;
   }
@@ -99,10 +97,12 @@ export function initSnake() {
   let tickTimer = null;
   const score = { 1: 0, 2: 0, draw: 0 };
 
+  // String key for a coordinate, used in the `walls` Set
   function key(x, y) {
     return `${x},${y}`;
   }
 
+  // Clears the grid and places both players at their starting positions
   function resetBoard() {
     cells.forEach((cell) => {
       cell.className = 'snake-cell';
@@ -121,6 +121,7 @@ export function initSnake() {
     buildHeadCell(players[2].x, players[2].y, 2);
   }
 
+  // Repaints a single cell as a trail cell, clearing any leftover head image
   function paintCell(x, y, className) {
     if (!inBounds(x, y)) return;
     const cell = cells[cellIndex(x, y)];
@@ -139,6 +140,7 @@ export function initSnake() {
     cell.replaceChildren();
   }
 
+  // Renders a player's head at a cell, with the photo -> SVG -> plain color fallback
   function buildHeadCell(x, y, player) {
     const cell = cells[cellIndex(x, y)];
     cell.className = `snake-cell snake-cell-p${player}-head`;
@@ -171,16 +173,19 @@ export function initSnake() {
   // innerHTML (not textContent) because the winning message drops in
   // a player-color <img> — see endRound() below. All other setStatus
   // callers only ever pass static Dutch strings, so this is safe.
+  // Updates the status line (as HTML, since winning messages include an icon)
   function setStatus(text) {
     statusEl.innerHTML = text;
   }
 
+  // Refreshes the score numbers
   function updateScoreboard() {
     scoreP1El.textContent = String(score[1]);
     scoreP2El.textContent = String(score[2]);
     scoreDrawEl.textContent = String(score.draw);
   }
 
+  // Advances both players one step, checks for a crash, and schedules the next tick
   function tick() {
     if (!running) return;
 
@@ -237,6 +242,7 @@ export function initSnake() {
     tickTimer = setTimeout(tick, TICK_MS);
   }
 
+  // Stops the round and updates score/status for a win or draw
   function endRound(p1Dies, p2Dies) {
     running = false;
     clearTimeout(tickTimer);
@@ -257,6 +263,7 @@ export function initSnake() {
     startBtn.disabled = false;
   }
 
+  // Resets the board and starts the tick loop for a new round
   function startRound() {
     resetBoard();
     running = true;
@@ -265,6 +272,7 @@ export function initSnake() {
     tickTimer = setTimeout(tick, TICK_MS);
   }
 
+  // Turns a player based on WASD/arrow keys, ignoring 180-degree reversals
   function handleKeydown(event) {
     if (!running || !players) return;
     const mapping = KEY_MAP[event.code];
@@ -279,6 +287,7 @@ export function initSnake() {
     player.dir = mapping.dir;
   }
 
+  // Resets the score to 0-0-0
   function resetScore() {
     score[1] = 0;
     score[2] = 0;

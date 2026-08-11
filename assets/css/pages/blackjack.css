@@ -1,18 +1,16 @@
-/* =============================================================
-   PAGE: BLACKJACK (games/blackjack.html)
-   Reuses shared #bjApp centering + .ttt-status from games.css.
-   ============================================================= */
-
+/*  =============================================================
+    PAGE: BLACKJACK (games/blackjack.html)
+    Reuses shared #bjApp centering + .ttt-status from games.css.
+    ============================================================= */
+/* The application container is centered and constrained to a max width, with text centered */
 #bjApp {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
   text-align: center;
 }
 
-/* == AUTH STATUS ==
-   Status readout only now — login/logout lives in the sticky
-   header's "👤 Profiel" dropdown (see assets/css/components/settings.css
-   for that markup's styles). */
+/*  Authentication status message (e.g., "Logged in as ...") 
+    is centered and muted, with a small font size */
 .bj-auth-status {
   display: flex;
   flex-wrap: wrap;
@@ -24,7 +22,7 @@
   margin: 0 0 var(--space-5);
 }
 
-/* == CHIP BALANCE + BET == */
+/* Chip balance display is a flex column, centered, with a muted label and a bold value */
 .bj-chips-bar {
   display: flex;
   justify-content: center;
@@ -32,6 +30,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Chip balance display is a flex column, centered, with a muted label and a bold value */
 .bj-balance {
   display: flex;
   flex-direction: column;
@@ -44,12 +43,14 @@
   min-width: 100px;
 }
 
+/* Chip balance label is muted and slightly smaller, while the value is bold and primary-colored */
 .bj-balance-label {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   font-weight: 600;
 }
 
+/* Chip balance label is muted and slightly smaller, while the value is bold and primary-colored */
 .bj-balance-value {
   font-family: var(--font-display);
   font-size: var(--fs-h3);
@@ -57,7 +58,7 @@
   color: var(--color-primary);
 }
 
-/* == CHIP TRAY == */
+/* Chip tray is a flex container, centered with wrapping items */
 .bj-chip-tray {
   display: flex;
   flex-wrap: wrap;
@@ -66,6 +67,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Each chip is a flex column, centered, with a hover/focus transform effect and disabled state */
 .bj-chip {
   display: flex;
   flex-direction: column;
@@ -79,29 +81,31 @@
   transition: transform var(--transition-fast);
 }
 
-.bj-chip:not(:disabled):hover,
-.bj-chip:not(:disabled):focus-visible {
+/* Each chip is a flex column, centered, with a hover/focus transform effect and disabled state */
+.bj-chip:not(:disabled):hover, .bj-chip:not(:disabled):focus-visible {
   transform: translateY(-4px);
 }
 
+/* Each chip is a flex column, centered, with a hover/focus transform effect and disabled state */
 .bj-chip:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
+/* Each chip image is a fixed size, with the value displayed below it */
 .bj-chip-img {
   width: 56px;
   height: 56px;
 }
 
+/* Each chip value is a small, muted label below the chip image */
 .bj-chip-value {
   font-size: var(--fs-sm);
   font-weight: 700;
   color: var(--color-text-muted);
 }
 
-/* == ACTIONS ==
-   Reuses .ttt-actions spacing/wrapping from games.css. */
+/* The action buttons (Hit, Stand, Double Down, etc.) are centered and wrap on small screens */
 .bj-actions {
   display: flex;
   flex-wrap: wrap;
@@ -110,26 +114,25 @@
   margin-top: var(--space-5);
 }
 
-/* == NEXT HAND CHOICE ==
-   Shown after a hand finishes, replacing the old single "Volgende
-   hand" button — same centered/wrapping layout as .bj-actions, just
-   with a label above it. */
+/* The action buttons (Hit, Stand, Double Down, etc.) are centered and wrap on small screens */
 .bj-next-hand-group {
   margin-top: var(--space-5);
   text-align: center;
 }
 
+/* The "Next Hand" label is bold and muted, with a small bottom margin */
 .bj-next-hand-label {
   font-weight: 600;
   color: var(--color-text-muted);
   margin-bottom: var(--space-2);
 }
 
+/* The action buttons (Hit, Stand, Double Down, etc.) are centered and wrap on small screens */
 .bj-next-hand-group .bj-actions {
   margin-top: 0;
 }
 
-/* == TABLE == */
+/* The main blackjack table area is padded, rounded, and has a surface background with a small shadow */
 .bj-table {
   margin-top: var(--space-6);
   padding: var(--space-5);
@@ -138,20 +141,24 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Each hand area (player and dealer) is a flex column, centered, with a label and score */
 .bj-hand-area {
   margin-bottom: var(--space-4);
 }
 
+/* Each hand area (player and dealer) is a flex column, centered, with a label and score */
 .bj-hand-label {
   font-weight: 700;
   margin-bottom: var(--space-3);
 }
 
+/* Each hand score is muted and slightly smaller, displayed next to the hand label */
 .bj-hand-score {
   font-weight: 400;
   color: var(--color-text-muted);
 }
 
+/* The cards for each hand are displayed in a flex row, wrapping if necessary, with a small gap */
 .bj-cards {
   display: flex;
   flex-wrap: wrap;
@@ -160,6 +167,7 @@
   min-height: 90px;
 }
 
+/* Each card image is a fixed size, with rounded corners and a small shadow */
 .bj-card-img {
   width: 64px;
   height: auto;
@@ -167,21 +175,22 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Responsive adjustments for small screens: reduce the size of chips and cards, and adjust spacing */
 @media (max-width: 480px) {
   .bj-chips-bar {
     gap: var(--space-3);
   }
-
+  /* Responsive adjustments for small screens: reduce the size of chips and cards, and adjust spacing */
   .bj-balance {
     padding: var(--space-2) var(--space-3);
     min-width: 80px;
   }
-
+  /* Responsive adjustments for small screens: reduce the size of chips and cards, and adjust spacing */
   .bj-chip-img {
     width: 44px;
     height: 44px;
   }
-
+  /* Responsive adjustments for small screens: reduce the size of chips and cards, and adjust spacing */
   .bj-card-img {
     width: 48px;
   }

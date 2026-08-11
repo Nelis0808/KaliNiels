@@ -50,6 +50,7 @@ export function initReizen() {
   hoverLabel.className = 'rz-hover-label hidden';
   viewport.appendChild(hoverLabel);
 
+  // Shows/hides the hover label with a country name
   function showHoverName(name) {
     if (!name) { hoverLabel.classList.add('hidden'); return; }
     hoverLabel.textContent = name;
@@ -77,6 +78,7 @@ export function initReizen() {
     if (!stillOnShape && !stillOnPin) hoverLabel.classList.add('hidden');
   });
 
+  // Navigates to that country's own page
   function goToCountry(country) {
     window.location.href = siteRootUrl(`reizen/land.html?iso=${encodeURIComponent(country.iso)}`);
   }
@@ -97,6 +99,7 @@ export function initReizen() {
 
   // ---- World map render + pins ------------------------------------------
 
+  // Draws every country's SVG outline, then places one pin per travel-countries.json entry
   function renderWorldMap(worldFeatures) {
     const projection = makeWorldProjection(WORLD_SVG_WIDTH);
     worldProjection = projection;
@@ -126,6 +129,7 @@ export function initReizen() {
     });
   }
 
+  // Builds and appends one country's map pin
   function renderPin(country) {
     const pin = document.createElement('button');
     pin.type = 'button';

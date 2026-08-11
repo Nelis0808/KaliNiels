@@ -31,12 +31,14 @@
   margin-inline: auto;
 }
 
+/* "Fiches" label */
 .spi-chips-label {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   font-weight: 600;
 }
 
+/* Current chip balance number */
 .spi-chips-value {
   font-family: var(--font-display);
   font-weight: 700;
@@ -44,6 +46,7 @@
 }
 
 /* == STOCK + COMPLETED TRAY == */
+/* Row holding the stock pile and the completed-sequences tray */
 .spi-top-row {
   display: flex;
   align-items: center;
@@ -53,6 +56,7 @@
   flex-wrap: wrap;
 }
 
+/* Clickable stock pile — deals a new row across the tableau */
 .spi-stock {
   position: relative;
   display: flex;
@@ -66,10 +70,12 @@
   transition: transform var(--transition-fast);
 }
 
+/* Slight lift on hover */
 .spi-stock:hover {
   transform: translateY(-2px);
 }
 
+/* Stock temporarily has no cards left to deal this round */
 .spi-stock-empty {
   cursor: default;
   opacity: 0.35;
@@ -88,6 +94,7 @@
   filter: grayscale(1);
 }
 
+/* Card-back image for the stock pile */
 .spi-stock-img {
   width: 64px;
   height: auto;
@@ -95,6 +102,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Badge showing how many cards remain in the stock */
 .spi-stock-count {
   position: absolute;
   bottom: -8px;
@@ -112,6 +120,7 @@
   font-weight: 700;
 }
 
+/* Tray showing completed King-to-Ace sequences */
 .spi-completed {
   display: flex;
   gap: var(--space-2);
@@ -119,6 +128,7 @@
   align-items: center;
 }
 
+/* One completed-sequence card thumbnail */
 .spi-completed-img {
   width: 44px;
   height: auto;
@@ -127,6 +137,7 @@
 }
 
 /* == TABLEAU == */
+/* Row of tableau columns */
 .spi-board {
   display: flex;
   justify-content: center;
@@ -134,6 +145,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* One tableau column, cards stack absolutely inside it */
 .spi-column {
   position: relative;
   width: clamp(56px, 12vw, 92px);
@@ -142,6 +154,7 @@
   background: color-mix(in srgb, var(--color-surface) 60%, transparent);
 }
 
+/* One playing card, absolutely positioned within its column */
 .spi-card {
   position: absolute;
   left: 0;
@@ -150,6 +163,7 @@
   transition: transform var(--transition-fast);
 }
 
+/* The card face/back image itself */
 .spi-card-img {
   width: 100%;
   height: auto;
@@ -158,15 +172,18 @@
   display: block;
 }
 
+/* Lifts a selected card slightly above its stack */
 .spi-card-selected {
   transform: translateY(-5px);
 }
 
+/* Highlight ring on the selected card's image */
 .spi-card-selected .spi-card-img {
   outline: 3px solid var(--color-primary);
   outline-offset: 1px;
 }
 
+/* Smaller columns/cards and tighter gaps on narrow screens */
 @media (max-width: 640px) {
   .spi-board {
     gap: 3px;
@@ -201,6 +218,7 @@
   backdrop-filter: blur(3px);
 }
 
+/* Centered win-announcement card */
 .spi-win-card {
   width: min(100%, 420px);
   text-align: center;
@@ -211,21 +229,25 @@
   animation: spi-win-pop 0.35s ease-out;
 }
 
+/* Large celebratory emoji at the top of the win card */
 .spi-win-emoji {
   font-size: 2.75rem;
   margin-bottom: var(--space-2);
 }
 
+/* Win headline */
 .spi-win-card h2 {
   font-family: var(--font-display);
   margin-bottom: var(--space-3);
 }
 
+/* Supporting text in the win card, excluding the emoji line */
 .spi-win-card p:not(.spi-win-emoji) {
   color: var(--color-text-muted);
   margin-bottom: var(--space-5);
 }
 
+/* Highlighted chip payout amount */
 .spi-win-payout {
   font-weight: 700;
   color: var(--color-success) !important;

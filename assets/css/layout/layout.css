@@ -3,20 +3,20 @@
     Generic, reusable layout primitives. Page-specific layout
     tweaks belong in assets/css/pages/<page>.css, not here.
     ============================================================= */
-
+/* Contains maximum width and horizontal centering for the page content. */
 .container {
   width: min(90%, var(--container));
   margin-inline: auto;
 }
 
+/* Contains maximum width and horizontal centering for the page content. */
 .container-narrow {
   width: min(90%, var(--container-narrow));
   margin-inline: auto;
 }
 
-/* "Skip to content" link invisible until a keyboard user tabs
-    to it, then jumps focus straight to <main>. Required for
-    accessible navig ation past the header on every page. */
+/*  Skip links are hidden offscreen by default, but become visible when 
+    focused (e.g., via keyboard navigation) */
 .skip-link {
   position: absolute;
   left: -9999px;
@@ -28,56 +28,50 @@
   border-radius: 0 0 var(--radius-sm) 0;
 }
 
+/*  Skip links are hidden offscreen by default, but become visible when 
+    focused (e.g., via keyboard navigation) */
 .skip-link:focus {
   left: 0;
 }
 
+/* Padding for each section, and a special case for the first section after a hero */
 section {
   padding: var(--space-9) 0;
 }
 
-/* A hero is already visually "roomy" (its own space-7 padding plus
-   the gradient banner itself reads as a distinct block), so the
-   very next section's top padding on top of that stacks up to ~9rem
-   of empty space before any real content appears. Trim just that
-   first gap; the section keeps its normal bottom padding and every
-   later section on the page is unaffected. */
+/* Padding for each section, and a special case for the first section after a hero */
 .hero + section {
   padding-top: var(--space-5);
 }
 
+/* Titles for each section, centered and with a bottom margin */
 .section-title {
   text-align: center;
   margin-bottom: var(--space-8);
 }
 
+/* Titles for each section, centered and with a bottom margin */
 .section-title p {
   max-width: var(--container-narrow);
   margin-inline: auto;
 }
 
-/*  == GENERIC GRID UTILITIES ==
-    Prefer these for simple N-column layouts. For "cards that should
-    just wrap responsively without a manual breakpoint", use the
-    .cards-grid component (components/cards.css) instead, it uses
-    auto-fill/minmax so it never needs a media query. */
+/* Grid layout utilities for reusable grid layouts. Use .grid-X to specify the number of columns. */
 .grid   { display: grid; gap: var(--space-6); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 
-/*  == RESPONSIVE == */
+/*  Responsive adjustments for small screens: reduce the number of columns in the grid layouts */
 @media (max-width: 992px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   section { padding: var(--space-7) 0; }
   .hero + section { padding-top: var(--space-4); }
 }
-
 @media (max-width: 480px) {
   .container, .container-narrow { width: 95%; }
 }

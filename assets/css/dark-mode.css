@@ -16,6 +16,7 @@
    selector so there's one source for "in dark mode".
    ============================================================= */
 
+/* Dark-mode hero gradient, swaps in the "-dark" tokens instead of the light-mode ones */
 :root[data-theme='dark'] .hero {
   background:
     radial-gradient(circle at top left,     var(--color-primary-dark)   0, transparent 55%),
@@ -23,6 +24,7 @@
     var(--color-tertiary-dark);
 }
 
+/* Idea-card background in dark mode, one hard-coded tint per color theme (blue / pink) */
 :root[data-theme='dark'][data-color-theme='blue'] .idea-card {
   background: #323d56; /* very dark, slightly blue-tinted gray */
 }

@@ -14,7 +14,7 @@
 //   2. Asks the photo-gallery Cloudflare Worker's PUBLIC "/travel"
 //      endpoint for every distinct city that appears in
 //      captions.json for that country (see that worker's own
-//      comment + STAPPENPLAN-REIZEN.md), and positions each one
+//      comment + ACTION-EXPANSION-PLAN.md), and positions each one
 //      either at a manually-measured real {lon,lat} from
 //      travel-countries.json's "cityPins" (projected through the
 //      exact same projection as the country outline, so it's always
@@ -31,7 +31,7 @@
 //
 // The /travel endpoint this module calls (city names + counts, no
 // filenames/bytes) is still technically public at the Worker level
-// — see cloudflare-worker-photos/worker.js's own comment — but that
+// — see the gallery worker's own comment — but that
 // no longer matters in practice since the page around it is gated
 // client-side too.
 //
@@ -89,6 +89,7 @@ export function initReizenLand() {
   qs('#reizenLandZoomReset', root)?.addEventListener('click', () => zoom.reset());
   attachCoordHover(viewport, zoom, () => currentProjection);
 
+  // Highlights the tapped city pin and loads its photos into the side panel
   async function selectCity(city, pinEl) {
     mapFrame.querySelector('.rz-pin-selected')?.classList.remove('rz-pin-selected');
     pinEl.classList.add('rz-pin-selected');
@@ -107,6 +108,7 @@ export function initReizenLand() {
   }
 
   // ---- Render the country's own outline (local data, no network round-trip beyond this one static file) ----
+  // Fetches and renders the country's own SVG outline, fitting a projection to it
   async function loadBackground(displayName) {
     let feature;
     try {
@@ -140,8 +142,8 @@ export function initReizenLand() {
   // ---- Load country display name (static, always available) ----
   // IMPORTANT: this also decides what we ask the /travel Worker for.
   // It only ever compares against whatever string is literally typed
-  // in captions.json's 3rd field (see STAPPENPLAN-REIZEN.md — that's
-  // usually a full name like "Portugal", not the two-letter "PT"
+  // in captions.json's 3rd field (see the gallery worker's own
+  // comment — that's usually a full name like "Portugal", not the two-letter "PT"
   // used in the URL), so we query by the resolved display NAME here,
   // falling back to the raw ?iso= value only if the country isn't in
   // the config file.
@@ -163,9 +165,10 @@ export function initReizenLand() {
     });
 
   // ---- Load cities for this country from the public travel endpoint ----
+  // Fetches this country's cities from the Worker, positions them, and renders their pins
   function loadCitiesForCountry(countryQuery, cityPins, projection) {
     if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
-      statusEl.textContent = '⚠️ Nog geen Worker gekoppeld. Zie STAPPENPLAN-REIZEN.md.';
+      statusEl.textContent = '⚠️ Nog geen Worker gekoppeld. Zie ACTION-EXPANSION-PLAN.md.';
       subEl.textContent = '';
       return;
     }

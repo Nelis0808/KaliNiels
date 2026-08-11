@@ -2,7 +2,7 @@
 // GIFT IDEAS (gifts.html)
 // -----------------------------------------------------------------
 // Talks ONLY to the gifts Cloudflare Worker (see
-// /cloudflare/cloudflare-worker-gifts + STAPPENPLAN-GIFTS.md), which
+// cloudflare/gifts/), which
 // stores the shared list in Cloudflare KV. No login — same reasoning
 // as the lijstje Worker (see its top comment).
 //
@@ -65,6 +65,7 @@ export function initGifts() {
     b: { list: qs('#giftsListB', root), empty: qs('#giftsEmptyB', root), form: qs('#giftsAddFormB', root) },
   };
 
+  // True once config.js's gifts.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
@@ -91,6 +92,7 @@ export function initGifts() {
 
   // ---- Rendering -----------------------------------------------------
 
+  // Redraws both columns from `gifts`
   function render() {
     activeObjectUrls.forEach((url) => URL.revokeObjectURL(url));
     activeObjectUrls = [];
@@ -147,10 +149,12 @@ export function initGifts() {
 
   // A tiny CSS.escape fallback (crypto.randomUUID ids are safe as-is,
   // but this keeps the selector robust if that ever changes).
+  // Escapes a value for safe use inside a CSS attribute selector
   function cssEscape(value) {
     return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
   }
 
+  // Fetches a gift's thumbnail (custom photo or scraped og:image) via the Worker
   async function loadGiftImage(gift, imageEl) {
     try {
       const response = await fetch(
@@ -173,6 +177,7 @@ export function initGifts() {
 
   // ---- Networking ------------------------------------------------
 
+  // Fetches the shared gift list from the Worker
   async function loadGifts({ silent = false } = {}) {
     try {
       const response = await fetch(`${workerUrl}/gifts`);
@@ -185,6 +190,7 @@ export function initGifts() {
     }
   }
 
+  // Pushes the current `gifts` array to the Worker, reloading on failure
   async function saveGifts() {
     saveInFlight = true;
     try {
@@ -205,6 +211,7 @@ export function initGifts() {
     }
   }
 
+  // Sends a partial update for one gift (used when editing)
   async function patchGift(id, patch) {
     try {
       const response = await fetch(`${workerUrl}/gifts/${encodeURIComponent(id)}`, {
@@ -224,6 +231,7 @@ export function initGifts() {
     }
   }
 
+  // Uploads a custom photo for a gift, taking priority over any scraped image
   async function uploadGiftPhoto(id, file) {
     try {
       const response = await fetch(`${workerUrl}/gifts/upload?id=${encodeURIComponent(id)}`, {
@@ -246,6 +254,7 @@ export function initGifts() {
   // to peek at the link's <title>/og:title so they don't have to
   // type it themselves. Never blocks adding the gift — on any
   // failure we just fall back to the raw URL as the title.
+  // Asks the Worker to scrape a page title for a pasted link, for auto-filling the title field
   async function fetchTitleFor(url) {
     try {
       const response = await fetch(`${workerUrl}/gifts/meta?url=${encodeURIComponent(url)}`);
@@ -259,6 +268,7 @@ export function initGifts() {
 
   // ---- Mutations ---------------------------------------------------
 
+  // Adds a new gift (optimistically), then uploads its photo if one was chosen
   async function addGift(person, { url, title, note, photoFile }, formEls) {
     const trimmedUrl = url.trim();
     let trimmedTitle = title.trim();
@@ -289,6 +299,7 @@ export function initGifts() {
     setFormBusy(formEls, false, 'Toevoegen');
   }
 
+  // Saves an edited gift via PATCH, then uploads a new photo if one was chosen
   async function saveEdit(id, { url, title, note, person, photoFile }, formEls) {
     setFormBusy(formEls, true, 'Opslaan…');
 
@@ -303,11 +314,13 @@ export function initGifts() {
     return ok;
   }
 
+  // Disables/re-labels a form's submit button while a save is in flight
   function setFormBusy(formEls, busy, label) {
     formEls.submitBtn.disabled = busy;
     formEls.submitBtn.textContent = label;
   }
 
+  // Removes a gift (optimistically) and saves
   function deleteGift(id) {
     if (editingId === id) exitEditMode(columnEls[gifts.find((g) => g.id === id)?.person] || columnEls.a);
     gifts = gifts.filter((gift) => gift.id !== id);
@@ -321,6 +334,7 @@ export function initGifts() {
   // remembering `editingId` so the submit handler below knows to PATCH
   // instead of add. Only one edit can be open at once.
 
+  // Pre-fills a column's add-form with a gift's data and switches it into edit mode
   function enterEditMode(gift) {
     if (editingId && editingId !== gift.id) {
       // Cancel whichever edit was already open first.
@@ -346,6 +360,7 @@ export function initGifts() {
     qs('.gf-add-title', form).focus();
   }
 
+  // Restores a column's form back to its normal "add" state
   function exitEditMode(columnConfig) {
     if (!columnConfig) return;
     editingId = null;
@@ -375,6 +390,7 @@ export function initGifts() {
     // Shows the chosen file's name next to the custom "Kies bestand"
     // button (replaces the browser's native, hidden filename text —
     // see .gf-add-photo-filename in gifts.css).
+    // Resets the "chosen file" label back to its placeholder text
     function resetPhotoFilename() {
       if (photoFilenameEl) photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
     }
@@ -448,6 +464,7 @@ export function initGifts() {
 
   // ---- Polling (picks up gifts added on the other person's device) ----
 
+  // Starts the periodic background refresh, pausing while the tab is hidden
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
@@ -457,6 +474,7 @@ export function initGifts() {
     }, POLL_INTERVAL_MS);
   }
 
+  // Stops the periodic background refresh
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

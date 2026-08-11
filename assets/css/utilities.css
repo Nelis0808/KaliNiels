@@ -4,24 +4,29 @@
     on one element. Used to prevent repetition
     ============================================================= */
 
+/* Center text / mute its color */
 .text-center { text-align: center; }
 .text-muted  { color: var(--color-text-muted); }
 
+/* Top-margin scale, use the smallest that gives enough spacing */
 .mt-1 { margin-top: var(--space-4); }
 .mt-2 { margin-top: var(--space-6); }
 .mt-3 { margin-top: var(--space-7); }
 .mt-4 { margin-top: var(--space-8); }
 
+/* Bottom-margin scale, same steps as .mt-* above */
 .mb-1 { margin-bottom: var(--space-4); }
 .mb-2 { margin-bottom: var(--space-6); }
 .mb-3 { margin-bottom: var(--space-7); }
 .mb-4 { margin-bottom: var(--space-8); }
 
+/* Flexbox shorthands: plain flex, centered flex, wrapping, column direction */
 .flex        { display: flex; }
 .flex-center { display: flex; justify-content: center; align-items: center; }
 .flex-wrap   { flex-wrap: wrap; }
 .flex-col    { flex-direction: column; }
 
+/* Gap sizes for use with the flex helpers above */
 .gap-1 { gap: var(--space-4); }
 .gap-2 { gap: var(--space-6); }
 
@@ -50,6 +55,7 @@
   transition: opacity var(--transition-slow), transform var(--transition-slow);
 }
 
+/* Final, visible state once .visible is toggled on by reveal.js */
 .fade-up.visible {
   opacity: 1;
   transform: translateY(0);
@@ -67,6 +73,7 @@
   display: inline-block;
 }
 
+/* Gentle up/down bobbing loop, e.g. for floating decorative emoji */
 .float {
   animation: float 4s ease-in-out infinite;
 }
@@ -76,17 +83,20 @@
   50%      { transform: translateY(-15px); }
 }
 
+/* Same as .fade-up but enters from above instead of below */
 .fade-down {
   opacity: 0;
   transform: translateY(-40px);
   transition: opacity var(--transition-slow), transform var(--transition-slow);
 }
 
+/* Final, visible state once .visible is toggled on by reveal.js */
 .fade-down.visible {
   opacity: 1;
   transform: translateY(0);
 }
 
+/* Gentle down/up bobbing loop, mirror image of .float above */
 .sink {
   animation: sink 4s ease-in-out infinite;
 }

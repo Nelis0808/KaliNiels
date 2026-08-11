@@ -2,7 +2,7 @@
 // PRIVATE PHOTO GALLERY (photos.html)
 // -----------------------------------------------------------------
 // Talks ONLY to the photo-gallery Cloudflare Worker (see
-// /cloudflare-worker-photos + PHOTO-GALLERY.md) — never directly
+// cloudflare/gallery/ + ACTION-EXPANSION-PLAN.md) — never directly
 // to any storage. The real photos live in a private R2 bucket that
 // only that worker can read; this module never sees them until a
 // valid session token has been handed back by the worker.
@@ -20,7 +20,7 @@
 // always shown under the thumbnail) and `captionLong` (shown in the
 // lightbox when you click the photo, falls back to `caption` if not
 // set). Both come from captions.json in the R2 bucket via the worker
-// — see cloudflare-worker-photos/captions.example.json for the format.
+// — see cloudflare/gallery/captions.example.json for the format.
 //
 // EXTENDING: want a 3rd person? Add a PASSPHRASE_C secret + a 'c'
 // branch in the worker's /login handler, and add 'c' to
@@ -48,6 +48,7 @@ export function initPhotoGallery() {
   const lightboxClose   = qs('#pgLightboxClose', lightbox);
 
   // ---- View toggling ----------------------------------------------
+  // Shows the logged-out placeholder state
   function showLoggedOut(message) {
     loggedOutNote.classList.remove('hidden');
     placeholderGrid.classList.remove('hidden');
@@ -56,17 +57,20 @@ export function initPhotoGallery() {
     statusEl.textContent = message || '';
   }
 
+  // Shows the real results grid
   function showLoggedIn() {
     loggedOutNote.classList.add('hidden');
     placeholderGrid.classList.add('hidden');
     resultsGrid.classList.remove('hidden');
   }
 
+  // True once config.js's photos.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
 
   // ---- Networking ---------------------------------------------------
+  // Fetches the photo list, builds skeleton cards, then loads each image in parallel
   async function loadPhotos(token) {
     statusEl.textContent = 'Loading photo\u2019s';
     resultsGrid.innerHTML = '';
@@ -85,7 +89,7 @@ export function initPhotoGallery() {
       if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
 
       if (data.photos.length === 0) {
-        statusEl.textContent = 'No photo has been uploaded\u2019s. See PHOTO-GALLERY.md how to add.';
+        statusEl.textContent = 'No photo has been uploaded\u2019s. See ACTION-EXPANSION-PLAN.md how to add.';
         return;
       }
 
@@ -135,6 +139,7 @@ export function initPhotoGallery() {
     }
   }
 
+  // Fetches one photo's bytes and fills them into its skeleton card
   async function loadPhotoImage(photo, imageDiv, trigger, token) {
     try {
       const response = await fetch(`${workerUrl}/photos/object?key=${encodeURIComponent(photo.key)}`, {
@@ -163,6 +168,7 @@ export function initPhotoGallery() {
 
   let lastFocusedTrigger = null;
 
+  // Opens the lightbox with a given image + caption
   function openLightbox(imageUrl, caption) {
     lastFocusedTrigger = document.activeElement;
     lightboxImage.src = imageUrl;
@@ -173,6 +179,7 @@ export function initPhotoGallery() {
     lightboxClose.focus();
   }
 
+  // Closes the lightbox and returns focus to whatever triggered it
   function closeLightbox() {
     lightbox.classList.add('hidden');
     document.body.classList.remove('pg-lightbox-locked');
@@ -192,9 +199,10 @@ export function initPhotoGallery() {
   });
 
   // ---- React to the shared header login/logout -----------------------
+  // Shows/hides the gallery and (re)loads photos whenever the shared session changes
   function syncWithAuth(auth) {
     if (!workerConfigured()) {
-      statusEl.textContent = '⚠️ No worker configurated, see PHOTO-GALLERY.md for help.';
+      statusEl.textContent = '⚠️ No worker configurated, see ACTION-EXPANSION-PLAN.md for help.';
       return;
     }
     if (auth) {

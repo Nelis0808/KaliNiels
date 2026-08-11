@@ -18,6 +18,7 @@ export function attachCoordHover(viewport, panZoom, getProjection) {
   badge.className = 'rz-coord-badge hidden';
   viewport.appendChild(badge);
 
+  // Hides the coord readout badge
   function hide() {
     badge.classList.add('hidden');
   }

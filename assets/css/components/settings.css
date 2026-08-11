@@ -1,32 +1,34 @@
-/* =============================================================
-   SETTINGS DROPDOWN "⚙️"
-   -------------------------------------------------------------
-   Lives in .nav-actions, separate from the "More" nav-dropdown
-   Because this one has to stay usable at every screen width, it
-   deliberately does NOT reuse .nav-dropdown-menu's mobile
-   accordion override; it always floats, same as before.
+/*  =============================================================
+    SETTINGS DROPDOWN
+    Lives in .nav-actions, separate from the "More" nav-dropdown
+    Because this one has to stay usable at every screen width, it
+    deliberately does NOT reuse .nav-dropdown-menu's mobile
+    accordion override; it always floats, same as before.
 
-   Renders two live controls (dark mode, color theme) plus any
-   extra entries from siteConfig.settings: see
-   assets/js/modules/settings-dropdown.js. 
-   
-   Adding a real 'X'th setting later means: give it a working control 
-   markup here (copy a .settings-item block) and wire it up in its
-   own module, the same pattern as theme.js.
-   ============================================================= */
-
+    Renders two live controls (dark mode, color theme) plus any
+    extra entries from siteConfig.settings: see
+    assets/js/modules/settings-dropdown.js. 
+    
+    Adding a real 'X'th setting later means: give it a working control 
+    markup here (copy a .settings-item block) and wire it up in its
+    own module, the same pattern as theme.js.
+    ============================================================= */
+/* Settings dropdown is a "trigger + menu" pattern, same as .nav-dropdown-menu */
 .settings-dropdown {
   position: relative;
 }
 
+/* The trigger is the settings icon in the top-right nav, which opens the menu */
 .settings-trigger .chevron {
   display: none;
 }
 
+/* When the dropdown is open, the trigger gets a background to indicate it's active */
 .settings-dropdown.open .settings-trigger {
   background: var(--color-border);
 }
 
+/* The menu itself is a floating panel, positioned below the trigger */
 .settings-menu {
   position: absolute;
   top: calc(100% + var(--space-3));
@@ -42,10 +44,12 @@
   z-index: var(--z-navbar);
 }
 
+/* When the dropdown is open, the menu becomes visible */
 .settings-dropdown.open .settings-menu {
   display: flex;
 }
 
+/* Each setting item is a flex row with a label and a control (like a toggle switch) */
 .settings-menu-heading {
   padding: var(--space-2) var(--space-4) var(--space-1);
   font-size: var(--fs-sm);
@@ -53,6 +57,7 @@
   color: var(--color-text-muted);
 }
 
+/* Each setting item is a flex row with a label and a control (like a toggle switch) */
 .settings-item {
   display: flex;
   align-items: center;
@@ -63,10 +68,12 @@
   font-size: var(--fs-sm);
 }
 
+/* Hover effect for enabled settings items */
 .settings-item:not(.settings-item-disabled):hover {
   background: var(--color-border);
 }
 
+/* The label for each setting item is a flex row with an icon and text */
 .settings-item-label {
   display: flex;
   align-items: center;
@@ -74,15 +81,17 @@
   white-space: nowrap;
 }
 
+/* Disabled settings items have a "not-allowed" cursor and muted text color */
 .settings-item-disabled {
   cursor: not-allowed;
 }
 
+/* Disabled settings items have a "not-allowed" cursor and muted text color */
 .settings-item-disabled .settings-item-label {
   color: var(--color-text-muted);
 }
 
-/* TOGGLE SWITCH (used for dark mode + color theme, and reusable
+/*  TOGGLE SWITCH (used for dark mode + color theme, and reusable
     for any future on/off setting) == */
 .switch {
   position: relative;
@@ -96,6 +105,7 @@
   transition: background var(--transition-fast);
 }
 
+/* The switch knob is a pseudo-element that moves when the switch is toggled */
 .switch::after {
   content: '';
   position: absolute;
@@ -109,14 +119,17 @@
   transition: transform var(--transition-fast);
 }
 
+/* When the switch is checked (aria-checked="true"), change the background color and move the knob */
 .switch[aria-checked='true'] {
   background: var(--color-primary);
 }
 
+/* When the switch is checked (aria-checked="true"), change the background color and move the knob */
 .switch[aria-checked='true']::after {
   transform: translateX(20px);
 }
 
+/* Focus-visible state for accessibility: add an outline when the switch is focused via keyboard navigation */
 .switch:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -128,6 +141,7 @@
   cursor: not-allowed;
 }
 
+/* Responsive adjustments for small screens: reduce the min-width of the settings menu and adjust its position */
 @media (max-width: 480px) {
   .settings-menu {
     min-width: 220px;
@@ -135,6 +149,7 @@
   }
 }
 
+/* Reduce motion for users who prefer it: disable transitions on the switch and its knob */
 @media (prefers-reduced-motion: reduce) {
   .switch,
   .switch::after {
@@ -142,37 +157,36 @@
   }
 }
 
-/* =============================================================
-   PROFILE DROPDOWN "👤" (top-right, every page)
-   -------------------------------------------------------------
-   The single site-wide login — see assets/js/modules/auth.js +
-   profile-dropdown.js. Structurally identical to .settings-dropdown
-   above (same open/close JS pattern), this block only adds the
-   bits specific to the login form / logged-in state.
-   ============================================================= */
-
+/*  =============================================================
+    PROFILE DROPDOWN
+    The single site-wide login, see assets/js/modules/auth.js +
+    profile-dropdown.js. Structurally identical to .settings-dropdown
+    above (same open/close JS pattern), this block only adds the
+    bits specific to the login form / logged-in state.
+    ============================================================= */
+/* The menu itself is a floating panel, positioned below the trigger */
 .profile-menu {
   min-width: 260px;
 }
 
+/* The profile view is hidden by default, and shown when the user is logged in */
 .profile-view.hidden {
   display: none;
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-hint {
   padding: 0 var(--space-4) var(--space-2);
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
 }
 
-/* Logged-in view (hint + logout button) reads better centered than
-   left-aligned under the icon-only trigger — the login form above is
-   centered too (the "Inloggen" button), while the password input
-   itself stays full-width via width: 100% below. */
+/* The profile view is shown when the user is logged in */
 #profileLoggedIn {
   text-align: center;
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-login-form {
   display: flex;
   flex-direction: column;
@@ -181,6 +195,7 @@
   padding: 0 var(--space-4) var(--space-2);
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-login-form input[type='password'] {
   width: 100%;
   min-height: 40px;
@@ -193,11 +208,13 @@
   font-size: var(--fs-sm);
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-login-form input[type='password']:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-login-error {
   padding: 0 var(--space-4) var(--space-2);
   min-height: 1.2em;
@@ -205,10 +222,12 @@
   color: var(--color-error, #d64545);
 }
 
+/* The profile view is shown when the user is logged in */
 .profile-logout-btn {
-  margin: 0 0 var(--space-2); /* horizontal centering comes from #profileLoggedIn's text-align */
+  margin: 0 0 var(--space-2);
 }
 
+/* Responsive adjustments for small screens: reduce the min-width of the profile menu */
 @media (max-width: 480px) {
   .profile-menu {
     min-width: 240px;

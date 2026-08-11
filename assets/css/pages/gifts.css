@@ -7,6 +7,7 @@
    🎁 fallback), plus an edit(✏️)/delete(✕) button pair per card.
    ============================================================= */
 
+/* Page wrapper, columns start closer to the hero than usual */
 #giftsApp {
   padding-top: 0px;
   padding-bottom: var(--space-8);
@@ -21,6 +22,7 @@
   margin-top: var(--space-6);
 }
 
+/* One person's column (Kalina or Niels) */
 .gf-column {
   min-width: 0;
   /* Generic `section { padding: var(--space-9) 0; }` (layout.css)
@@ -28,6 +30,7 @@
   padding-top: var(--space-3);
 }
 
+/* Person name heading at the top of each column */
 .gf-column-heading {
   text-align: center;
   margin-bottom: var(--space-5);
@@ -41,6 +44,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* One gift-idea card: thumbnail, title/note, edit+delete actions */
 .gf-card {
   display: flex;
   align-items: stretch;
@@ -53,11 +57,13 @@
   position: relative;
 }
 
+/* Lift effect on hover */
 .gf-card:hover {
   box-shadow: var(--shadow);
   transform: translateY(-2px);
 }
 
+/* Clickable area of the card (thumbnail + text), links out to the gift URL */
 .gf-card-link {
   display: flex;
   align-items: center;
@@ -77,6 +83,7 @@
   cursor: default;
 }
 
+/* Thumbnail box: custom photo, scraped og:image, or the fallback emoji */
 .gf-card-image {
   flex-shrink: 0;
   width: 72px;
@@ -92,20 +99,24 @@
   overflow: hidden;
 }
 
+/* 🎁 fallback emoji shown until/unless a real thumbnail loads */
 .gf-card-fallback {
   font-size: 1.6rem;
 }
 
+/* Hide the fallback emoji once a real image has loaded */
 .gf-card-has-image .gf-card-fallback {
   display: none;
 }
 
+/* Shimmering placeholder background while the thumbnail is resolving */
 .gf-card-loading {
   background-image: linear-gradient(110deg, var(--color-border) 8%, var(--color-surface) 18%, var(--color-border) 33%);
   background-size: 200% 100%;
   animation: gf-shimmer 1.4s linear infinite;
 }
 
+/* Dim the fallback emoji while loading */
 .gf-card-loading .gf-card-fallback {
   opacity: 0.35;
 }
@@ -114,6 +125,7 @@
   to { background-position-x: -200%; }
 }
 
+/* Title + note text column next to the thumbnail */
 .gf-card-body {
   display: flex;
   flex-direction: column;
@@ -121,11 +133,13 @@
   min-width: 0;
 }
 
+/* Gift title/name */
 .gf-card-title {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
+/* Optional note/description under the title */
 .gf-card-note {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
@@ -142,6 +156,7 @@
   gap: var(--space-2);
 }
 
+/* Shared circular sizing for the edit (✏️) and delete (✕) buttons */
 .gf-edit,
 .gf-delete {
   flex-shrink: 0;
@@ -156,12 +171,14 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+/* Edit button turns primary-colored on hover/focus */
 .gf-edit:hover,
 .gf-edit:focus-visible {
   background: var(--color-primary);
   color: var(--color-white);
 }
 
+/* Delete button turns red on hover/focus as a warning */
 .gf-delete:hover,
 .gf-delete:focus-visible {
   background: var(--color-danger);
@@ -169,6 +186,7 @@
 }
 
 /* == EMPTY STATE == */
+/* Spacing for the shared .empty-state block when a column has no gifts yet */
 .gf-column .empty-state {
   margin-bottom: var(--space-5);
 }
@@ -189,12 +207,14 @@
   transition: box-shadow var(--transition-fast), outline var(--transition-fast);
 }
 
+/* Highlighted outline shown while the form is editing an existing card */
 .gf-add-form-editing {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   box-shadow: var(--shadow);
 }
 
+/* Text/URL inputs in the add/edit form */
 .gf-add-form input[type='url'],
 .gf-add-form input[type='text'] {
   padding: var(--space-3) var(--space-4);
@@ -205,6 +225,7 @@
   min-height: 44px;
 }
 
+/* Wraps the custom photo upload control with its own label text */
 .gf-add-photo-label {
   display: flex;
   flex-direction: column;
@@ -214,12 +235,13 @@
   font-weight: 600;
 }
 
-/* Custom "Kies bestand" pill is now the ONLY visible control. The
-   native <input type="file"> used to also render the browser's own
+/* Custom "Kies bestand" pill is the ONLY visible control. Left alone,
+   a native <input type="file"> also renders the browser's own
    file-selector-button (locale text like "Choose File" / "Bestand
-   kiezen"), showing two overlapping "pick a file" texts side by
+   kiezen"), which would show two overlapping "pick a file" texts side by
    side. The input is now visually hidden entirely (below) while
    staying focusable/clickable via the wrapping <label>. */
+/* Custom "Kies bestand" pill standing in for the native file input's button */
 .gf-add-photo-filename {
   display: inline-flex;
   align-items: center;
@@ -234,6 +256,7 @@
   cursor: pointer;
 }
 
+/* Visually hides the native file input; the label above stays clickable */
 .gf-add-photo-label input[type='file'] {
   position: absolute;
   width: 1px;
@@ -246,16 +269,19 @@
   border: 0;
 }
 
+/* Save/cancel button row at the bottom of the form */
 .gf-add-form-buttons {
   display: flex;
   gap: var(--space-3);
   align-self: center;
 }
 
+/* Cancel button, only shown while editing an existing card */
 .gf-edit-cancel {
   padding: 14px 20px;
 }
 
+/* Inline validation/error message under the form */
 .gf-add-error {
   color: var(--color-danger);
   font-size: var(--fs-sm);
@@ -276,6 +302,7 @@
   color: var(--color-text-muted);
 }
 
+/* Stack the two columns on narrower screens */
 @media (max-width: 800px) {
   .gf-columns {
     grid-template-columns: 1fr;
@@ -283,6 +310,7 @@
   }
 }
 
+/* Smallest screens: less reserved space for the action buttons, stack form buttons */
 @media (max-width: 480px) {
   .gf-card-link {
     padding-right: var(--space-8);
@@ -295,6 +323,7 @@
   }
 }
 
+/* Respect reduced-motion: no hover lift, no shimmer animation */
 @media (prefers-reduced-motion: reduce) {
   .gf-card { transition: none; }
   .gf-card-loading { animation: none; }

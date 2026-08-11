@@ -16,8 +16,7 @@
 //
 // SYNC MODEL: identical to snack-rating.js/lijstje.js/
 // todo.js — talks to the clothing Cloudflare Worker
-// (cloudflare/cloudflare-worker-clothing + STAPPENPLAN-TODO-SNACKS.md's
-// pattern), one shared array covering BOTH columns (each item
+// (cloudflare/clothing/), one shared array covering BOTH columns (each item
 // carries a `person` field), saved optimistically and polled every
 // few seconds.
 //
@@ -42,6 +41,7 @@ export function initClothing() {
   const workerUrl = siteConfig.clothing?.workerUrl || '';
   const personLabels = siteConfig.clothing?.personLabels || { a: 'Niels', b: 'Kalina' };
 
+  // True once config.js's clothing.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
@@ -64,6 +64,7 @@ export function initClothing() {
 
   const statusEl = qs('#clothingStatus', root);
 
+  // Updates the status line, optionally styled as an error
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle('sl-status-error', isError);
@@ -72,6 +73,7 @@ export function initClothing() {
 
   // ---- Networking (identical shape to snack-rating.js) ----------
 
+  // Fetches every item (both people) from the Worker
   async function loadItems({ silent = false } = {}) {
     if (!silent) setStatus('Laden…');
     try {
@@ -87,6 +89,7 @@ export function initClothing() {
     }
   }
 
+  // Pushes the current items array to the Worker, reloading on failure
   async function saveItems() {
     saveInFlight = true;
     try {
@@ -110,6 +113,7 @@ export function initClothing() {
 
   // ---- Star picker (used both in the add/edit form and read-only on cards) ----
 
+  // Renders a clickable 0-5 star picker
   function renderStarPicker(container, rating, onChange) {
     container.innerHTML = '';
     container.dataset.rating = String(rating);
@@ -150,6 +154,7 @@ export function initClothing() {
   // shared KV list (which every save PUTs in full, and every poll
   // GETs in full) would be slow and wasteful for both of you. Downscale
   // to a max 640px-wide JPEG first — a few dozen KB instead.
+  // Downscales and JPEG-compresses an uploaded photo into a data URL client-side
   function resizePhoto(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -172,12 +177,14 @@ export function initClothing() {
     });
   }
 
+  // Escapes a value for safe use inside a CSS attribute selector
   function cssEscape(value) {
     return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
   }
 
   // ---- Rendering -------------------------------------------------
 
+  // Renders one clothing card's HTML
   function renderCard(item) {
     const hasUrl = Boolean(item.url);
     const nameHtml = escapeHtml(item.name);
@@ -209,10 +216,12 @@ export function initClothing() {
 
   const columns = ['a', 'b'].map((person) => setupColumn(person));
 
+  // Re-renders both columns
   function renderAll() {
     columns.forEach((column) => column.render());
   }
 
+  // Wires up one person's column: add/edit form, rendering
   function setupColumn(person) {
     const listEl = qs(`#clothingList${person.toUpperCase()}`, root);
     const emptyStateEl = qs(`#clothingEmpty${person.toUpperCase()}`, root);
@@ -233,10 +242,12 @@ export function initClothing() {
     let editingId = null;
     let formRating = 0;
 
+    // This person's items, in their stored order
     function personItems() {
       return items.filter((it) => it.person === person);
     }
 
+    // Resets the "chosen file" label back to its placeholder text
     function resetPhotoFilename() {
       photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
     }
@@ -245,6 +256,7 @@ export function initClothing() {
       photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
     });
 
+    // Redraws this column's card list from personItems()
     function render() {
       const list = personItems();
 
@@ -269,6 +281,7 @@ export function initClothing() {
 
     // ---- Mutations for this column ------------------------------------
 
+    // Adds a new item (optimistically) and saves
     async function addItem({ name, url, size, description, rating, photoFile }) {
       let photo = null;
       if (photoFile) {
@@ -285,6 +298,7 @@ export function initClothing() {
       saveItems();
     }
 
+    // Saves an edited item (optimistically) and saves
     async function saveEdit(id, { name, url, size, description, rating, photoFile }) {
       let photo = items.find((it) => it.id === id)?.photo || null;
       if (photoFile) {
@@ -298,12 +312,14 @@ export function initClothing() {
       saveItems();
     }
 
+    // Removes an item (optimistically) and saves
     function deleteItem(id) {
       items = items.filter((it) => it.id !== id);
       renderAll();
       saveItems();
     }
 
+    // Pre-fills the column's form with an item's data and switches it into edit mode
     function enterEditMode(item) {
       editingId = item.id;
       nameInput.value = item.name;
@@ -319,6 +335,7 @@ export function initClothing() {
       nameInput.focus();
     }
 
+    // Restores the column's form back to its normal "add" state
     function exitEditMode() {
       editingId = null;
       form.reset();
@@ -405,6 +422,7 @@ export function initClothing() {
 
   // ---- Polling (picks up changes made on the other person's device) ----
 
+  // Starts the periodic background refresh, pausing while the tab is hidden
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
@@ -412,6 +430,7 @@ export function initClothing() {
     }, POLL_INTERVAL_MS);
   }
 
+  // Stops the periodic background refresh
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

@@ -13,16 +13,15 @@
 // SECURITY NOTE: this module never talks to Ticketmaster directly
 // and never touches an API key. It only calls the small serverless
 // proxy configured as `siteConfig.ticketmaster.workerUrl` (a
-// Cloudflare Worker — see /cloudflare-worker + STAPPENPLAN.md at the
-// repo root). The proxy holds the real Ticketmaster key as a secret
+// Cloudflare Worker — see cloudflare/ticketmaster/ +
+// ACTION-EXPANSION-PLAN.md). The proxy holds the real Ticketmaster key as a secret
 // on Cloudflare's side. Since this repo is public, putting the real
 // key directly in this file (or config.js) would let anyone reading
 // the source, or GitHub Pages' shipped JS, use up your daily quota.
 //
 // FAVORITES: a SEPARATE small Worker
 // (siteConfig.ticketmaster.favoriteArtistsWorkerUrl, see
-// /cloudflare/cloudflare-worker-favorite-artists +
-// STAPPENPLAN-TICKETMASTER-FAVORIETEN.md) stores just the list of
+// cloudflare/ticketmaster_favorite-artists/) stores just the list of
 // saved artist NAMES, shared across every device — add "Coldplay" on
 // your phone, it's there on the laptop too. It does not know
 // anything about concerts itself. When the favorites tab is active,
@@ -94,6 +93,7 @@ export function initTicketmaster() {
   // Current query state — rebuilt whenever a tab, filter, or search changes.
   let state = { mode: 'favorites', keyword: '', page: 0, loading: false };
 
+  // Switches the active tab, shows/hides its controls, and (re)runs its query
   function setMode(mode) {
     state = { ...state, mode, page: 0 };
     Object.entries(tabs).forEach(([key, btn]) => {
@@ -123,6 +123,7 @@ export function initTicketmaster() {
     runQuery({ replace: true });
   }
 
+  // Builds the proxy request URL for a given mode/keyword/page/size
   function buildUrl(page, { mode = state.mode, keyword = state.keyword, size = PAGE_SIZE } = {}) {
     const params = new URLSearchParams({
       mode: mode === 'favorites' ? 'search' : mode, // favorites has no server-side "mode" of its own — it's N search calls merged client-side
@@ -134,10 +135,11 @@ export function initTicketmaster() {
     return `${workerUrl}?${params.toString()}`;
   }
 
+  // Runs the query for the current tab (or delegates to runFavoritesQuery), renders results
   async function runQuery({ replace }) {
     if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
       statusEl.textContent =
-        '⚠️ Geen worker geconfigureerd. Zet je Cloudflare Worker-URL in assets/js/config.js (ticketmaster.workerUrl), zie STAPPENPLAN.md.';
+        '⚠️ Geen worker geconfigureerd. Zet je Cloudflare Worker-URL in assets/js/config.js (ticketmaster.workerUrl), zie ACTION-EXPANSION-PLAN.md.';
       resultsEl.innerHTML = '';
       loadMoreBtn.classList.add('hidden');
       return;
@@ -208,6 +210,7 @@ export function initTicketmaster() {
   // No "Meer laden" here (see the module header comment for why) —
   // every call below already asks for a full page (FAVORITES_PAGE_SIZE)
   // per artist, so this is inherently a "replace everything" query.
+  // Fans out one search per saved artist, merges/de-dupes/sorts the results
   async function runFavoritesQuery() {
     if (state.loading) return;
     state.loading = true;
@@ -282,6 +285,7 @@ export function initTicketmaster() {
     }
   }
 
+  // Sortable timestamp for an event, undated shows sort last
   function eventTimestamp(event) {
     const start = event.dates?.start;
     if (!start?.localDate) return Number.POSITIVE_INFINITY; // undated shows sort last
@@ -295,6 +299,7 @@ export function initTicketmaster() {
     return statusCode !== 'cancelled' && statusCode !== 'postponed';
   }
 
+  // "No results" status text, worded per tab
   function emptyMessage(mode) {
     if (mode === 'sales') return 'Geen aankomende ticketverkoop gevonden voor dit land.';
     if (mode === 'search') return `Geen concerten gevonden voor “${state.keyword}”.`;
@@ -303,6 +308,7 @@ export function initTicketmaster() {
 
   // ---- Rendering -------------------------------------------------
 
+  // Renders one event result card
   function renderCard(event) {
     const venue = event._embedded?.venues?.[0];
     const dateLabel = formatEventDate(event.dates);
@@ -333,6 +339,7 @@ export function initTicketmaster() {
     `;
   }
 
+  // Renders the on-sale/upcoming/presale badge(s) for one event
   function renderSaleBadges(sales) {
     if (!sales) return '<p class="tm-badge tm-badge-muted">ℹ️ Verkoopinfo onbekend</p>';
 
@@ -362,12 +369,14 @@ export function initTicketmaster() {
     return badges.join('') || '<p class="tm-badge tm-badge-muted">ℹ️ Verkoopinfo onbekend</p>';
   }
 
+  // Picks the best available event image (prefers a wide 16:9 one)
   function pickImage(images) {
     if (!images || images.length === 0) return null;
     const wide = images.find((img) => img.ratio === '16_9' && img.width >= 400);
     return (wide ?? images[0]).url;
   }
 
+  // Formats a ticket price range with the right currency symbol
   function formatPriceRange(priceRanges) {
     const range = priceRanges?.[0];
     if (!range) return null;
@@ -376,6 +385,7 @@ export function initTicketmaster() {
     return `${currency}${range.min} – ${currency}${range.max}`;
   }
 
+  // Formats an event's date (and time, if known) in Dutch
   function formatEventDate(dates) {
     const start = dates?.start;
     if (!start?.localDate) return 'Datum onbekend';
@@ -386,6 +396,7 @@ export function initTicketmaster() {
     return `${dateStr} · ${timeStr}`;
   }
 
+  // Formats an ISO datetime string in Dutch
   function formatDateTime(isoString) {
     return new Date(isoString).toLocaleString('nl-NL', {
       day: 'numeric',
@@ -403,6 +414,7 @@ export function initTicketmaster() {
   // lijstje.js's item saves, appropriate here too since this list is
   // small (tens of names, not thousands, see MAX_ARTISTS server-side).
 
+  // Renders the saved-artist pill list
   function renderFavoritesChips() {
     if (favoriteArtists.length === 0) {
       favoritesChips.innerHTML = '<p class="tm-favorites-empty-hint">Nog geen favorieten — voeg er hierboven een toe.</p>';
@@ -420,10 +432,11 @@ export function initTicketmaster() {
       .join('');
   }
 
+  // Fetches the saved favorites list from its Worker
   async function loadFavoriteArtists() {
     if (!favoriteArtistsWorkerUrl || favoriteArtistsWorkerUrl.includes('YOUR-SUBDOMAIN')) {
       favoritesChips.innerHTML =
-        '<p class="tm-favorites-empty-hint">⚠️ Geen favorieten-worker geconfigureerd. Zet favoriteArtistsWorkerUrl in assets/js/config.js, zie STAPPENPLAN-TICKETMASTER-FAVORIETEN.md.</p>';
+        '<p class="tm-favorites-empty-hint">⚠️ Geen favorieten-worker geconfigureerd. Zet favoriteArtistsWorkerUrl in assets/js/config.js, zie ACTION-EXPANSION-PLAN.md.</p>';
       return;
     }
     try {
@@ -463,6 +476,7 @@ export function initTicketmaster() {
     }
   }
 
+  // Adds an artist to favorites (optimistically), then saves it
   async function addFavoriteArtist(name) {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -480,6 +494,7 @@ export function initTicketmaster() {
     if (saved && state.mode === 'favorites') runQuery({ replace: true });
   }
 
+  // Removes an artist from favorites (optimistically), then saves it
   async function removeFavoriteArtist(name) {
     const previous = favoriteArtists;
     favoriteArtists = favoriteArtists.filter((artist) => artist !== name);
@@ -511,6 +526,7 @@ export function initTicketmaster() {
     runQuery({ replace: false });
   });
 
+  // Switches to search mode with the current input's keyword and runs the query
   function triggerSearch() {
     const keyword = searchInput.value.trim();
     if (!keyword) return;

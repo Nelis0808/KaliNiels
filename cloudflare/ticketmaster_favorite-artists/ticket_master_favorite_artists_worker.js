@@ -40,8 +40,7 @@
 // list is expected to stay small (tens of names, not thousands) —
 // see MAX_ARTISTS below.
 //
-// Deploy instructions: see STAPPENPLAN-TICKETMASTER-FAVORIETEN.md at
-// the repo root.
+// Deploy instructions: see ACTION-EXPANSION-PLAN.md at the repo root.
 // =================================================================
 
 const ALLOWED_ORIGINS = [
@@ -76,7 +75,7 @@ function json(data, status, origin) {
 // ---- Daily call limit -----------------------------------------------
 // Same shared-KV, prefix-per-Worker daily counter as every other
 // Worker on this site — see their file headers (e.g.
-// cloudflare-worker-lijstje/worker.js) for the full reasoning.
+// cloudflare/lijstje/lijstje_worker.js) for the full reasoning.
 const RATE_LIMIT_PREFIX = 'favorite-artists';
 const DAILY_LIMIT = 5000;
 

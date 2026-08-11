@@ -9,8 +9,7 @@
 // enterEditMode/exitEditMode), exactly like gifts.js.
 //
 // SYNC MODEL: identical to lijstje.js/todo.js — talks to
-// the snacks Cloudflare Worker (cloudflare/cloudflare-worker-snacks +
-// STAPPENPLAN-TODO-SNACKS.md), one shared array covering BOTH
+// the snacks Cloudflare Worker (cloudflare/rating/), one shared array covering BOTH
 // columns (each item carries a `person` field), saved optimistically
 // and polled every few seconds.
 //
@@ -35,6 +34,7 @@ export function initSnackRating() {
   const workerUrl = siteConfig.snackRatings?.workerUrl || '';
   const personLabels = siteConfig.snackRatings?.personLabels || { a: 'Niels', b: 'Kalina' };
 
+  // True once config.js's snackRatings.workerUrl has been set to a real Worker URL
   function workerConfigured() {
     return workerUrl && !workerUrl.includes('YOUR-SUBDOMAIN');
   }
@@ -57,6 +57,7 @@ export function initSnackRating() {
 
   const statusEl = qs('#snackStatus', root);
 
+  // Updates the status line, optionally styled as an error
   function setStatus(text, isError = false) {
     statusEl.textContent = text;
     statusEl.classList.toggle('sl-status-error', isError);
@@ -65,6 +66,7 @@ export function initSnackRating() {
 
   // ---- Networking (identical shape to lijstje.js) ----------
 
+  // Fetches every snack (both people) from the Worker
   async function loadSnacks({ silent = false } = {}) {
     if (!silent) setStatus('Laden…');
     try {
@@ -80,6 +82,7 @@ export function initSnackRating() {
     }
   }
 
+  // Pushes the current `snacks` array to the Worker, reloading on failure
   async function saveSnacks() {
     saveInFlight = true;
     try {
@@ -103,6 +106,7 @@ export function initSnackRating() {
 
   // ---- Star picker (used both in the add/edit form and read-only on cards) ----
 
+  // Renders a clickable 0-5 star picker
   function renderStarPicker(container, rating, onChange) {
     container.innerHTML = '';
     container.dataset.rating = String(rating);
@@ -143,6 +147,7 @@ export function initSnackRating() {
   // shared KV list (which every save PUTs in full, and every poll
   // GETs in full) would be slow and wasteful for both of you. Downscale
   // to a max 640px-wide JPEG first — a few dozen KB instead.
+  // Downscales and JPEG-compresses an uploaded photo into a data URL client-side
   function resizePhoto(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -165,12 +170,14 @@ export function initSnackRating() {
     });
   }
 
+  // Escapes a value for safe use inside a CSS attribute selector
   function cssEscape(value) {
     return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
   }
 
   // ---- Rendering -------------------------------------------------
 
+  // Renders one snack card's HTML
   function renderCard(snack) {
     const hasUrl = Boolean(snack.url);
     const nameHtml = escapeHtml(snack.name);
@@ -198,10 +205,12 @@ export function initSnackRating() {
 
   const columns = ['a', 'b'].map((person) => setupColumn(person));
 
+  // Re-renders both columns
   function renderAll() {
     columns.forEach((column) => column.render());
   }
 
+  // Wires up one person's column: add/edit form, rendering
   function setupColumn(person) {
     const listEl = qs(`#snackList${person.toUpperCase()}`, root);
     const emptyStateEl = qs(`#snackEmpty${person.toUpperCase()}`, root);
@@ -221,10 +230,12 @@ export function initSnackRating() {
     let editingId = null;
     let formRating = 0;
 
+    // This person's snacks, in their stored order
     function personSnacks() {
       return snacks.filter((s) => s.person === person);
     }
 
+    // Resets the "chosen file" label back to its placeholder text
     function resetPhotoFilename() {
       photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
     }
@@ -233,6 +244,7 @@ export function initSnackRating() {
       photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
     });
 
+    // Redraws this column's card list from personSnacks()
     function render() {
       const list = personSnacks();
 
@@ -257,6 +269,7 @@ export function initSnackRating() {
 
     // ---- Mutations for this column ------------------------------------
 
+    // Adds a new snack (optimistically) and saves
     async function addSnack({ name, url, description, rating, photoFile }) {
       let photo = null;
       if (photoFile) {
@@ -273,6 +286,7 @@ export function initSnackRating() {
       saveSnacks();
     }
 
+    // Saves an edited snack (optimistically) and saves
     async function saveEdit(id, { name, url, description, rating, photoFile }) {
       let photo = snacks.find((s) => s.id === id)?.photo || null;
       if (photoFile) {
@@ -286,12 +300,14 @@ export function initSnackRating() {
       saveSnacks();
     }
 
+    // Removes a snack (optimistically) and saves
     function deleteSnack(id) {
       snacks = snacks.filter((s) => s.id !== id);
       renderAll();
       saveSnacks();
     }
 
+    // Pre-fills the column's form with a snack's data and switches it into edit mode
     function enterEditMode(snack) {
       editingId = snack.id;
       nameInput.value = snack.name;
@@ -306,6 +322,7 @@ export function initSnackRating() {
       nameInput.focus();
     }
 
+    // Restores the column's form back to its normal "add" state
     function exitEditMode() {
       editingId = null;
       form.reset();
@@ -385,6 +402,7 @@ export function initSnackRating() {
 
   // ---- Polling (picks up changes made on the other person's device) ----
 
+  // Starts the periodic background refresh, pausing while the tab is hidden
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
@@ -392,6 +410,7 @@ export function initSnackRating() {
     }, POLL_INTERVAL_MS);
   }
 
+  // Stops the periodic background refresh
   function stopPolling() {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

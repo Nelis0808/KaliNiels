@@ -8,9 +8,9 @@
    SVGs pixel-for-pixel, instead of the theme-swappable
    --color-secondary/--color-accent tokens. Those tokens flip their
    hex values in the pink color theme ([data-color-theme='pink'] in
-   variables.css), which used to make the board background clash
-   with the avatar images sitting on top of it (e.g. Player 1's blue
-   avatar rendering on a pink cell). Fixed hex values sidestep that
+   variables.css), which would otherwise clash with the avatar images
+   sitting on top of the board (e.g. Player 1's blue avatar rendering
+   on a pink cell). Fixed hex values sidestep that
    entirely — the same blue/pink pairing now holds in both the blue
    and pink site themes.
    ============================================================= */
@@ -21,6 +21,7 @@
 #snakeScoreP1 { color: var(--snake-p1, #7B68EE); }
 #snakeScoreP2 { color: var(--snake-p2, #FF6B9D); }
 
+/* The 30x20 grid board itself, plus its own fixed player-color tokens */
 .snake-board {
   --snake-cols: 30;
   --snake-rows: 20;
@@ -41,6 +42,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* One empty/filled board cell */
 .snake-cell {
   position: relative; /* containment for .snake-head-img (position: absolute) — see paintCell()'s comment in snake.js for why this matters even on non-head cells */
   background: var(--color-surface);
@@ -50,20 +52,25 @@
   justify-content: center;
 }
 
+/* Player 1's trail color */
 .snake-cell-p1-trail {
   background: var(--snake-p1);
 }
 
+/* Player 2's trail color */
 .snake-cell-p2-trail {
   background: var(--snake-p2);
 }
 
+/* Raises the head cell above trail cells so its avatar image isn't clipped */
 .snake-cell-p1-head,
+/* Player 2's head cell background color */
 .snake-cell-p2-head {
   position: relative;
   z-index: 2;
 }
 
+/* Player 1's head cell background color */
 .snake-cell-p1-head {
   background: var(--snake-p1);
 }
@@ -72,25 +79,16 @@
   background: var(--snake-p2);
 }
 
-/* FIX: uploaded head photos can be any aspect ratio (portrait phone
-   photo, wide crop, near-square, ...). This image used to be sized
-   with plain `width/height: 130%` while sitting as a normal flex
-   child of `.snake-cell` (a flex container with no fixed box size of
-   its own — its size comes purely from the grid track). A percentage
-   size on a replaced element in-flow still lets its INTRINSIC aspect
-   ratio influence the flex item's own contribution to the layout, so
-   swapping in a very tall or very wide photo could nudge that one
-   cell's flex sizing by a hair — and since every cell shares the
-   same grid row/column tracks, that tiny nudge rippled into the
-   whole board very slightly resizing, which read as the trail lines
-   "moving a bit" every time a differently-shaped photo loaded.
-   Taking the image fully out of flow with `position: absolute` (using
-   the cell's own `position: relative` above) means its intrinsic size
-   can never again feed back into the cell's/track's own sizing — the
-   cell size is 100% determined by the grid, never by what's drawn
-   inside it. `object-fit: contain` then safely letterboxes any
-   aspect ratio within that fixed 130%×130% box, centered via the
-   top/left/transform trick, with no distortion and no layout impact. */
+/* Uploaded head photos can be any aspect ratio (portrait phone
+   photo, wide crop, near-square, ...), so this image is taken fully
+   out of flow with `position: absolute` (using the cell's own
+   `position: relative` above): the cell's grid track sizing then
+   depends only on the grid itself, never on the intrinsic size of
+   whatever photo is drawn inside it, so a very tall or very wide
+   photo can never nudge the board's layout. `object-fit: contain`
+   safely letterboxes any aspect ratio within the fixed 130%×130%
+   box, centered via the top/left/transform trick, with no
+   distortion and no layout impact. */
 .snake-head-img {
   position: absolute;
   top: 50%;
@@ -103,6 +101,7 @@
   pointer-events: none;
 }
 
+/* Tighter grid spacing on narrow screens */
 @media (max-width: 600px) {
   .snake-board {
     padding: var(--space-1);

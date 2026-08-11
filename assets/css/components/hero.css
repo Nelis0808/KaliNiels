@@ -4,6 +4,7 @@
    a component file because it's a section-level layout choice
    used by more than one page but not universal to every page.
    ============================================================= */
+/*  Hero section styles, including padding, background gradients, and text alignment. */
 .hero {
   padding: var(--space-7) 0;
   background:
@@ -13,5 +14,6 @@
   text-align: center;
 }
 
+/*  Hero heading and paragraph styles, including margin and font size. */
 .hero h1 { margin-bottom: var(--space-4); }
 .hero p  { font-size: var(--fs-lg); margin: 0 auto var(--space-6); }

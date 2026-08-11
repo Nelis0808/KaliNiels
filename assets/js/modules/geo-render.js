@@ -1,12 +1,11 @@
 // =================================================================
 // GEO RENDER — GeoJSON → SVG, entirely local, zero external requests
 // -----------------------------------------------------------------
-// Replaces the old d-maps.com scraper. Country borders are real
-// Natural Earth data (public domain, via the `world-atlas` npm
-// package — see /home/claude/geodata/build.js-style pipeline notes
-// in STAPPENPLAN-REIZEN.md for how assets/data/world-map.json and
-// assets/data/countries/*.json were generated), bundled straight
-// into the repo:
+// Country borders are real Natural Earth data (public domain, via the
+// `world-atlas` npm package), pre-generated and bundled straight into
+// the repo — see ACTION-EXPANSION-PLAN.md for how
+// assets/data/world-map.json and assets/data/countries/*.json were
+// built, and how to regenerate them:
 //
 //   assets/data/world-map.json      — every country, 50m detail,
 //                                      for the world overview.
@@ -17,7 +16,7 @@
 //                                      territory" so a country's
 //                                      own map isn't dominated by a
 //                                      far-off overseas bit (see
-//                                      STAPPENPLAN-REIZEN.md).
+//                                      ACTION-EXPANSION-PLAN.md).
 //
 // Why this instead of scraping another site: ISO 3166-1 alpha-2
 // codes are a real, stable, universal standard — "NL", "US", "JP" —
@@ -66,6 +65,7 @@ export function makeWorldProjection(width = 2000, { lonMin = -180, lonMax = 180,
   return { project, invert, width, height, viewBox: `0 0 ${width} ${height}`, aspectRatio: `${width} / ${height}` };
 }
 
+// Computes the lon/lat bounding box of a GeoJSON Polygon/MultiPolygon
 function boundsOfGeometry(geometry) {
   let lonMin = Infinity, lonMax = -Infinity, latMin = Infinity, latMax = -Infinity;
   const polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates;

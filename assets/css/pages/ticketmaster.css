@@ -2,6 +2,7 @@
    PAGE: TICKETMASTER (ticketmaster.html)
    ============================================================= */
 
+/* Page wrapper */
 #ticketmasterApp {
   padding-bottom: var(--space-8);
 }
@@ -14,6 +15,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* Row of category tabs (e.g. Music/Sport/...) */
 .tm-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -21,6 +23,7 @@
   gap: var(--space-2);
 }
 
+/* One tab button */
 .tm-tab {
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-full);
@@ -33,17 +36,20 @@
                 background var(--transition-fast);
 }
 
+/* Hover/focus feedback for a tab */
 .tm-tab:hover, .tm-tab:focus-visible {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
+/* Active/selected tab styling */
 .tm-tab[aria-selected='true'] {
   border-color: var(--color-primary);
   background: var(--color-primary);
   color: var(--color-white);
 }
 
+/* Wraps the search, favorites and country filter rows */
 .tm-filters {
   display: flex;
   flex-wrap: wrap;
@@ -52,6 +58,7 @@
   gap: var(--space-4);
 }
 
+/* Free-text search input + button */
 .tm-search-row {
   display: flex;
   flex-wrap: wrap;
@@ -60,11 +67,13 @@
   flex: 1 1 320px;
 }
 
+/* Search input grows to fill available space */
 .tm-search-row input {
   flex: 1 1 220px;
   min-width: 0;
 }
 
+/* "Add favorite artist" input + button */
 .tm-favorites-row {
   display: flex;
   flex-wrap: wrap;
@@ -73,6 +82,7 @@
   flex: 1 1 320px;
 }
 
+/* Favorites input grows to fill available space */
 .tm-favorites-row input {
   flex: 1 1 220px;
   min-width: 0;
@@ -92,6 +102,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* One saved-artist pill */
 .tm-favorite-chip {
   display: inline-flex;
   align-items: center;
@@ -104,6 +115,7 @@
   font-weight: 600;
 }
 
+/* ✕ button inside a chip to remove that artist */
 .tm-favorite-chip-remove {
   display: inline-flex;
   align-items: center;
@@ -115,6 +127,7 @@
   line-height: 1;
 }
 
+/* Hover/focus feedback for the remove button */
 .tm-favorite-chip-remove:hover,
 .tm-favorite-chip-remove:focus-visible {
   background: var(--color-border);
@@ -131,6 +144,7 @@
   margin-bottom: var(--space-6);
 }
 
+/* Country dropdown filter row */
 .tm-country-row {
   display: flex;
   justify-content: center;
@@ -139,11 +153,13 @@
   flex-wrap: wrap;
 }
 
+/* Label text next to the country select */
 .tm-country-row label {
   font-weight: 700;
   color: var(--color-text-muted);
 }
 
+/* Country dropdown itself */
 .tm-country-row select {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
@@ -167,6 +183,7 @@
   gap: var(--space-5);
 }
 
+/* One event result card */
 .tm-card {
   display: flex;
   flex-direction: column;
@@ -177,11 +194,13 @@
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
+/* Lift effect on hover */
 .tm-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
 }
 
+/* Event image/banner at the top of the card */
 .tm-card-image {
   height: 160px;
   background-size: cover;
@@ -189,6 +208,7 @@
   background-color: var(--color-border);
 }
 
+/* Text content below the image: title, meta, price, button */
 .tm-card-body {
   padding: var(--space-5);
   display: flex;
@@ -196,21 +216,25 @@
   gap: var(--space-2);
 }
 
+/* Event title */
 .tm-card-body h3 {
   font-size: var(--fs-lg);
   line-height: 1.2;
 }
 
+/* Venue/date meta line */
 .tm-card-meta {
   color: var(--color-text-muted);
   font-size: var(--fs-sm);
 }
 
+/* Ticket price, highlighted in the primary color */
 .tm-card-price {
   font-weight: 700;
   color: var(--color-primary);
 }
 
+/* Smaller "buy tickets" button variant, left-aligned in the card */
 .btn-sm {
   min-height: 36px;
   padding: 8px 20px;
@@ -219,6 +243,7 @@
 }
 
 /* == SALE BADGES == */
+/* Shared shape for the on-sale/upcoming/presale badges below */
 .tm-badge {
   display: inline-block;
   width: fit-content;
@@ -228,30 +253,36 @@
   border-radius: var(--radius-full);
 }
 
+/* Yellow badge: sale hasn't started yet */
 .tm-badge-upcoming {
   background: rgba(255, 215, 0, 0.18);
   color: #7a5b00;
 }
 
+/* Green badge: tickets currently on sale */
 .tm-badge-onsale {
   background: rgba(50, 205, 50, 0.16);
   color: #1f7a1f;
 }
 
+/* Blue badge: presale window */
 .tm-badge-presale {
   background: rgba(100, 149, 237, 0.18);
   color: #1d4ea3;
 }
 
+/* Gray badge: no sale info / sold out */
 .tm-badge-muted {
   background: var(--color-border);
   color: var(--color-text-muted);
 }
 
+/* Brighter badge text colors so they stay readable on dark backgrounds */
 :root[data-theme='dark'] .tm-badge-upcoming { color: #FFD700; }
 :root[data-theme='dark'] .tm-badge-onsale   { color: #32CD32; }
 :root[data-theme='dark'] .tm-badge-presale  { color: #6495ED; }
 
+/* Small screens: stack filters and let their controls fill the width */
 @media (max-width: 600px) {
   .tm-filters {
     flex-direction: column;
@@ -271,6 +302,7 @@
   }
 }
 
+/* Respect reduced-motion: no hover lift on result cards */
 @media (prefers-reduced-motion: reduce) {
   .tm-card {
     transition: none;

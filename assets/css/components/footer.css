@@ -1,7 +1,8 @@
 /*  =============================================================
     FOOTER
+    Never used, but kept for future reference.
     ============================================================= */
-
+/*  Footer styles, including background color, text color, padding, and responsive layout. */
 .site-footer {
   background: var(--color-dark);
   color: var(--color-white);
@@ -9,6 +10,7 @@
   margin-top: var(--space-9);
 }
 
+/*  Footer container styles, including flexbox layout, wrapping, and spacing. */
 .site-footer .container {
   display: flex;
   flex-wrap: wrap;
@@ -17,19 +19,23 @@
   gap: var(--space-3);
 }
 
+/*  Footer text and link styles, including color and margin. */
 .site-footer p, .site-footer a {
   color: var(--color-white);
   margin: 0;
 }
 
+/*  Footer link hover styles, including color change on hover. */
 .site-footer a:hover {
   color: var(--color-tertiary);
 }
 
+/*  Footer copyright styles, including font size and margin. */
 :root[data-theme='dark'] .site-footer {
   background: #000;
 }
 
+/*  Footer copyright styles, including font size and margin. */
 @media (max-width: 480px) {
   .site-footer .container {
     flex-direction: column;

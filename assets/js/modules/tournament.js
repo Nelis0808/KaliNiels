@@ -104,10 +104,12 @@ export function initTournament() {
 
   let tournament = null;
 
+  // Shows one of setup/match/winner, hiding the other two
   function showView(view) {
     [setupView, matchView, winnerView].forEach((v) => v.classList.toggle('hidden', v !== view));
   }
 
+  // Splits the textarea into one trimmed, non-empty option per line
   function parseOptions(rawText) {
     return rawText
       .split('\n')
@@ -115,6 +117,7 @@ export function initTournament() {
       .filter(Boolean);
   }
 
+  // Fills the textarea with a quick-start preset list from date-ideas JSON
   async function loadPreset(category) {
     try {
       const response = await fetch(PRESET_FILES[category]);
@@ -128,6 +131,7 @@ export function initTournament() {
     }
   }
 
+  // Advances the tournament and shows the next match (or the winner screen)
   function renderMatch() {
     tournament.advance();
 
@@ -143,6 +147,7 @@ export function initTournament() {
     showView(matchView);
   }
 
+  // Shows the winner and the full round-by-round history
   function renderWinner() {
     winnerNameEl.textContent = tournament.winner;
     historyList.innerHTML = tournament.history

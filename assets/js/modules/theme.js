@@ -11,11 +11,10 @@
 // touching the other — picking "roze" carries into dark mode too,
 // since dark mode never redefines the brand hue tokens itself.
 //
-// Both toggles now live inside the settings dropdown (see
-// settings-dropdown.js) as `.switch` elements (role="switch"),
-// instead of the two standalone icon buttons this used to be. This
-// module only flips `aria-checked` + the label — the visuals live in
-// assets/css/components/settings.css.
+// Both toggles live inside the settings dropdown (see
+// settings-dropdown.js) as `.switch` elements (role="switch").
+// This module only flips `aria-checked` + the label — the visuals
+// live in assets/css/components/settings.css.
 //
 // EXTENDING: listen for the `themechange` / `colorthemechange`
 // events this module fires on `document` if some future feature
@@ -38,6 +37,7 @@ function syncThemeColorMeta() {
   if (bg) meta.setAttribute('content', bg);
 }
 
+// Sets data-theme, updates the toggle's aria state, and notifies listeners
 function applyTheme(theme, toggleBtn) {
   document.documentElement.setAttribute('data-theme', theme);
 
@@ -52,6 +52,7 @@ function applyTheme(theme, toggleBtn) {
   document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
 }
 
+// Reads the stored/system light-dark preference, applies it, and wires the toggle
 export function initTheme() {
   const toggleBtn = document.getElementById('themeToggle');
 
@@ -71,6 +72,7 @@ export function initTheme() {
   });
 }
 
+// Sets data-color-theme, updates the toggle's aria state, and notifies listeners
 function applyColorTheme(colorTheme, toggleBtn) {
   document.documentElement.setAttribute('data-color-theme', colorTheme);
 
@@ -84,6 +86,7 @@ function applyColorTheme(colorTheme, toggleBtn) {
   document.dispatchEvent(new CustomEvent('colorthemechange', { detail: { colorTheme } }));
 }
 
+// Reads the stored blue/pink preference, applies it, and wires the toggle
 export function initColorTheme() {
   const toggleBtn = document.getElementById('colorThemeToggle');
 

@@ -28,6 +28,7 @@ const MAX_WRONG = 6;
 const LENGTH_STORAGE_KEY = 'hangmanLength';
 const LANG_STORAGE_KEY = 'hangmanLang';
 
+// Default language for a first-time visitor (NL)
 function detectDefaultLang() {
   return 'nl';
 }
@@ -57,6 +58,7 @@ const GALLOWS_BASE = `
 const wordsCache = {}; // loaded once per language, cached — { en: {...}, nl: {...} }
 
 /** { "4": { "A": [...], "B": [...] } } -> { "4": [...all merged...] } */
+// Merges each length's per-letter word groups into one flat array
 function flattenWordData(raw) {
   const flat = {};
   for (const [length, byLetter] of Object.entries(raw)) {
@@ -65,6 +67,7 @@ function flattenWordData(raw) {
   return flat;
 }
 
+// Fetches (and caches) a language's word list, flattened
 async function loadWords(lang) {
   if (wordsCache[lang]) return wordsCache[lang];
   const response = await fetch(DATA_URLS[lang]);
@@ -74,6 +77,7 @@ async function loadWords(lang) {
   return wordsCache[lang];
 }
 
+// Picks a random word from a list
 function pickWord(words) {
   return words[Math.floor(Math.random() * words.length)];
 }
@@ -99,14 +103,17 @@ export function initHangman() {
   let gameOver = false;
   let wordsByLength = null; // current language's flat arrays, keyed by length
 
+  // Clamps a requested word length to the supported MIN_LEN..MAX_LEN range
   function clampLength(len) {
     return Math.min(MAX_LEN, Math.max(MIN_LEN, len));
   }
 
+  // Updates the status line text
   function updateStatus(text) {
     statusEl.textContent = text;
   }
 
+  // Renders the NL/EN language pills
   function renderLangPicker() {
     if (!langPicker) return;
     langPicker.innerHTML = '';
@@ -140,6 +147,7 @@ export function initHangman() {
     });
   }
 
+  // Renders the word-length pills (4-10)
   function renderLengthPicker() {
     lengthPicker.innerHTML = '';
     for (let len = MIN_LEN; len <= MAX_LEN; len++) {
@@ -160,6 +168,7 @@ export function initHangman() {
     }
   }
 
+  // Draws the gallows plus whichever HANGMAN_STAGES piece matches the wrong-guess count
   function renderDrawing() {
     drawing.innerHTML = `
       <g stroke="var(--color-text-muted)" stroke-width="4" stroke-linecap="round" fill="none">${GALLOWS_BASE}</g>
@@ -167,6 +176,7 @@ export function initHangman() {
     `;
   }
 
+  // Redraws the word display, revealing only already-guessed letters
   function renderWord() {
     wordDisplay.innerHTML = '';
     answer.split('').forEach((letter) => {
@@ -177,11 +187,13 @@ export function initHangman() {
     });
   }
 
+  // Updates the "foute letters" list
   function renderWrongLetters() {
     const wrong = [...guessedLetters].filter((l) => !answer.includes(l));
     wrongLettersEl.textContent = wrong.length ? `Foute letters: ${wrong.join(', ')}` : '';
   }
 
+  // Builds the on-screen A-Z keyboard
   function renderKeyboard() {
     keyboard.innerHTML = '';
     ALPHABET.forEach((letter) => {
@@ -198,10 +210,12 @@ export function initHangman() {
     });
   }
 
+  // Looks up an on-screen keyboard key's DOM element by letter
   function keyEl(letter) {
     return keyboard.querySelector(`.hangman-key[data-key="${letter}"]`);
   }
 
+  // Handles one letter guess: marks it correct/wrong and checks win/loss
   function guessLetter(letter) {
     if (gameOver || guessedLetters.has(letter)) return;
 
@@ -234,6 +248,7 @@ export function initHangman() {
     if (key) key.disabled = true;
   }
 
+  // Reveals the full word (marking never-guessed letters) after a loss
   function renderWordRevealed() {
     wordDisplay.innerHTML = '';
     answer.split('').forEach((letter) => {
@@ -244,12 +259,14 @@ export function initHangman() {
     });
   }
 
+  // Maps a physical A-Z keypress onto guessLetter()
   function handlePhysicalKeydown(event) {
     if (!root.isConnected) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     if (/^[a-zA-Z]$/.test(event.key)) guessLetter(event.key.toUpperCase());
   }
 
+  // Picks a new answer and resets the drawing/word/keyboard/status for a fresh round
   function startNewGame() {
     const words = wordsByLength[String(wordLength)] || [];
     answer = pickWord(words);

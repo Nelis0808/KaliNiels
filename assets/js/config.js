@@ -154,15 +154,14 @@ export const siteConfig = {
   ],
 
   // Config for the Ticketmaster page (assets/js/modules/ticketmaster.js).
-  // STAPPENPLAN.md for usage.
+  // See ACTION-EXPANSION-PLAN.md for setup.
   ticketmaster: {
     workerUrl: 'https://ticketmaster-proxy.niels-luijten7.workers.dev',
     defaultCountry: 'NL',
     // Separate small Worker that stores the shared "Favorieten" artist
-    // list (see cloudflare/cloudflare-worker-favorite-artists +
-    // STAPPENPLAN-TICKETMASTER-FAVORIETEN.md). Not the same Worker as
-    // workerUrl above — that one only proxies Ticketmaster itself and
-    // has no storage of its own.
+    // list (see cloudflare/ticketmaster_favorite-artists). Not the same
+    // Worker as workerUrl above — that one only proxies Ticketmaster
+    // itself and has no storage of its own.
     favoriteArtistsWorkerUrl: 'https://favorite-artists.niels-luijten7.workers.dev',
   },
 
@@ -170,7 +169,7 @@ export const siteConfig = {
   // AND for the "Onze Reizen" country view (assets/js/modules/reizen-land.js),
   // which reuses this exact same Worker's public /travel endpoint plus
   // the logged-in session for showing real thumbnails per city.
-  // PHOTO_GALLERY.md / STAPPENPLAN-REIZEN.md for usage.
+  // See cloudflare/gallery/ + ACTION-EXPANSION-PLAN.md for setup.
   photos: {
     workerUrl: 'https://photo-gallery.niels-luijten7.workers.dev',
     personLabels: {
@@ -180,13 +179,13 @@ export const siteConfig = {
   },
 
   // Config for the synced shopping list (assets/js/modules/lijstje.js).
-  // STAPPENPLAN-LIJSTJE.md for usage.
+  // See cloudflare/lijstje/ for setup.
   shoppingList: {
     workerUrl: 'https://lijstje.niels-luijten7.workers.dev',
   },
 
   // Config for the gift ideas lists (assets/js/modules/gifts.js).
-  // STAPPENPLAN-GIFTS.md for usage. No login (same as shoppingList
+  // See cloudflare/gifts/ for setup. No login (same as shoppingList
   // above) — 'a' = Niels (right column), 'b' = Kalina (left column).
   gifts: {
     workerUrl: 'https://gifts.niels-luijten7.workers.dev',
@@ -197,7 +196,7 @@ export const siteConfig = {
   },
 
   // Config for the TODO list (assets/js/modules/todo.js).
-  // STAPPENPLAN-TODO-SNACKS.md for usage. Same no-login reasoning and
+  // See cloudflare/todo/ for setup. Same no-login reasoning and
   // the same 'a' = Niels (right column) / 'b' = Kalina (left column)
   // convention as `gifts` above.
   todo: {
@@ -209,7 +208,7 @@ export const siteConfig = {
   },
 
   // Config for the snack ratings list (assets/js/modules/snack-rating.js).
-  // STAPPENPLAN-TODO-SNACKS.md for usage. Same conventions as `todo` above.
+  // See cloudflare/rating/ for setup. Same conventions as `todo` above.
   snackRatings: {
     workerUrl: 'https://snack-ratings.niels-luijten7.workers.dev',
     personLabels: {
@@ -219,8 +218,8 @@ export const siteConfig = {
   },
 
   // Config for the clothing ratings list (assets/js/modules/clothing.js).
-  // Same pattern/setup as `snackRatings` above (see
-  // STAPPENPLAN-TODO-SNACKS.md), just its own Worker + KV namespace
+  // Same pattern/setup as `snackRatings` above, just its own Worker +
+  // KV namespace — see cloudflare/clothing/.
   clothing: {
     workerUrl: 'https://clothing.niels-luijten7.workers.dev',
     personLabels: {
@@ -231,24 +230,24 @@ export const siteConfig = {
 
   // Config for the shared chip balance used by BlackJack
   // (assets/js/modules/blackjack.js) and Spiderette
-  // (assets/js/modules/spiderette.js). STAPPENPLAN-BLACKJACK.md for
-  // usage. Login itself happens once, site-wide, via the header's
-  // "👤 Profiel" dropdown (assets/js/modules/auth.js) — this Worker
-  // only needs to recognise that shared session's token, so its
-  // TOKEN_SECRET / PASSPHRASE_A / PASSPHRASE_B secrets must match the
-  // "photo-gallery" Worker's exactly (see auth.js's file header for
-  // why). Display names come from `photos.personLabels` above, not
-  // repeated here.
+  // (assets/js/modules/spiderette.js). See cloudflare/chips/ +
+  // ACTION-EXPANSION-PLAN.md for setup. Login itself happens once,
+  // site-wide, via the header's "👤 Profiel" dropdown
+  // (assets/js/modules/auth.js) — this Worker only needs to recognise
+  // that shared session's token, so its TOKEN_SECRET / PASSPHRASE_A /
+  // PASSPHRASE_B secrets must match the "photo-gallery" Worker's
+  // exactly (see auth.js's file header for why). Display names come
+  // from `photos.personLabels` above, not repeated here.
   //
   // IMPORTANT — this worker is deliberately GAME-AGNOSTIC: its /chips
   // endpoint stores one balance per PERSON ("a"/"b"), not per game (see
-  // cloudflare/cloudflare-worker-blackjack/worker.js's file header). Any
-  // game's module can read/spend/win the exact same shared balance just
-  // by pointing its own `workerUrl` entry at this same URL — that's all
-  // `blackjack` and `spiderette` below are doing. Adding a new chip-based
-  // game later should follow the same pattern: add `<newGame>: {
-  // workerUrl: 'https://blackjack.niels-luijten7.workers.dev' }` here
-  // (same URL, no other setup needed) rather than inventing a new
+  // cloudflare/chips/chips_worker.js's file header). Any game's module
+  // can read/spend/win the exact same shared balance just by pointing
+  // its own `workerUrl` entry at this same URL — that's all
+  // `blackjack` and `spiderette` below are doing. Adding a new
+  // chip-based game later should follow the same pattern: add
+  // `<newGame>: { workerUrl: 'https://blackjack.niels-luijten7.workers.dev' }`
+  // here (same URL, no other setup needed) rather than inventing a new
   // worker/KV namespace for it — that's what keeps every game's chips
   // automatically in sync with each other.
   blackjack: {

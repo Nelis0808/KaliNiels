@@ -2,6 +2,7 @@
    PAGE: PHOTOS (photos.html)
    ============================================================= */
 
+/* Page wrapper */
 #photoGalleryApp {
   padding-bottom: var(--space-8);
 }
@@ -23,6 +24,7 @@
   color: var(--color-text-muted);
 }
 
+/* Hides the note once a session is active */
 .pg-loggedout-note.hidden {
   display: none;
 }
@@ -42,6 +44,7 @@
 }
 
 /* == PLACEHOLDER (logged-out) TILES == */
+/* One placeholder tile shown before login, gradient background set per-tile below */
 .pg-locked-card {
   aspect-ratio: 4 / 3;
   border-radius: var(--radius);
@@ -51,6 +54,7 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 🔒 icon centered on each placeholder tile */
 .pg-lock {
   font-size: 2.5rem;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
@@ -97,11 +101,13 @@
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
+/* Lift effect on hover */
 .pg-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
 }
 
+/* Clickable thumbnail button, opens the lightbox */
 .pg-card-trigger {
   display: block;
   width: 100%;
@@ -112,10 +118,12 @@
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
+/* No pointer cursor while a photo is still loading/unavailable */
 .pg-card-trigger:disabled {
   cursor: default;
 }
 
+/* Keyboard focus ring, inset so it doesn't get clipped by the rounded corners */
 .pg-card-trigger:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: -3px;
@@ -137,6 +145,7 @@
   padding: var(--space-2);
 }
 
+/* Shimmering placeholder background while a real thumbnail loads */
 .pg-card-loading {
   background-image: linear-gradient(110deg, var(--color-border) 8%, var(--color-surface) 18%, var(--color-border) 33%);
   background-size: 200% 100%;
@@ -147,11 +156,13 @@
   to { background-position-x: -200%; }
 }
 
+/* Fallback background when a thumbnail fails to load */
 .pg-card-error {
   background-color: var(--color-border);
   position: relative;
 }
 
+/* Error message overlay shown on a failed thumbnail */
 .pg-card-error::after {
   content: '⚠️ could not load!';
   position: absolute;
@@ -165,6 +176,7 @@
   padding: var(--space-2);
 }
 
+/* Short caption under each thumbnail */
 .pg-card figcaption {
   padding: var(--space-3) var(--space-4);
   color: var(--color-text-muted);
@@ -186,10 +198,12 @@
   -webkit-backdrop-filter: blur(4px);
 }
 
+/* Locks page scroll behind the open lightbox */
 body.pg-lightbox-locked {
   overflow: hidden;
 }
 
+/* Centered content wrapper inside the lightbox overlay */
 .pg-lightbox-content {
   margin: 0;
   max-width: min(90vw, 1100px);
@@ -200,6 +214,7 @@ body.pg-lightbox-locked {
   gap: var(--space-3);
 }
 
+/* The full-size photo itself */
 .pg-lightbox-content img {
   max-width: 100%;
   max-height: 75vh;
@@ -208,6 +223,7 @@ body.pg-lightbox-locked {
   object-fit: contain;
 }
 
+/* Full caption text shown below the enlarged photo */
 .pg-lightbox-content figcaption {
   color: var(--color-white);
   text-align: center;
@@ -216,6 +232,7 @@ body.pg-lightbox-locked {
   line-height: 1.5;
 }
 
+/* Close (×) button, top-right of the lightbox */
 .pg-lightbox-close {
   position: absolute;
   top: var(--space-5);
@@ -231,6 +248,7 @@ body.pg-lightbox-locked {
   transition: background var(--transition-fast);
 }
 
+/* Hover/focus feedback for the close button */
 .pg-lightbox-close:hover, .pg-lightbox-close:focus-visible {
   background: rgba(255, 255, 255, 0.3);
   outline: 2px solid var(--color-white);
@@ -238,6 +256,7 @@ body.pg-lightbox-locked {
 }
 
 
+/* Respect reduced-motion: no hover lift, no shimmer animation */
 @media (prefers-reduced-motion: reduce) {
   .pg-card { transition: none; }
   .pg-card-loading { animation: none; }

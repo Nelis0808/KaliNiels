@@ -34,6 +34,7 @@ const CATEGORIES = {
 const ideasCache = new Map(); // category -> string[]
 const lastShown = new Map();  // category -> last idea shown, to avoid an immediate repeat
 
+// Fetches (and caches) the idea list for a category
 async function loadIdeas(category) {
   if (ideasCache.has(category)) return ideasCache.get(category);
 
@@ -47,6 +48,7 @@ async function loadIdeas(category) {
   return ideas;
 }
 
+// Picks a random idea, retrying to avoid immediately repeating the last one
 function pickRandom(ideas, avoid) {
   if (ideas.length <= 1) return ideas[0];
 
@@ -58,6 +60,7 @@ function pickRandom(ideas, avoid) {
   return choice;
 }
 
+// Loads, picks, and renders one idea card with a fade-in reveal
 async function revealRandomIdea(category) {
   const { resultId } = CATEGORIES[category];
   const container = document.getElementById(resultId);
@@ -90,6 +93,7 @@ async function revealRandomIdea(category) {
   }
 }
 
+// Wires up the Binnen/Buiten buttons on date.html
 export function initDatePicker() {
   const buttons = Object.entries(CATEGORIES).filter(
     ([, config]) => document.getElementById(config.buttonId)

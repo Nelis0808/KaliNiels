@@ -23,6 +23,7 @@ import { escapeHtml, EXCLUSIVE_DROPDOWN_EVENT, announceDropdownOpen } from './ut
 
 const DROPDOWN_ID = 'settings';
 
+// Renders one disabled "Binnenkort" settings row from config.js
 function renderPlaceholder(setting) {
   const emoji = setting.emoji ? `${setting.emoji} ` : '';
   return `
@@ -33,6 +34,7 @@ function renderPlaceholder(setting) {
   `;
 }
 
+// Renders placeholder settings and wires up open/close for the panel.
 export function initSettingsDropdown() {
   const dropdown = document.getElementById('navSettingsDropdown');
   const trigger = document.getElementById('navSettingsBtn');
@@ -45,11 +47,13 @@ export function initSettingsDropdown() {
     extraContainer.innerHTML = extraSettings.map(renderPlaceholder).join('');
   }
 
+  // Closes the dropdown and updates aria-expanded
   function closeMenu() {
     dropdown.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
   }
 
+  // Toggles the dropdown open/closed
   function toggleMenu() {
     const isOpen = dropdown.classList.toggle('open');
     trigger.setAttribute('aria-expanded', String(isOpen));

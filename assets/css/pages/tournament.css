@@ -11,6 +11,7 @@
   text-align: center;
 }
 
+/* Row of quick-pick preset buttons above the textarea */
 .tournament-presets {
   display: flex;
   flex-wrap: wrap;
@@ -19,6 +20,7 @@
   margin-bottom: var(--space-5);
 }
 
+/* Textarea for typing/pasting the list of options to bracket */
 #tournamentOptions {
   display: block;
   width: 100%;
@@ -35,16 +37,19 @@
   resize: vertical;
 }
 
+/* Focus ring on the textarea */
 #tournamentOptions:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
+/* Inline validation/error message under the textarea */
 .tournament-error {
   color: var(--color-danger);
   min-height: 1.5em;
 }
 
+/* Centers the "Start" button */
 #tournamentStart {
   display: flex;
   margin-inline: auto;
@@ -61,6 +66,7 @@
   margin-top: var(--space-6);
 }
 
+/* One of the two head-to-head choice buttons */
 .match-option {
   flex: 1;
   min-height: 160px;
@@ -79,6 +85,7 @@
     box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
+/* Highlight the option on hover/focus */
 .match-option:hover,
 .match-option:focus-visible {
   transform: scale(1.03);
@@ -87,6 +94,7 @@
   color: var(--color-white);
 }
 
+/* "VS" divider between the two match options */
 .match-vs {
   display: flex;
   align-items: center;
@@ -97,6 +105,7 @@
   font-size: var(--fs-lg);
 }
 
+/* "Ronde X van Y" progress text under the match */
 .tournament-progress {
   text-align: center;
   color: var(--color-text-muted);
@@ -108,10 +117,12 @@
   text-align: center;
 }
 
+/* Winner's name heading */
 .tournament-winner h2 {
   color: var(--color-primary);
 }
 
+/* Scrollable list of every match played, shown after the winner */
 .tournament-history {
   text-align: center;
   margin-top: var(--space-6);
@@ -122,16 +133,19 @@
   overflow-y: auto;
 }
 
+/* One row in the match history list */
 .tournament-history li {
   padding-block: var(--space-2);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-muted);
 }
 
+/* No divider under the final row */
 .tournament-history li:last-child {
   border-bottom: none;
 }
 
+/* Stack the two match options vertically on narrow screens */
 @media (max-width: 600px) {
   .match {
     flex-direction: column;

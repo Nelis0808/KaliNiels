@@ -14,6 +14,7 @@
 
 import { qsa, prefersReducedMotion } from './utils.js';
 
+// Types out one heading's text character by character
 function typewrite(heading) {
   const fullText = heading.textContent;
   heading.setAttribute('aria-label', fullText);
@@ -23,6 +24,7 @@ function typewrite(heading) {
   heading.textContent = '';
   let i = 0;
 
+  // Reveals one more character, then schedules the next
   function typeNextChar() {
     if (i <= fullText.length) {
       heading.textContent = fullText.slice(0, i);
@@ -34,6 +36,7 @@ function typewrite(heading) {
   typeNextChar();
 }
 
+// Runs the typewriter effect on every opted-in [data-typewriter] heading
 export function initTypewriter() {
   qsa('[data-typewriter]').forEach(typewrite);
 }
