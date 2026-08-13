@@ -112,7 +112,7 @@ export const siteConfig = {
       description: 'Wacht tot 1 februari...',
       href: 'valentine.html',
       emoji: '❣️',
-      status: 'available',
+      status: 'coming-soon',
     },
     {
       title: 'Bucket List',
