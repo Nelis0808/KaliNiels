@@ -25,7 +25,6 @@ step, no framework.
 
 ```
 DateSite/
-├── .nojekyll                    Tells GitHub Pages to serve every file as-is (§8) — keep this
 ├── index.html                 Home — "days together" counter + card grid to every page
 ├── date.html                  Random date-idea picker (indoor/outdoor)
 ├── tournament.html            Paste any list, run a single-elimination bracket
@@ -270,20 +269,10 @@ works unchanged whether it ends up at a custom domain, a user site
 (`username.github.io`), or a project site
 (`username.github.io/DateSite/`).
 
-1. Push this repo to GitHub. A `.nojekyll` file already sits at the
-   project root — **keep it there** (don't delete it, and make sure
-   your `.gitignore` doesn't exclude dotfiles). It tells GitHub Pages
-   to serve every file exactly as-is instead of running it through
-   Jekyll first, which otherwise silently skips or mangles certain
-   files/folders and is a common cause of a page loading its static
-   HTML but none of its JavaScript-driven content.
+1. Push this repo to GitHub.
 2. Repo **Settings → Pages → Source** → "Deploy from a branch" → pick
    your branch (e.g. `main`) and folder `/ (root)`.
 3. Wait a minute, then visit the URL GitHub shows you.
-4. **Hard-refresh** the first time you check it (Ctrl/Cmd+Shift+R, or
-   an incognito/private window) — GitHub Pages' CDN and your browser
-   can both cache an earlier, broken deploy for a while after you've
-   pushed a fix.
 
 **Custom domain (optional):** add a `CNAME` file at the project root
 containing just your domain name, and configure the DNS records
@@ -291,16 +280,6 @@ GitHub documents for Pages. If you do this, also add your custom
 domain to `ALLOWED_ORIGINS` in every Cloudflare Worker you've deployed
 (§6, and see
 [ACTION-EXPANSION-PLAN.md §1.3](./ACTION-EXPANSION-PLAN.md#13-cors--do-this-for-every-worker-you-deploy)).
-
-**Page loads but only shows plain text, no header/cards/counter?**
-That's `assets/js/main.js` failing to run — every page now shows a red
-banner explaining why when this happens (instead of just looking
-broken), so open the page and read it, or open the browser console
-(F12) for the full error. The two most common causes on GitHub Pages
-specifically: a missing/removed `.nojekyll` file (§8.1 above), or a
-stale cached copy of the page from before a fix was pushed (try a hard
-refresh or incognito window first, always, before troubleshooting
-further).
 
 Everything above applies equally to **Netlify / Vercel** — connect the
 repo, leave the build command empty, publish directory `/`.
