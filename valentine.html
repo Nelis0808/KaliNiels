@@ -82,25 +82,7 @@ VOOR JE 'M LIVE ZET:
 
   <div data-include="chrome-end"></div>
 
-  <!-- Plain (non-module) safety net: if assets/js/main.js fails to
-       even load as a module (404, wrong MIME type, ad-blocker,
-       blocked script, ...), the browser gives no visible error and
-       the page is left showing only its static HTML — exactly like
-       this. type="module" scripts fail silently in that case, so
-       this tiny classic script checks in a few seconds later
-       whether main.js ever ran (it sets window.__siteMainRan = true
-       right after its imports run) and shows a plain-language message if
-       not, instead of a page that just looks broken with no clue why. -->
-  <script>
-    setTimeout(function () {
-      if (window.__siteMainRan) return;
-      var banner = document.createElement('div');
-      banner.setAttribute('role', 'alert');
-      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#B00020;color:#fff;font:14px/1.5 system-ui,sans-serif;padding:10px 16px;text-align:center;';
-      banner.textContent = 'Deze pagina kon assets/js/main.js niet laden (netwerkfout, verkeerd pad, of geblokkeerd script). Open de browserconsole (F12) voor details.';
-      document.body && document.body.prepend(banner);
-    }, 4000);
-  </script>
+  <script src="assets/js/main-watchdog.js"></script>
   <script type="module" src="assets/js/main.js"></script>
 </body>
 </html>
