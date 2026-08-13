@@ -31,17 +31,18 @@ const POLL_INTERVAL_MS = 5000;
 const LONG_PRESS_MS = 350;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
-// Cycle order the priority swatch button on each row steps through.
 // Priority-dot emoji set, matching whichever color theme is active
 function getDots() {
-  return localStorage.getItem('color-theme-preference').toLowerCase() === 'blue'
-    ? ['🔴', '🟠', '🟡', '⚪']
-    : ['🌹', '🏵️', '🌻', '💮'];
+  return document.documentElement.getAttribute('data-color-theme') === 'pink'
+    ? ['🌹', '🏵️', '🌻', '💮']
+    : ['🔴', '🟠', '🟡', '⚪']; // blue is the default, same as theme.js
 }
 
 let dots = getDots();
 
-// The 4 priority levels, each with its current-theme dot emoji
+// The 4 priority levels, each with its current-theme dot emoji.
+// Also the cycle order the priority swatch button on each row steps
+// through (see cyclePriority()).
 function getPriorities() {
   return [
     { level: 'high',   label: 'Hoog',      dot: dots[0] },
@@ -548,9 +549,15 @@ export function initTodo() {
     }
   });
 
-  // ---- Theme change listener ----------------------------------------
+  // ---- Theme change listener ------------------------------------------
+  // Dark/light (themechange) doesn't affect the dots, but is included
+  // here too in case future priority styling ever depends on it;
+  // colorthemechange (blue/pink) is the one that actually swaps them.
 
   window.addEventListener('themechange', () => {
+    renderAll();
+  });
+  window.addEventListener('colorthemechange', () => {
     updateThemeDots();
     renderAll();
   });
