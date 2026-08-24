@@ -99,6 +99,10 @@ export function initTodo() {
   let items = []; // flat, both people — see file header
   let pollTimer = null;
   let saveInFlight = false;
+  // True while either column is mid-drag. Set from within setupColumn()
+  // (once per person), read by startPolling() below to avoid a poll
+  // clobbering an in-flight drag — see that function for why.
+  let draggingLi = null;
   const newItemPriority = { a: DEFAULT_PRIORITY, b: DEFAULT_PRIORITY };
 
   const statusEl = qs('#todoStatus', root);
@@ -395,7 +399,9 @@ export function initTodo() {
     }
 
     // ---- Drag to reorder (scoped to this column's <ul> only) ------------
-    let draggingLi = null;
+    // draggingLi itself lives in the outer scope (shared across both
+    // columns) so startPolling() can see it; only dragPointerId is
+    // local to this column.
     let dragPointerId = null;
     let longPressTimer = null;
     let longPressStart = null;

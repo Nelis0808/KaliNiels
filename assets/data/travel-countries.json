@@ -5,13 +5,23 @@
   "countries": [
     { "iso": "NL", "name": "Nederland",   "status": "visited",  "cityPins": {
       "klarenbeek":    { "lon": 6.0333,  "lat": 52.2167 },
-      "leidschendam":  { "lon": 4.4028,  "lat": 52.0833 }
+      "leidschendam":  { "lon": 4.4028,  "lat": 52.0833 },
+      "zwolle":        { "lon": 6.0944,  "lat": 52.5125 },
+      "delft":         { "lon": 4.3571,  "lat": 52.0116 },
+      "utrecht":       { "lon": 5.1214,  "lat": 52.0908 },
+      "amsterdam":     { "lon": 4.8952,  "lat": 52.3702 },
+      "zandvoort":     { "lon": 4.5341,  "lat": 52.3749 },
+      "dedemsvaart":   { "lon": 6.4667,  "lat": 52.6000 },
+      "amersfoort":    { "lon": 5.3875,  "lat": 52.1552 },
+      "eindhoven":     { "lon": 5.4778,  "lat": 51.4408 },
+      "kaatsheuvel":   { "lon": 5.0667,  "lat": 51.6667 }
     } },
     { "iso": "ES", "name": "Spanje",      "status": "visited",  "cityPins": {
-      "madrid": { "lon": -3.7038, "lat": 40.4168 }
+      "madrid":  { "lon": -3.7038, "lat": 40.4168 },
+      "sevilla": { "lon": -5.9836, "lat": 37.3891 }
     } },
     { "iso": "DE", "name": "Duitsland",   "status": "visited",  "cityPins": {
-      "unterscheffach": { "lon": 10.2833, "lat": 47.6167 }
+      "schwäbisch hall": { "lon": 9.7375, "lat": 49.1122 }
     } },
     { "iso": "IT", "name": "Italië",      "status": "visited",  "cityPins": {
       "pisa":               { "lon": 10.4017, "lat": 43.7228 },
@@ -34,20 +44,21 @@
       "point clare":         { "lon": 151.3486, "lat": -33.4372 },
       "gosford":             { "lon": 151.3428, "lat": -33.4267 },
       "daintree national park": { "lon": 145.4172, "lat": -16.2500 },
-      "melbourne":           { "lon": 144.9631, "lat": -37.8136 }
+      "melbourne":           { "lon": 144.9631, "lat": -37.8136 },
+      "palm cove":           { "lon": 145.6658, "lat": -16.7469 },
+      "wooroonooran":        { "lon": 145.8202, "lat": -17.3911 },
+      "port douglas":        { "lon": 145.4652, "lat": -16.4834 }
     } },
     { "iso": "AT", "name": "Oostenrijk",  "status": "visited",  "cityPins": {
       "wenen": { "lon": 16.3738, "lat": 48.2082 }
     } },
     { "iso": "IE", "name": "Ierland",     "status": "visited",  "cityPins": {
+      "cill chiaráin": { "lon": -9.7396, "lat": 53.3232 },
       "galway": { "lon": -9.0568,  "lat": 53.2707 },
       "dublin": { "lon": -6.2603,  "lat": 53.3498 }
     } },
     { "iso": "SE", "name": "Zweden",      "status": "visited",  "cityPins": {
       "gothenburg": { "lon": 11.9746, "lat": 57.7089 }
-    } },
-    { "iso": "PT", "name": "Portugal",    "status": "wishlist", "cityPins": {
-      "porto": { "lon": -8.6291, "lat": 41.1579 }
     } },
     { "iso": "US", "name": "Amerika",     "status": "wishlist", "cityPins": {
       "new york":  { "lon": -74.0060, "lat": 40.7128 },
