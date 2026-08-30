@@ -25,13 +25,39 @@
 // is ever visible to a logged-out visitor.
 // =================================================================
 
-import { qs, escapeHtml, siteRootUrl } from './utils.js';
+import { qs, escapeHtml, siteRootUrl, pinEdgeClasses } from './utils.js';
 import { initPanZoom } from './map-pan-zoom.js';
 import { loadWorldData, makeWorldProjection, geometryToPathD } from './geo-render.js';
 import { attachCoordHover } from './map-coord-hover.js';
 
 const DATA_URL = new URL('../../data/travel-countries.json', import.meta.url);
 const WORLD_SVG_WIDTH = 2000;
+
+// Rough size of a GeoJSON feature, used only to pick the "real" landmass
+// when two features share an iso2 code (see byIso in renderWorldMap
+// below) — the bounding-box diagonal in degrees is plenty precise for
+// that, no need for an actual area calculation.
+function featureSpan(feature) {
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  const visit = (coords, depth) => {
+    if (depth === 0) {
+      const [lon, lat] = coords;
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    } else {
+      coords.forEach((c) => visit(c, depth - 1));
+    }
+  };
+  const geom = feature.geometry;
+  // Polygon.coordinates is [ring][point] (depth 2 to reach a [lon,lat]
+  // pair); MultiPolygon.coordinates adds one more level, [poly][ring][point]
+  // (depth 3) — same normalization geometryToPathD uses in geo-render.js.
+  const depth = geom.type === 'Polygon' ? 2 : geom.type === 'MultiPolygon' ? 3 : 0;
+  visit(geom.coordinates, depth);
+  return (maxLon - minLon) + (maxLat - minLat);
+}
 
 export function initReizen() {
   const root = document.getElementById('reizenApp');
@@ -43,7 +69,6 @@ export function initReizen() {
 
   let countries = [];
   let worldProjection = null;
-  const isoNameMap = new Map(); // iso2 -> country name, from world-map.json
 
   // ---- Bottom-left "which country is this?" hover label -----------------
   const hoverLabel = document.createElement('div');
@@ -60,7 +85,7 @@ export function initReizen() {
   viewport.addEventListener('pointerover', (event) => {
     const shape = event.target.closest?.('.rz-country-shape');
     if (shape) {
-      showHoverName(isoNameMap.get(shape.dataset.iso2));
+      showHoverName(shape.dataset.name);
       return;
     }
     const pin = event.target.closest?.('.rz-pin');
@@ -104,11 +129,23 @@ export function initReizen() {
     const projection = makeWorldProjection(WORLD_SVG_WIDTH);
     worldProjection = projection;
     viewport.style.aspectRatio = projection.aspectRatio;
-    const byIso = new Map(worldFeatures.map((f) => [f.properties.iso2, f]));
-    worldFeatures.forEach((f) => isoNameMap.set(f.properties.iso2, f.properties.name));
+    // Some Natural Earth entries share an iso2 with a tiny disputed/outlying
+    // territory (e.g. Australia's mainland AND "Ashmore and Cartier Is."
+    // both carry "AU"). A plain Map would let whichever one happens to come
+    // last in the array silently win the pin position — so when several
+    // features share a code, keep the one with the largest bounding box
+    // (the actual country, not a speck of an island) for pin placement.
+    const byIso = new Map();
+    worldFeatures.forEach((f) => {
+      const code = f.properties.iso2;
+      const existing = byIso.get(code);
+      if (!existing || featureSpan(f) > featureSpan(existing)) {
+        byIso.set(code, f);
+      }
+    });
 
     const pathMarkup = worldFeatures
-      .map((f) => `<path d="${geometryToPathD(f.geometry, projection.project)}" class="rz-country-shape" data-iso2="${f.properties.iso2}"></path>`)
+      .map((f) => `<path d="${geometryToPathD(f.geometry, projection.project)}" class="rz-country-shape" data-iso2="${f.properties.iso2}" data-name="${escapeHtml(f.properties.name)}"></path>`)
       .join('');
     const svg = `<svg viewBox="${projection.viewBox}" class="rz-world-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wereldkaart">${pathMarkup}</svg>`;
     mapFrame.insertAdjacentHTML('afterbegin', svg);
@@ -135,7 +172,13 @@ export function initReizen() {
     pin.type = 'button';
     pin.dataset.iso = country.iso;
     const statusClass = country.status === 'both' ? 'both' : country.status === 'visited' ? 'visited' : 'wishlist';
-    pin.className = `rz-pin rz-pin-${statusClass}`;
+    // Edge classes (see pinEdgeClasses() in utils.js) flip/shift the
+    // label for any pin that lands near the map's border — a country
+    // whose centroid/override sits low or to the side (e.g. the US
+    // pin, or Miami's own city pin on reizen/land.html) would
+    // otherwise get its label clipped by the viewport or buried
+    // under the fixed coord-badge/hover-label corners.
+    pin.className = ['rz-pin', `rz-pin-${statusClass}`, ...pinEdgeClasses(country.__x, country.__y)].join(' ');
     pin.style.left = `${country.__x}%`;
     pin.style.top = `${country.__y}%`;
     pin.setAttribute('aria-label', `${country.name}, klik om naar de landkaart te gaan`);

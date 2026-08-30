@@ -2,7 +2,7 @@
 // MAP COORD HOVER — "what lon/lat is under my cursor?"
 // -----------------------------------------------------------------
 // Purely a data-entry aid: since pin positions in travel-countries.json
-// (and a country's cityPins) are plain {lon, lat} numbers, this shows
+// (and a country's visitedCityPins) are plain {lon, lat} numbers, this shows
 // a small floating readout that follows the cursor while hovering any
 // map, so you can point at the right spot and copy the numbers
 // straight into the JSON file instead of guessing.

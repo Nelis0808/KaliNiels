@@ -101,6 +101,64 @@
   background: var(--color-border);
 }
 
+/* Live study-timer clock shown in the navbar on every page (see
+   assets/js/modules/study-timer-badge.js) whenever a timer session is
+   running (or just finished and awaiting attention). Hidden entirely
+   the rest of the time. */
+.study-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.study-timer-badge:hover, .study-timer-badge:focus-visible {
+  background: var(--color-border);
+}
+
+.study-timer-badge.hidden {
+  display: none;
+}
+
+/* Small green "running" dot, turns red (and pulses) once the step has
+   actually hit zero and is waiting for the person to come back. */
+.study-timer-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2fb35c;
+  flex-shrink: 0;
+}
+
+.study-timer-badge-dot.is-done {
+  background: #e2433a;
+  animation: study-timer-badge-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes study-timer-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+/* Explicit, visible opt-in for the "studie timer" desktop notification
+   (see study-timer-badge.js) — shown only while permission isn't
+   granted yet. Deliberately a plain, always-legible bell rather than
+   something that blends into the icon-btn hover state, since its
+   whole job is to be noticed and clicked once. */
+.study-timer-notify-btn.is-blocked {
+  opacity: .55;
+}
+
 /* Hamburger button, hidden on desktop and revealed by the media query below */
 #menuBtn {
   display: none;
@@ -110,6 +168,14 @@
 @media (max-width: 768px) {
   #menuBtn {
     display: inline-flex;
+  }
+
+  /* Keep just the live time on small screens — the badge's padding
+     and label would otherwise crowd out the hamburger button. */
+  .study-timer-badge {
+    padding: 0 10px;
+    font-size: 12px;
+    gap: 6px;
   }
 
   .nav-links {

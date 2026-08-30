@@ -73,6 +73,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Studie Timer',
+      description: 'Studeren met een eigen planning en groeiende beloningsboom.',
+      href: 'timer.html',
+      emoji: '🌱',
+      status: 'available',
+    },
+    {
       title: 'Lijstje',
       description: 'Samen bijgehouden, altijd in sync.',
       href: 'lijstje.html',

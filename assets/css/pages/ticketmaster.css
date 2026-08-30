@@ -285,17 +285,23 @@
 
 /* Small screens: stack filters and let the text inputs fill the width,
    but keep the buttons a normal, tappable size instead of stretching
-   full-width (which made "Toevoegen"/"Zoeken" look oversized). */
+   full-width (which made "Toevoegen"/"Zoeken" look oversized). Gaps
+   are tightened too — the input-drops-to-full-width layout below
+   already pushes each row's button onto its own line, so the default
+   (desktop-sized) gaps stacked on top of that left a big empty-looking
+   band between e.g. the search button and the "Toevoegen" input below it. */
 @media (max-width: 600px) {
   .tm-filters {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-2);
   }
 
   .tm-search-row,
   .tm-favorites-row,
   .tm-country-row {
     width: 100%;
+    gap: var(--space-2);
   }
 
   .tm-search-row input,

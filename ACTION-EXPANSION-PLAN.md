@@ -268,12 +268,31 @@ before chips, since chips reuses its secrets.
   optional 3rd/4th (country, place) are what power Onze Reizen's city
   pins — a photo without them just never shows up on the travel map,
   everything else about it works the same.
-- **`/travel` is deliberately public** (no login check) — it only ever
-  returns city names + photo counts + a "visited" flag, built from
-  `captions.json`'s optional fields, never filenames or anything
-  usable to fetch a real photo. This is what lets Onze Reizen's map
-  page show a "places we've been" teaser to a logged-out visitor while
-  the actual photos stay behind login.
+- **Stock/moodboard photos for wishlist cities:** give an entry a full
+  `http(s)://` URL as its key instead of a filename — e.g. an Unsplash
+  photo:
+  ```json
+  { "https://images.unsplash.com/photo-xxxx": ["Short caption", "Longer caption... https://example.com", "Portugal", "Porto"] }
+  ```
+  A URL-keyed entry is never looked up in R2 (it doesn't need to be —
+  the URL is already a public image), and is therefore never gated
+  behind login the way a real photo is. It's returned directly by the
+  public `/travel` endpoint instead, alongside that city's real-photo
+  count, and shows up as that wishlist pin's moodboard on
+  `reizen/land.html` — same short-caption/click-to-enlarge/
+  longer-caption-with-a-working-link treatment as a real photo. See
+  `cloudflare/gallery/captions.json` for a worked Porto example, and
+  `travel-countries.json`'s own `_unvisitedCityPinsComment`.
+- **`/travel` is deliberately public** (no login check) — for real
+  (filename-keyed) photos it only ever returns city names + photo
+  counts + a "visited" flag, built from `captions.json`'s optional
+  fields, never filenames or anything usable to fetch a real photo.
+  URL-keyed (stock) entries are the one exception: their caption + URL
+  ARE returned here, since that URL was already public before it went
+  into `captions.json`. This is what lets Onze Reizen's map page show
+  a "places we've been" teaser (and wishlist-city moodboards) to a
+  logged-out visitor while the actual private photos stay behind
+  login.
 - Routes: `POST /login`, `GET /photos`, `GET /photos/object?key=...`,
   `GET /travel?country=XX` (public).
 

@@ -139,3 +139,43 @@
   --color-border:     rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
+
+/* =============================================================
+   SMOOTH THEME SWITCHING
+   Flipping data-theme (light/dark) or data-color-theme (blue/pink)
+   on <html> (see assets/js/modules/theme.js) changes a handful of
+   CSS custom properties instantly — every element reading one of
+   them recomputes in the same frame, which is what made both
+   switches feel like an abrupt flash rather than a transition.
+   Custom properties themselves can't be animated in every browser
+   we support, but the actual visual properties elements paint with
+   (background-color, color, border-color, box-shadow, fill/stroke
+   for inline SVG) CAN be, so transitioning those instead achieves
+   the same smooth effect. Scoped to a shortlist of properties
+   (not `all`) so this never fights the component-specific
+   transitions already defined elsewhere (e.g. .tm-card's hover
+   lift, .tm-tab's border/color transition) — those keep their own
+   timing untouched since this rule doesn't declare `transform` etc.
+
+   `background-image` is in that shortlist too, not just
+   `background-color` — .hero (hero.css) paints its two radial
+   gradients as a `background-image` layer, built from the very same
+   theme tokens (--color-primary/-secondary/-bg, swapped for their
+   `-dark` counterparts in dark mode, see dark-mode.css). Without it,
+   only the hero's flat base color used to fade smoothly while the
+   gradients themselves snapped instantly, so the whole hero still
+   looked like it "jumped" on every theme/color-theme toggle.
+   Browsers interpolate between two same-shaped gradients (same
+   function + stop count, which every theme variant here is) just
+   like any other transitionable value. */
+*, *::before, *::after {
+  transition: background-color var(--transition), background-image var(--transition),
+              color var(--transition), border-color var(--transition),
+              box-shadow var(--transition), fill var(--transition), stroke var(--transition);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none;
+  }
+}

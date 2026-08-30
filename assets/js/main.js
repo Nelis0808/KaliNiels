@@ -57,6 +57,8 @@ import { initBlackjack } from './modules/blackjack.js';
 import { initSpiderette } from './modules/spiderette.js';
 import { initSnake } from './modules/snake.js';
 import { initWallz } from './modules/wallz.js';
+import { initStudyTimer } from './modules/study-timer.js';
+import { initStudyTimerBadge } from './modules/study-timer-badge.js';
 import { initValentine } from './modules/valentine.js';
 
 // Tells the plain <script> watchdog in every page's HTML (right
@@ -120,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initNavDropdown', initNavDropdown);        /* Must run before initMobileMenu*/
   safeInit('initSettingsDropdown', initSettingsDropdown);
   safeInit('initProfileDropdown', initProfileDropdown);
+  safeInit('initStudyTimerBadge', initStudyTimerBadge);
   safeInit('initMobileMenu', initMobileMenu);
   safeInit('initScrolledShadow', initScrolledShadow);
   safeInit('initActiveNavLink', initActiveNavLink);
@@ -154,7 +157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initBlackjack', initBlackjack);         // games/blackjack.html
   safeInit('initSpiderette', initSpiderette);       // games/spiderette.html
   safeInit('initSnake', initSnake);                 // games/snake.html
-  safeInit('initWallz', initWallz);                 // games/wallz.html
+  safeInit('initWallz', initWallz);
+  safeInit('initStudyTimer', initStudyTimer);                 // games/wallz.html
   safeInit('initValentine', initValentine);         // valentine.html
 
   console.log(`${document.title} — initialized ✅`);

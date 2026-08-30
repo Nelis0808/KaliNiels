@@ -1,0 +1,100 @@
+/* Study timer keeps the working area compact enough for one laptop screen. */
+.study-page{padding-top:var(--space-6);padding-bottom:var(--space-9)}
+.study-layout{display:flex;flex-direction:column;gap:var(--space-6)}
+.study-top-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,430px);gap:var(--space-6);align-items:stretch}
+.study-left-column,.study-tree-column,.study-main-top{display:flex;flex-direction:column;gap:var(--space-4)}
+.study-left-column{height:100%}
+.study-main-top{flex:1;justify-content:space-between}
+.study-tree-column{height:100%}
+.study-tree-column .tree-card{height:100%;display:flex;flex-direction:column}
+.study-presets-row{display:flex;flex-direction:column;gap:var(--space-6);width:100%}
+.card-like{background:var(--color-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:var(--space-5)}
+.section-heading-row,.timer-topline,.timer-actions,.range-label-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
+.section-heading-row h1,.section-heading-row h2{margin:0}.section-heading-row h1{font-size:var(--fs-h2)}.section-heading-row h2{font-size:var(--fs-h3)}
+.eyebrow{display:block;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:800;color:var(--color-primary);margin-bottom:2px}
+.progress-track,.growth-track{height:10px;background:var(--color-bg);border-radius:var(--radius-full);overflow:hidden}.progress-fill{height:100%;width:0;background:var(--color-primary);border-radius:inherit}
+.timer-card{text-align:center;min-height:0;flex:1;display:flex;flex-direction:column;justify-content:center}.timer-topline{font-size:var(--fs-sm);color:var(--color-text-muted)}.phase-badge{padding:.35rem .75rem;border-radius:var(--radius-full);background:color-mix(in srgb,var(--color-primary) 12%,transparent);color:var(--color-primary);font-weight:800}
+.timer-display{font-family:var(--font-display);font-size:clamp(5.2rem,9vw,8.6rem);line-height:.95;margin:clamp(1.6rem,4vh,2.6rem) 0 .7rem;letter-spacing:.02em;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+.timer-task{font-size:var(--fs-lg);font-weight:800;min-height:1.4em}.timer-task-meta{font-size:var(--fs-sm);color:var(--color-text-muted);min-height:1.3em;margin-top:.2rem}
+.timer-actions{justify-content:center;margin:var(--space-4) 0;flex-wrap:wrap}.next-session-box{border-top:1px solid var(--color-border);padding-top:var(--space-4);text-align:left}.next-session-heading{font-weight:800;margin-bottom:var(--space-3)}
+/* Fixed min-width so the combined start/pause button doesn't change
+   size (and shove the buttons next to it around) when its label
+   swaps between the shorter "▶ Start" and longer "Ⅱ Pauze". */
+#timerToggle{min-width:130px}
+.next-session-box label,.range-label-row label{font-size:var(--fs-sm);font-weight:700}.next-session-box input[type=text],.tree-name-row input,.form-grid input,.step-editor input,.step-editor select{width:100%;padding:.65rem .75rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text);font:inherit}.next-session-box input[type=text]{margin:.4rem 0 var(--space-3)}
+.full-range{display:block;width:100%;margin:.55rem 0 0;padding:0;accent-color:var(--color-primary);cursor:pointer;box-sizing:border-box;-webkit-appearance:none;appearance:none;background:transparent;height:20px}
+/* Native range inputs keep their thumb fully inside the track bounds,
+   so the thumb's center never quite reaches the left/right edges at
+   min/max — the track (and the filled portion) visibly stops short of
+   the ends. Custom track + thumb styling fixes this: the track spans
+   the input's full width edge-to-edge, and the thumb is free to
+   center exactly on 0%/100%, so both visually reach the ends. */
+.full-range::-webkit-slider-runnable-track{width:100%;height:6px;border-radius:var(--radius-full);background:var(--color-bg)}
+.full-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:var(--color-primary);border:0;margin-top:-6px;cursor:pointer}
+.full-range::-moz-range-track{width:100%;height:6px;border-radius:var(--radius-full);background:var(--color-bg)}
+.full-range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--color-primary);border:0;cursor:pointer}
+.full-range::-moz-range-progress{height:6px;border-radius:var(--radius-full);background:var(--color-primary)}
+.range-label-row output{font-weight:800;min-width:55px;text-align:right}
+.study-tree-column{min-width:0}.tree-card{position:sticky;top:84px;overflow:hidden}
+/* Fixed height (not min-height off --fs-h3) so swapping the title <-> the
+   input never shifts the rest of the page: both share the exact same
+   font-size, line-height, padding and border-width, so their rendered
+   heights match exactly rather than merely "close enough". */
+.tree-name-heading{text-align:center;padding-top:var(--space-1);height:calc(var(--fs-h3) * .82 * 1.3 + .4rem + 2px);display:flex;align-items:center;justify-content:center}
+.tree-title-editable{margin:0;cursor:pointer;border-radius:var(--radius-sm);padding:.2rem .6rem;border:1px solid transparent;display:inline-block;line-height:1.3;font-size:calc(var(--fs-h3) * .82);box-sizing:border-box;transition:background .15s ease}
+.tree-title-editable:hover,.tree-title-editable:focus-visible{background:var(--color-bg);outline:none}
+.tree-title-input{display:block;margin:0 auto;text-align:center;font-size:calc(var(--fs-h3) * .82);line-height:1.3;font-weight:800;font-family:inherit;color:var(--color-text);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.2rem .6rem;width:min(100%,320px);box-sizing:border-box}
+.tree-scene{flex:1;min-height:520px;margin:var(--space-4) calc(var(--space-5) * -1) 0;position:relative;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,color-mix(in srgb,var(--color-tertiary) 14%,var(--color-surface)),var(--color-surface));border-top:1px solid var(--color-border);overflow:hidden}
+.tree-sky{position:absolute;top:18px;left:0;right:0;text-align:center;color:var(--color-primary);opacity:.45;font-size:1.1rem}.tree-graphic{font-size:clamp(9rem,17vw,17rem);line-height:1;margin-bottom:42px;position:relative;z-index:2;white-space:nowrap}.tree-ground{position:absolute;bottom:0;left:-10%;width:120%;height:70px;background:color-mix(in srgb,var(--color-success) 30%,var(--color-bg));border-radius:50% 50% 0 0}
+.growth-stats{display:flex;justify-content:space-between;margin:var(--space-4) 0 var(--space-2);font-size:var(--fs-sm)}.growth-stats span{color:var(--color-text-muted)}
+.rewards-card{max-height:180px;overflow:auto}.reward-list{display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-3)}.reward-item{padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius);display:flex;align-items:center;gap:var(--space-3)}.reward-icon{font-size:1.55rem}.reward-item strong{display:block}.reward-item small{color:var(--color-text-muted)}.reward-item .reward-claim{margin-left:auto;flex-shrink:0}.reward-claimed{opacity:.55}.reward-locked{filter:saturate(.4);opacity:.65}
+.preset-card{margin-top:0}.preset-help{color:var(--color-text-muted);margin:.5rem auto 0;text-align:center;max-width:640px}
+.preset-heading-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--space-3)}
+.preset-heading-left{justify-self:start;margin-bottom:0}
+.preset-heading-center{justify-self:center;text-align:center;white-space:nowrap}
+.preset-heading-right{justify-self:end}
+@media(max-width:620px){.preset-heading-row{grid-template-columns:1fr;justify-items:center;text-align:center;gap:var(--space-2)}.preset-heading-left,.preset-heading-right{justify-self:center}}
+.preset-list{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-4);justify-content:center}
+.session-tag{font-weight:600;font-size:.75rem;color:var(--color-text-muted)}
+.preset-item{display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-bg);flex:1 1 260px;max-width:320px}
+.preset-item.selected{border-color:var(--color-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--color-primary) 14%,transparent)}
+.preset-info{min-width:0}.preset-info strong{display:block}.preset-info small{display:block;color:var(--color-text-muted);margin-top:3px}
+.preset-buttons{display:flex;gap:var(--space-1);flex-shrink:0;flex-wrap:wrap;justify-content:center}
+.step-editor-list{display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-4)}
+.editor-card{margin-top:0;border:1px solid color-mix(in srgb,var(--color-primary) 25%,var(--color-border))}
+.form-grid{display:grid;grid-template-columns:1fr;gap:var(--space-3);margin-top:var(--space-4);justify-items:center}
+.form-grid label{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);font-size:var(--fs-sm);font-weight:700;width:100%;max-width:420px}
+.form-grid label input{width:100%;text-align:center}
+.visually-hidden-label{width:100%;max-width:420px}
+.step-editor{display:grid;grid-template-columns:105px minmax(170px,1fr) 148px minmax(150px,1fr) auto;gap:var(--space-2);align-items:end;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius);background:var(--color-bg);max-width:900px;margin:0 auto;width:100%;text-align:left}
+.step-editor label{font-size:.75rem;font-weight:700}.difficulty-field{min-width:0}.remove-step{padding:.55rem}
+.duration-field{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.duration-field-label{font-size:.75rem;font-weight:700}
+.duration-inputs{display:flex;gap:.35rem}
+.duration-subfield{display:flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:600;color:var(--color-text-muted);flex:1;min-width:0}
+.duration-subfield input{width:100%;min-width:0;padding:.5rem .4rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text);font:inherit;text-align:center}
+.duration-subfield span{flex-shrink:0}
+.editor-actions{display:flex;align-items:center;justify-content:center;gap:var(--space-3);margin-top:var(--space-4);flex-wrap:wrap}
+.study-login{max-width:650px;margin:var(--space-8) auto;text-align:center}.hidden{display:none!important}
+.rating-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:var(--z-overlay);display:grid;place-items:center;padding:var(--space-5)}.rating-dialog{width:min(540px,100%);background:var(--color-surface);color:var(--color-text);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-6);text-align:center}.rating-dialog h2{margin:.2rem 0}.rating-dialog p{color:var(--color-text-muted)}.rating-label-row{display:flex;justify-content:space-between;gap:var(--space-2);font-size:var(--fs-sm);color:var(--color-text-muted);align-items:center}.rating-label-row output{font-weight:800;color:var(--color-text)}.rating-dialog textarea{display:block;width:100%;margin-top:var(--space-4);padding:.75rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text);font:inherit;resize:vertical}
+@media(max-width:980px){.study-top-row{grid-template-columns:minmax(0,1fr) 320px}.tree-scene{min-height:400px}.timer-display{font-size:clamp(4.3rem,8vw,6.5rem)}}
+@media(max-width:800px){.study-top-row{grid-template-columns:1fr}.study-tree-column{order:-1}.tree-card{position:relative;top:auto}.tree-scene{min-height:340px}.rewards-card{max-height:none}.timer-display{font-size:clamp(4.3rem,19vw,7.6rem)}.preset-item{flex:1 1 100%;max-width:none}}
+@media(max-width:620px){.study-page{padding-top:var(--space-4)}.card-like{padding:var(--space-4)}.form-grid{grid-template-columns:1fr}.step-editor{grid-template-columns:1fr 1fr}.step-editor label:nth-child(2){grid-column:span 2}.duration-field{grid-column:span 2}.difficulty-field{grid-column:span 2}.step-editor .remove-step{grid-column:2;justify-self:end}.preset-buttons{width:100%;justify-content:center}.timer-display{font-size:clamp(4.1rem,19vw,6.3rem)}}
+
+/* Timer visibility toggle: hide the distracting readout without removing controls. */
+.timer-card{width:100%;box-sizing:border-box}
+.timer-visibility{border:0;background:transparent;color:var(--color-text-muted);line-height:1;padding:.4rem;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .15s ease,background .15s ease,color .15s ease}
+.timer-visibility svg{width:20px;height:20px;display:block}
+.timer-visibility .icon-eye-off{display:none}
+.timer-blurred .timer-visibility .icon-eye{display:none}
+.timer-blurred .timer-visibility .icon-eye-off{display:block}
+.timer-visibility:hover{background:var(--color-bg);color:var(--color-primary);transform:scale(1.05)}
+.timer-blurred .timer-card .timer-display,.timer-blurred .timer-card .timer-task,.timer-blurred .timer-card .timer-task-meta{filter:blur(22px);user-select:none}
+.timer-display{user-select:none}
+.empty-field{visibility:hidden}
+.single-field{grid-template-columns:minmax(0,1fr)}
+
+/* Deliberately not sticky: the tree stays in the normal page flow. */
+.study-tree-column .tree-card{position:relative;top:auto}
+
+@media(max-width:800px){.study-tree-column .tree-card{position:relative;top:auto}}

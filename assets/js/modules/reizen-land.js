@@ -16,7 +16,7 @@
 //      captions.json for that country (see that worker's own
 //      comment + ACTION-EXPANSION-PLAN.md), and positions each one
 //      either at a manually-measured real {lon,lat} from
-//      travel-countries.json's "cityPins" (projected through the
+//      travel-countries.json's "visitedCityPins" (projected through the
 //      exact same projection as the country outline, so it's always
 //      pixel-perfect) or a deterministic radial fallback — see
 //      reizen-cities.js.
@@ -44,7 +44,7 @@ import { siteConfig } from '../config.js';
 import { qs, escapeHtml, siteRootUrl } from './utils.js';
 import { initPanZoom } from './map-pan-zoom.js';
 import { loadCountryData, makeFitProjection, geometryToPathD } from './geo-render.js';
-import { loadCities, positionCities, renderCityPins, loadCityPhotos } from './reizen-cities.js';
+import { loadCities, positionCities, positionWishlistCities, renderCityPins, loadCityPhotos } from './reizen-cities.js';
 import { attachCoordHover } from './map-coord-hover.js';
 
 const COUNTRIES_URL = new URL('../../data/travel-countries.json', import.meta.url);
@@ -153,20 +153,21 @@ export function initReizenLand() {
       const country = (data.countries || []).find((c) => c.iso.toUpperCase() === iso);
       const displayName = country?.name || iso;
       headingEl.textContent = `🌍 ${displayName}`;
-      document.title = `${displayName}, Onze Reizen`;
+      document.title = `${displayName} - Onze Reizen`;
 
       const projection = await loadBackground(displayName);
-      loadCitiesForCountry(displayName, country?.cityPins || {}, projection);
+      loadCitiesForCountry(displayName, country?.visitedCityPins || {}, country?.unvisitedCityPins || {}, projection);
     })
     .catch(async () => {
       headingEl.textContent = `🌍 ${iso}`;
+      document.title = `${iso} - Onze Reizen`;
       const projection = await loadBackground(iso);
-      loadCitiesForCountry(iso, {}, projection);
+      loadCitiesForCountry(iso, {}, {}, projection);
     });
 
   // ---- Load cities for this country from the public travel endpoint ----
   // Fetches this country's cities from the Worker, positions them, and renders their pins
-  function loadCitiesForCountry(countryQuery, cityPins, projection) {
+  function loadCitiesForCountry(countryQuery, visitedCityPins, unvisitedCityPins, projection) {
     if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
       statusEl.textContent = '⚠️ Nog geen Worker gekoppeld. Zie ACTION-EXPANSION-PLAN.md.';
       subEl.textContent = '';
@@ -177,20 +178,29 @@ export function initReizenLand() {
 
     loadCities(workerUrl, countryQuery)
       .then((rawCities) => {
-        if (rawCities.length === 0) {
+        const countryLower = countryQuery.toLowerCase();
+        // positionCities() already folds in any visitedCityPins city the
+        // Worker didn't report (no photos catalogued yet) — see that
+        // function's comment — so this still renders city pins even
+        // when rawCities comes back empty.
+        const visitedCities = positionCities(rawCities, visitedCityPins, projection?.project, projection)
+          .map((c) => ({ ...c, __countryLower: countryLower }));
+        // Same rawCities list as above — as of the Worker's stock-photo
+        // support it already carries each place's public stockPhotos,
+        // which positionWishlistCities() matches in by name.
+        const wishlistCities = positionWishlistCities(unvisitedCityPins, rawCities, projection?.project, projection)
+          .map((c) => ({ ...c, __countryLower: countryLower }));
+
+        cities = [...visitedCities, ...wishlistCities];
+
+        if (cities.length === 0) {
           statusEl.textContent = 'Nog geen steden gecatalogiseerd voor dit land. Voeg "Land"/"Plaats" toe aan foto-bijschriften in captions.json.';
           subEl.textContent = '';
           return;
         }
-        const countryLower = countryQuery.toLowerCase();
-        cities = positionCities(rawCities, cityPins, projection?.project, projection).map((c) => ({ ...c, __countryLower: countryLower }));
 
-        const visitedCount = cities.filter((c) => c.visited).length;
-        const preciseCount = cities.filter((c) => c.precise).length;
         statusEl.textContent = `${cities.length} plek${cities.length === 1 ? '' : 'ken'} gevonden, klik op een pin voor de foto's.`;
-        subEl.textContent = preciseCount > 0
-          ? `${visitedCount} van ${cities.length} al bezocht · ${preciseCount} precies geplaatst.`
-          : `${visitedCount} van ${cities.length} al bezocht.`;
+        subEl.textContent = '';
 
         renderCityPins(mapFrame, cities, (city, pinEl) => selectCity(city, pinEl));
       })

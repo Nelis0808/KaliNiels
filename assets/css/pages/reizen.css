@@ -215,7 +215,7 @@
 /* == COORD HOVER BADGE ==
    Pinned to the bottom-right corner of the map viewport while
    hovering, showing the lon/lat under the cursor — a data-entry aid
-   for filling in travel-countries.json / cityPins with precise
+   for filling in travel-countries.json / visitedCityPins with precise
    coordinates. See map-coord-hover.js. */
 .rz-coord-badge {
   position: absolute;
@@ -278,7 +278,12 @@
   background: none;
   padding: 0;
   cursor: pointer;
-  z-index: 4;
+  /* Above the fixed corner badges (.rz-coord-badge / .rz-hover-label,
+     both z-index 5) so a pin that happens to land in one of those
+     corners (e.g. Miami, bottom-right of the US map) is never
+     visually buried under them — see also the .rz-pin-edge-* classes
+     below, which handle the label spilling off the viewport edge. */
+  z-index: 6;
 }
 
 /* Hover/selected pop scale, kept separate from .rz-pin's own transform */
@@ -356,6 +361,11 @@
   background: var(--color-success);
 }
 
+/* Wishlist cities (a city we'd like to visit but haven't yet) simply
+   stay unstyled beyond the base .rz-pin-city rule above — that base
+   color (--color-secondary, blue) IS the "Op verlanglijstje" legend
+   dot already, so no extra class/color is needed here. */
+
 /* Name tooltip under a pin, hidden until hover/focus/selected */
 .rz-pin-label {
   position: absolute;
@@ -385,6 +395,33 @@
 .rz-pin-selected .rz-pin-label {
   opacity: 1;
   box-shadow: 0 0 0 2px var(--color-primary), var(--shadow-sm);
+}
+
+/* == EDGE PINS ==
+   Any pin whose %-position lands near the map viewport's border
+   (e.g. Miami, bottom-right of the US map) gets one of these classes
+   from pinEdgeClasses() in utils.js — purely geometric, so it covers
+   every country/city automatically, not just the ones we've noticed
+   so far. Without this, a bottom-edge pin's label (normally BELOW
+   the dot, see .rz-pin-label above) would spill past the map
+   viewport's `overflow: hidden` edge and get clipped, or sit right
+   under the fixed .rz-coord-badge / .rz-hover-label corner badges. */
+.rz-pin-edge-bottom .rz-pin-label {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: var(--space-1);
+}
+
+.rz-pin-edge-left .rz-pin-label {
+  left: 0;
+  transform: none;
+}
+
+.rz-pin-edge-right .rz-pin-label {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 /* Persistent highlight ring for the currently-selected pin */
@@ -480,13 +517,35 @@
   text-align: center;
 }
 
+/* Defensive full-width, in case any ancestor ever gets a flex/grid
+   display added later — without this, a flex/grid parent would let
+   this div (and the centered message/grid inside it) shrink-wrap to
+   its content instead of spanning the panel, throwing off centering. */
+#reizenCityPhotos {
+  width: 100%;
+}
+
 /* "Foto's" heading above the city photo strip */
 .rz-city-panel h3 {
   margin-bottom: var(--space-1);
 }
 
-/* Message shown when a country/city has no photos yet */
+/* Message shown when a country/city has no photos yet — explicit
+   flex centering (not just text-align) so it's reliably dead-center
+   across the panel's full width. `max-width: none` is required here:
+   the global `p { max-width: 65ch }` rule (typography.css) applies to
+   every <p> including this one, capping it at 65ch and — since that
+   rule has no `margin-inline: auto` — left-anchoring that capped box
+   instead of centering it, which is exactly why this used to stop
+   well short of the panel's full width while a plain <h3> (not
+   matched by that `p` rule) stretched all the way across. */
 .rz-city-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-height: 3em;
   text-align: center;
   color: var(--color-text-muted);
 }
@@ -642,13 +701,27 @@ body.rz-photo-lightbox-locked {
   object-fit: contain;
 }
 
-/* Full caption text shown below the enlarged photo */
+/* Full caption text shown below the enlarged photo — rendered via
+   linkifyText() (see reizen-cities.js's openPhotoLightbox()), so a
+   captions.json longer description can contain a working link. */
 .rz-photo-lightbox-content figcaption {
   color: var(--color-white);
   text-align: center;
   font-size: var(--fs-md);
   max-width: 65ch;
   line-height: 1.5;
+}
+
+.rz-photo-lightbox-content figcaption a {
+  color: var(--color-white);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rz-photo-lightbox-content figcaption a:hover,
+.rz-photo-lightbox-content figcaption a:focus-visible {
+  color: var(--color-primary);
 }
 
 /* Close (×) button, top-right of the lightbox */

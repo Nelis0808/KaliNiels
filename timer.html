@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Studie Timer</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/study-timer.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section class="container study-page" id="studyTimerApp">
+      <div class="study-layout">
+        <div class="study-top-row">
+          <div class="study-left-column">
+            <div class="study-main-top">
+              <div class="timer-card card-like">
+                <div class="timer-topline">
+                  <span id="timerPhaseBadge" class="phase-badge">Klaar</span>
+                  <span id="timerStepText">0 / 5 taken gedaan</span>
+                  <button id="timerVisibility" class="timer-visibility" type="button" aria-label="Timer verbergen" title="Timer verbergen">
+                    <svg class="icon-eye" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M1.5 12C1.5 12 5.25 5 12 5C18.75 5 22.5 12 22.5 12C22.5 12 18.75 19 12 19C5.25 19 1.5 12 1.5 12Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="12" cy="12" r="3.25" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                    <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M3.5 3.5L20.5 20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      <path d="M10.6 5.14C11.06 5.05 11.53 5 12 5C18.75 5 22.5 12 22.5 12C22.5 12 21.6 13.68 19.94 15.31M6.5 6.62C3.55 8.4 1.5 12 1.5 12C1.5 12 5.25 19 12 19C13.86 19 15.44 18.47 16.74 17.73" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14.3 14.3C13.74 14.74 13.03 15 12.25 15C10.45 15 9 13.55 9 11.75C9 10.97 9.26 10.26 9.7 9.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <div id="timerDisplay" class="timer-display" aria-live="polite">01:00:00</div>
+                <div id="currentTaskName" class="timer-task">Kies hieronder je planning</div>
+                <div id="currentTaskMeta" class="timer-task-meta"></div>
+                <div class="timer-actions">
+                  <button id="timerToggle" class="btn btn-primary" type="button">▶ Start</button>
+                  <button id="timerReset" class="btn btn-ghost" type="button">↺ Reset</button>
+                  <button id="skipStep" class="btn btn-ghost hidden" type="button">⏭ Overslaan</button>
+                </div>
+                <div class="timer-visibility-hint" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="study-tree-column">
+            <div class="tree-card card-like">
+              <div class="tree-name-heading">
+                <h2 id="treeTitle" class="tree-title-editable" tabindex="0" role="button" title="Klik om te bewerken">Mijn appelboom</h2>
+                <input id="treeNameInput" type="text" maxlength="30" placeholder="Mijn boom" class="tree-title-input hidden">
+              </div>
+              <div class="tree-scene" id="treeScene" aria-label="Je boom">
+                <div class="tree-sky">✦　·　✧　·　✦</div>
+                <div id="treeGraphic" class="tree-graphic">🌱</div>
+                <div class="tree-ground"></div>
+              </div>
+              <div class="growth-stats"><strong id="growthPoints">0 / 100 groei</strong><span id="treeCountText">Boom 1</span></div>
+              <div class="growth-track" aria-label="Boomgroei"><div id="growthBar" class="progress-fill"></div></div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="study-presets-row">
+          <section class="preset-card card-like">
+            <div class="section-heading-row preset-heading-row">
+              <span class="eyebrow preset-heading-left">Je planning</span>
+              <h2 class="preset-heading-center">Wijzig presets</h2>
+              <button id="newPresetBtn" class="btn btn-primary btn-sm preset-heading-right" type="button">＋ Nieuwe preset</button>
+            </div>
+            <p class="preset-help">Pas je planning per dag aan. Taken en pauzes kunnen onbeperkt na elkaar worden gezet.</p>
+            <div id="presetList" class="preset-list"></div>
+          </section>
+
+          <section id="presetEditor" class="editor-card card-like hidden">
+            <div class="section-heading-row preset-heading-row">
+              <span class="eyebrow preset-heading-left">Planning aanpassen</span>
+              <h2 id="editorTitle" class="preset-heading-center">Nieuwe preset</h2>
+              <button id="closeEditorBtn" class="btn btn-ghost btn-sm preset-heading-right" type="button">Sluiten</button>
+            </div>
+            <form id="presetForm">
+              <div class="form-grid single-field">
+                <label class="visually-hidden-label"><input id="presetName" required maxlength="60" placeholder="Studiedag"></label>
+              </div>
+              <div id="stepEditorList" class="step-editor-list"></div>
+              <div class="editor-actions">
+                <button id="addStepBtn" class="btn" type="button">＋ Taak / pauze toevoegen</button>
+                <button id="useOnceBtn" class="btn btn-outline" type="button">Alleen deze sessie gebruiken</button>
+                <button class="btn btn-primary" type="submit">Preset opslaan</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="chrome-end"></div>
+  <script src="assets/js/main-watchdog.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
