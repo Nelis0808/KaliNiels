@@ -3,7 +3,15 @@
 .study-layout{display:flex;flex-direction:column;gap:var(--space-6)}
 .study-top-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,430px);gap:var(--space-6);align-items:stretch;max-height:725px}
 .study-left-column,.study-tree-column,.study-main-top{display:flex;flex-direction:column;gap:var(--space-4)}
-.study-left-column{height:100%;max-height:725px}
+/* overflow:hidden matches the treatment .tree-card already gets below
+   (see .study-tree-column .tree-card). Without it, if this column's
+   content ever needed more than its own max-height (e.g. a very large
+   OS/browser font-size zoom), it would silently paint outside its own
+   box rather than being contained — which is what "overlapping
+   containers" looks like, since .study-presets-row sits directly
+   after this in normal flow and would get painted over. Clipping is
+   the safe failure mode; growing past max-height quietly isn't. */
+.study-left-column{height:100%;max-height:725px;overflow:hidden}
 .study-main-top{flex:1;justify-content:space-between}
 .study-tree-column{height:100%;max-height:725px}
 .study-tree-column .tree-card{height:100%;max-height:725px;min-height:0;display:flex;flex-direction:column}
@@ -70,7 +78,13 @@
    the page. Letting flex distribute space here means the scene always
    gets exactly "whatever's left after the fixed-height siblings",
    which can never exceed the card's own budget. */
-.tree-scene{flex:1;min-height:0;margin:var(--space-4) calc(var(--space-5) * -1) 0;position:relative;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,color-mix(in srgb,var(--color-tertiary) 14%,var(--color-surface)),var(--color-surface));border-top:1px solid var(--color-border);overflow:hidden}
+/* container-type:inline-size turns .tree-scene into a size query
+   container, so .tree-graphic below can size its font off cqw (a %
+   of THIS element's own width) instead of vw (a % of the whole page).
+   That's what makes the tree's size actually track the real box it
+   lives in at every window width — see .tree-graphic for why vw was
+   the wrong unit here. */
+.tree-scene{flex:1;min-height:0;margin:var(--space-4) calc(var(--space-5) * -1) 0;position:relative;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,color-mix(in srgb,var(--color-tertiary) 14%,var(--color-surface)),var(--color-surface));border-top:1px solid var(--color-border);overflow:hidden;container-type:inline-size}
 .tree-sky{position:absolute;top:14px;left:0;right:0;text-align:center;color:var(--color-primary);opacity:.45;font-size:1.1rem}
 /* Two decorative clouds, one on each side of the scene. Purely
    decorative (aria-hidden in the HTML) so they don't affect the
@@ -86,12 +100,16 @@
    center point instead of growing outward from its top-left corner,
    which a font-size change alone would do. */
 .tree-cloud{position:absolute;font-size:2.1rem;opacity:.85;filter:drop-shadow(0 2px 3px rgba(0,0,0,.06));pointer-events:none;z-index:1;line-height:1}
-.tree-cloud-left{left:0;top:0;transform:translate(-50%,-50%) scale(5);transform-origin:center}
-/* Mirrored (negative scaleX) rather than a plain scale(5), and offset
-   10px further down than the left cloud's corner pin — a small,
-   deliberate asymmetry so the two clouds don't read as an exact
+/* Pinned further in from the left edge (14%, not the corner at 0) so
+   the visible slice of the cloud drifts in noticeably closer to the
+   horizontal middle of the scene, rather than sitting right in the
+   corner. */
+.tree-cloud-left{left:5%;top:15px;transform:translate(-50%,-50%) scale(5);transform-origin:center}
+/* Mirrored (negative scaleX) rather than a plain scale(5), and pinned
+   noticeably lower than the left cloud's corner pin (64px, not 10px)
+   — a deliberate asymmetry so the two clouds don't read as an exact
    mirror-image pair. */
-.tree-cloud-right{right:0;top:10px;transform:translate(50%,-50%) scaleX(-5) scaleY(5);transform-origin:center}
+.tree-cloud-right{right:0;top:35px;transform:translate(50%,-50%) scaleX(-5) scaleY(5);transform-origin:center}
 /* .tree-graphic's box is deliberately NOT a fixed square (aspect-ratio
    1/1): the tree needed to grow roughly 3x taller without also
    growing 3x wider (which would collide with the side clouds and
@@ -106,19 +124,39 @@
    why a transform (not a font-size or box-size change) is what keeps
    this box, and everything outside it, fixed. */
 .tree-graphic{position:relative;z-index:2;margin-bottom:16px;width:min(60%,260px);max-width:100%;display:flex;align-items:flex-end;justify-content:center;
-  /* clamp()'s middle term is viewport-HEIGHT based (vh) so the tree's
-     slot is bounded by the scene's available height — but font-size
-     alone doesn't know about .tree-graphic's own *width* constraint
-     above (a single glyph doesn't wrap or get clipped by a narrower
-     box the way text would), so on a narrow card a tall clamp() value
-     could still render visually wider than the box and spill past the
-     scene's top edge. Wrapping the whole clamp() in min(...,32vw) is
-     what actually ties the size back to the card's width too, so this
-     slot can never overflow the scene regardless of how tall OR how
-     narrow the card is. This size is the FULLY GROWN tree's size —
-     see .tree-growth-wrap for how a not-yet-grown tree renders
-     smaller than this without changing the slot itself. */
-  font-size:min(32vw, clamp(8rem, 50vh, 19rem));
+  /* clamp()'s middle term is height-based (vh) so the tree's slot is
+     bounded by the scene's available height. The width-based term
+     used to be 32vw (a % of the whole PAGE), which doesn't know or
+     care how wide the actual tree column/card is — at in-between
+     window widths, just before the 980px/800px breakpoints reflow the
+     grid into a narrower column, the glyph would size itself for the
+     full page while the box above (width:60%) was only 60% of that
+     much-narrower column, so the glyph rendered wider than its own
+     box and .tree-scene's overflow:hidden had to clip it. That's what
+     made the layout look broken at certain window sizes rather than
+     just shrinking cleanly. cqw is a % of .tree-scene's own width
+     (see its container-type:inline-size) instead of the page's, so
+     this now always tracks the real box it has to fit in. This size
+     is the FULLY GROWN tree's size — see .tree-growth-wrap for how a
+     not-yet-grown tree renders smaller than this without changing the
+     slot itself. */
+  font-size:clamp(8rem, min(70cqw, 50vh), 19rem);
+  /* Fixed height (not auto/content-based) so this box's OWN layout
+     contribution — and therefore .tree-scene's, .tree-card's and
+     .study-top-row's — never changes between growth stages. 1.5em
+     reserves the space needed for the LARGEST base glyph (GLYPH_SCALE's
+     1.5 multiplier in study-timer.js, used from the "Jong boompje"
+     stage onward — i.e. the mature-tree size, matching "Volle boom",
+     the second-to-last of the 6 growth stages). A freshly-planted
+     seedling (GLYPH_SCALE 0.5, half that size) then sits inside this
+     SAME fixed box instead of shrinking the box around it; align-items:
+     flex-end (above) keeps every stage's glyph bottom-anchored to this
+     box's bottom edge regardless. Before this, the box's height came
+     from its content alone, which is what made the whole
+     .tree-scene/.tree-card/.study-top-row visibly grow and shrink as
+     the tree grew. Keep in sync with GLYPH_SCALE's highest value in
+     study-timer.js if that ever changes. */
+  height:1.5em;
 }
 /* This is what actually grows: a transform:scale() shrinks/grows the
    tree ITSELF (base + all its accents/fruit together, as one rigid
@@ -169,6 +207,23 @@
 .duration-subfield input{width:100%;min-width:0;padding:.5rem .4rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);color:var(--color-text);font:inherit;text-align:center}
 .duration-subfield span{flex-shrink:0}
 .editor-actions{display:flex;align-items:center;justify-content:center;gap:var(--space-3);margin-top:var(--space-4);flex-wrap:wrap}
+/* .step-editor's wide layout above has hard floors (105px + 170px min
+   + 148px + 150px min + the remove button + gaps ≈ 670px of content,
+   plus this card's own padding ≈ 720px total) that the @media(max-
+   width:620px) rule further down switches away from — but only below
+   620px. Between roughly 620-900px there wasn't anywhere for that
+   ~720px of grid content to shrink to, so it overflowed .editor-card
+   sideways at those in-between window widths instead of reflowing —
+   exactly the kind of overlapping/broken layout a resize could
+   trigger. This mirrors the same 2-column rules the 620px query
+   already uses, just switching over earlier so it never gets tight. */
+@media(max-width:900px){
+  .step-editor{grid-template-columns:1fr 1fr}
+  .step-editor label:nth-child(2){grid-column:span 2}
+  .duration-field{grid-column:span 2}
+  .difficulty-field{grid-column:span 2}
+  .step-editor .remove-step{grid-column:2;justify-self:end}
+}
 .study-login{max-width:650px;margin:var(--space-8) auto;text-align:center}.hidden{display:none!important}
 .rating-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:var(--z-overlay);display:grid;place-items:center;padding:var(--space-5)}.rating-dialog{width:min(540px,100%);background:var(--color-surface);color:var(--color-text);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:var(--space-6);text-align:center}.rating-dialog h2{margin:.2rem 0}.rating-dialog p{color:var(--color-text-muted)}.rating-label-row{display:flex;justify-content:space-between;gap:var(--space-2);font-size:var(--fs-sm);color:var(--color-text-muted);align-items:center}.rating-label-row output{font-weight:800;color:var(--color-text)}.rating-dialog textarea{display:block;width:100%;margin-top:var(--space-4);padding:.75rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-bg);color:var(--color-text);font:inherit;resize:vertical}
 /* "Boom voltooid" showcase (see showTreeCompleted() in

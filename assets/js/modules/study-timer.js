@@ -53,17 +53,17 @@ const TREE_CATALOG = [
     { base: '🌱', accents: [] },
     { base: '🌿', accents: [] },
     { base: '🌳', accents: [] },
-    { base: '🌳', accents: [] },
     { base: '🌳', accents: ['🍂'] },
     { base: '🌳', accents: ['🍂', '🍂'] },
+    { base: '🌳', accents: ['🍂', '🍂', '🍂'] },
   ] },
   { id: 'pine', name: 'Den', stages: [
     { base: '🌱', accents: [] },
     { base: '🌲', accents: [] },
     { base: '🌲', accents: [] },
-    { base: '🌲', accents: [] },
     { base: '🌲', accents: ['❄️'] },
     { base: '🌲', accents: ['❄️', '❄️'] },
+    { base: '🌲', accents: ['❄️', '❄️', '❄️'] },
   ] },
 ];
 
@@ -375,8 +375,8 @@ export function initStudyTimer() {
   // one big centered emoji filling most of #treeGraphic's box, and any
   // accent glyphs (fruit, blossom, decoration) are absolutely
   // positioned in fixed slots that sit ON the base's canopy — see
-  // ACCENT_SLOTS below, tuned by eye against the actual 🌳/🌲/🌸 glyph
-  // shapes so 1-3 accents land inside the leafy area rather than
+  // ACCENT_POSITIONS below, tuned by eye against the actual 🌳/🌲/🌸
+  // glyph shapes so 1-3 accents land inside the leafy area rather than
   // beside it. Previously every glyph in a stage (tree AND fruit)
   // was plain inline text at the same size, which is what made fruit
   // render to the right of the tree instead of on it, and forced the
@@ -395,17 +395,36 @@ export function initStudyTimer() {
   // renderer outside that scene, like the tree-completed celebration
   // dialog's smaller, fixed-size showcase — passing it there sets an
   // inline font-size instead of relying on the scene's CSS.
-  const ACCENT_SLOTS = [
-    [[50, 26]],
-    [[64, 22], [36, 30]],
-    [[66, 16], [34, 22], [50, 34]],
+  // A single ordered list of accent positions (NOT one separate list
+  // per accent count, as before) — stage.accents.length just takes
+  // the first N of these. That means each individual fruit keeps the
+  // exact same spot as more fruit are added later, instead of every
+  // already-placed fruit also jumping to a new spot the moment a new
+  // one appears (which happened before, since the 1-accent and
+  // 2-accent cases used entirely unrelated [x,y] arrays). Order:
+  // first fruit lands mid-right toward the top of the canopy, second
+  // lands mid-left, third lands bottom-right — tuned by eye against
+  // the actual 🌳/🌲/🌸 glyph shapes so all three sit inside the leafy
+  // area rather than beside it.
+  const ACCENT_POSITIONS = [
+    [45, 23], // mid-right, upper canopy
+    [32, 48], // mid-left
+    [62, 65], // bottom-right
+    [40, 70], // bottem
+    [53, 72], // bottem
   ];
   // Per-glyph-type size multiplier, applied on top of whatever
   // .tree-graphic's own font-size is. Seedling/sprout are drawn small
   // relative to a full tree (they're meant to look like they've only
   // just emerged from the ground), while an actual tree canopy (🌳/🌲)
-  // is drawn bigger so it dominates the scene once grown.
-  const GLYPH_SCALE = { '🌱': 0.5, '🌿': 0.5, '🌳': 1.5 };
+  // is drawn bigger so it dominates the scene once grown. Both mature
+  // canopy glyphs share the same 1.5 multiplier so every tree in
+  // TREE_CATALOG ends up the same size once fully grown — 🌲 used to
+  // fall through to the 1x default below and render visibly smaller
+  // than 🌳 at the same stage/points, which is also what made
+  // .tree-graphic's box (see study-timer.css) size itself
+  // inconsistently depending on which tree was currently active.
+  const GLYPH_SCALE = { '🌱': 0.5, '🌿': 0.5, '🌳': 1.5, '🌲': 1.5 };
   // 🌿 (the sprout stage) is rotated so its stem reads as emerging at
   // an angle out of the ground rather than standing perfectly
   // upright — a small counter-clockwise tilt is what actually sells
@@ -413,6 +432,19 @@ export function initStudyTimer() {
   // it automatically follows 🌿 into whichever tree/stage uses it,
   // rather than being tied to a specific TREE_CATALOG entry.
   const GLYPH_ROTATE_DEG = { '🌿': -30 };
+  // Small upward nudge, ONLY for the mature canopy glyphs (🌳/🌲) — at
+  // GLYPH_SCALE's bigger 1.5x size, an emoji's own built-in padding
+  // below its visible canopy/trunk scales up right along with the
+  // font-size, which left a fully-grown tree looking like it was
+  // rooted noticeably lower into the hill than the seedling (🌱,
+  // GLYPH_SCALE 0.5, already sits correctly and is deliberately left
+  // at 0 here — its bottom is the anchor point everything else should
+  // match). Keyed by glyph, like GLYPH_ROTATE_DEG, so it follows
+  // whichever tree/stage uses that base. This is an eyeballed
+  // estimate — emoji rendering differs by OS/browser, so nudge the
+  // percentage if a tree still doesn't look planted at the same spot
+  // as the seedling.
+  const GLYPH_LIFT_PCT = { '🌳': 6, '🌲': 6 };
   // Smallest the tree ever renders at, even at 0% progress — a literal
   // 0 scale would make the very first seedling invisible, which reads
   // as broken rather than "just planted".
@@ -439,9 +471,13 @@ export function initStudyTimer() {
     const glyphScale = GLYPH_SCALE[stage.base] ?? 1;
     base.style.fontSize = `${glyphScale}em`;
     const rotateDeg = GLYPH_ROTATE_DEG[stage.base];
-    if (rotateDeg) base.style.transform = `rotate(${rotateDeg}deg)`;
+    const liftPct = GLYPH_LIFT_PCT[stage.base] ?? 0;
+    const baseTransforms = [];
+    if (rotateDeg) baseTransforms.push(`rotate(${rotateDeg}deg)`);
+    if (liftPct) baseTransforms.push(`translateY(-${liftPct}%)`);
+    if (baseTransforms.length) base.style.transform = baseTransforms.join(' ');
     wrap.append(base);
-    const slots = ACCENT_SLOTS[Math.max(0, stage.accents.length - 1)] || [];
+    const slots = ACCENT_POSITIONS.slice(0, stage.accents.length);
     stage.accents.forEach((accent, i) => {
       const [x, y] = slots[i] || [50, 30];
       const span = document.createElement('span');
