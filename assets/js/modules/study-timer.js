@@ -113,7 +113,7 @@ const DEFAULT_OTHER_PRESET = {
 // Fades out and stops as soon as the "session done" rating popup it
 // belongs to is closed — see the MutationObserver set up in
 // initStudyTimer() below.
-const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp4', import.meta.url).href;
+const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp3', import.meta.url).href;
 const TIMER_SOUND_FADE_MS = 600;
 
 function clone(value) { return structuredClone(value); }
