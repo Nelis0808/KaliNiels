@@ -46,7 +46,7 @@
                   <button id="timerReset" class="btn btn-ghost" type="button">↺ Reset</button>
                   <button id="skipStep" class="btn btn-ghost hidden" type="button">⏭ Overslaan</button>
                 </div>
-                <div class="timer-visibility-hint" aria-hidden="true"></div>
+                <div id="timerVisibilityHint" class="timer-visibility-hint" role="status"></div>
               </div>
             </div>
           </div>
@@ -59,7 +59,9 @@
               </div>
               <div class="tree-scene" id="treeScene" aria-label="Je boom">
                 <div class="tree-sky">✦　·　✧　·　✦</div>
-                <div id="treeGraphic" class="tree-graphic">🌱</div>
+                <span class="tree-cloud tree-cloud-left" aria-hidden="true">☁️</span>
+                <span class="tree-cloud tree-cloud-right" aria-hidden="true">☁️</span>
+                <div id="treeGraphic" class="tree-graphic"><span class="tree-base-emoji">🌱</span></div>
                 <div class="tree-ground"></div>
               </div>
               <div class="growth-stats"><strong id="growthPoints">0 / 100 groei</strong><span id="treeCountText">Boom 1</span></div>

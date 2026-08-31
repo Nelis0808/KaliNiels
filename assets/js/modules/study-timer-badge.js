@@ -1,34 +1,40 @@
 // =================================================================
-// STUDY TIMER — HEADER BADGE
+// STUDY TIMER — HEADER BADGE + NOTIFICATIONS SETTING
 // -----------------------------------------------------------------
-// A small always-visible clock in the navbar (see assets/partials/
-// header.html, #studyTimerBadge) that mirrors whatever the study
-// timer (study-timer.js, on timer.html) is doing — live remaining
-// time, and a red dot once it's hit 00:00:00 and is waiting for you
-// to come back and deal with it. It runs on EVERY page (wired up in
-// main.js like any other site-wide chrome piece), not just
-// timer.html, by reading the same localStorage key study-timer.js
-// writes to (studyTimerStateV2) rather than sharing any in-memory
-// state with it — the two are intentionally decoupled so this badge
-// works even on pages that never load study-timer.js at all.
+// Two things live in this module:
 //
-// It also offers a desktop/OS notification when a step finishes
-// while the tab is in the background or the browser isn't focused —
-// the in-page "session done" popup in study-timer.js only helps if
-// you're looking at the tab, so this is the "you're on another tab /
-// away" backstop. Browsers only grant notification permission from a
-// real, deliberate click on something that's clearly asking for it —
-// silently requesting it on the first random click anywhere on the
-// site is both against browser policy in most cases and, worse,
-// trains people to reflexively dismiss a popup they don't understand
-// the reason for, often permanently blocking it by accident. Instead,
-// #studyTimerNotifyBtn (the 🔔 button next to the badge) is the ONE
-// explicit, visible way to turn this on — see wireNotifyButton().
+// 1) A small always-visible clock in the navbar (see assets/partials/
+//    header.html, #studyTimerBadge) that mirrors whatever the study
+//    timer (study-timer.js, on timer.html) is doing — live remaining
+//    time, and a red dot once it's hit 00:00:00 and is waiting for
+//    you to come back and deal with it. It runs on EVERY page (wired
+//    up in main.js like any other site-wide chrome piece), not just
+//    timer.html, by reading the same localStorage key study-timer.js
+//    writes to (studyTimerStateV2) rather than sharing any in-memory
+//    state with it — the two are intentionally decoupled so this
+//    badge works even on pages that never load study-timer.js at all.
+//
+// 2) The "🔔 Meldingen" switch in the settings dropdown (same place
+//    as dark mode / pink theme — see settings-dropdown.js and
+//    theme.js, which this follows the same `.switch`/aria-checked
+//    pattern as). Turning it on shows a real Windows/OS-level
+//    notification when a step finishes while the tab is in the
+//    background or the browser isn't focused — the in-page "session
+//    done" popup in study-timer.js only helps if you're looking at
+//    the tab, so this is the "you're on another tab / away" backstop.
+//    The switch is the ONE place permission is ever requested: it's a
+//    real, deliberate click on something clearly labelled as being
+//    about notifications, which is both what browsers require to
+//    even show their permission prompt and — just as importantly —
+//    means the person understands why the prompt appeared, rather
+//    than a mystery popup after some unrelated click that gets
+//    reflexively (and often permanently) dismissed.
 // =================================================================
 
 import { getAuth, onAuthChange } from './auth.js';
 
 const KEY = 'studyTimerStateV2';
+const NOTIFICATIONS_PREF_KEY = 'study-timer-notifications-enabled';
 const CHECK_INTERVAL_MS = 1000;
 
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -42,11 +48,70 @@ function format(seconds) {
   return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// The switch's own on/off preference, separate from (but constrained
+// by) the browser's actual Notification.permission — this is what
+// lets the person turn the feature back off later without having to
+// dig into their browser's site settings to revoke permission.
+function notificationsWanted() {
+  return localStorage.getItem(NOTIFICATIONS_PREF_KEY) === 'true';
+}
+
+function initNotificationsToggle() {
+  const toggleBtn = document.getElementById('notificationsToggle');
+  if (!toggleBtn) return; // page has no settings dropdown — nothing to wire up
+
+  const notificationsSupported = 'Notification' in window;
+
+  function applyToggleState() {
+    // "On" in the UI only if the person wants it AND the browser has
+    // actually granted permission — if permission was revoked from
+    // outside the site (browser settings), the switch reflects that
+    // truthfully rather than claiming to be on when it can't work.
+    const on = notificationsSupported && notificationsWanted() && Notification.permission === 'granted';
+    toggleBtn.setAttribute('aria-checked', String(on));
+    toggleBtn.setAttribute('aria-label', on ? 'Zet meldingen uit' : 'Zet meldingen aan');
+    toggleBtn.disabled = !notificationsSupported;
+    toggleBtn.title = !notificationsSupported
+      ? 'Meldingen worden niet ondersteund in deze browser.'
+      : (Notification.permission === 'denied'
+        ? 'Meldingen zijn geblokkeerd in je browser. Zet ze aan via het slotje/site-instellingen naast de adresbalk, herlaad de pagina, en probeer opnieuw.'
+        : 'Krijg een Windows/OS-melding als je studietimer afloopt terwijl je op een ander tabblad zit.');
+  }
+
+  toggleBtn.addEventListener('click', async () => {
+    const currentlyOn = toggleBtn.getAttribute('aria-checked') === 'true';
+    if (currentlyOn) {
+      // Turning off never needs the browser — just stop wanting it.
+      localStorage.setItem(NOTIFICATIONS_PREF_KEY, 'false');
+      applyToggleState();
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      // JS can't re-prompt once denied — only the browser's own site
+      // settings can. Explain that instead of silently doing nothing.
+      alert('Meldingen zijn geblokkeerd voor deze site. Klik op het slotje (of "i") naast de adresbalk, zet Meldingen op "Toestaan", en herlaad de pagina.');
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      localStorage.setItem(NOTIFICATIONS_PREF_KEY, 'true');
+      // Immediate confirmation so the person knows the click worked —
+      // otherwise "did that do anything?" is a reasonable question
+      // for an invisible feature like this one.
+      try { new Notification('Meldingen aan ⏰', { body: 'Je krijgt nu een melding als je studietimer afloopt terwijl je op een ander tabblad zit.', tag: 'study-timer-notify-confirm' }); } catch { /* best-effort confirmation only */ }
+    }
+    applyToggleState();
+  });
+
+  applyToggleState();
+}
+
 export function initStudyTimerBadge() {
+  initNotificationsToggle();
+
   const badge = document.getElementById('studyTimerBadge');
   const timeEl = document.getElementById('studyTimerBadgeTime');
   const dotEl = document.getElementById('studyTimerBadgeDot');
-  const notifyBtn = document.getElementById('studyTimerNotifyBtn');
   if (!badge || !timeEl || !dotEl) return;
 
   let who = getAuth()?.who || null;
@@ -57,62 +122,8 @@ export function initStudyTimerBadge() {
   // "finished" notifies once.
   let notifiedEndsAt = null;
 
-  const notificationsSupported = 'Notification' in window;
-
-  // Reflects the actual permission state in the 🔔 button: hidden once
-  // granted (nothing left to do), a plain bell when it's still
-  // possible to ask, and a crossed-out/"blocked" look with an
-  // explanatory title when the person (or browser) has denied it —
-  // that state can only be undone from the browser's own site
-  // settings, not by JS, so the button becomes a hint instead of an
-  // action in that case.
-  function updateNotifyButton() {
-    if (!notifyBtn) return;
-    if (!notificationsSupported) { notifyBtn.classList.add('hidden'); return; }
-    const permission = Notification.permission;
-    if (permission === 'granted') {
-      notifyBtn.classList.add('hidden');
-      return;
-    }
-    notifyBtn.classList.remove('hidden');
-    if (permission === 'denied') {
-      notifyBtn.classList.add('is-blocked');
-      notifyBtn.title = 'Meldingen zijn geblokkeerd in je browser. Zet ze aan via het slotje/site-instellingen naast de adresbalk om een melding te krijgen als je studietimer afloopt.';
-      notifyBtn.setAttribute('aria-label', notifyBtn.title);
-    } else {
-      notifyBtn.classList.remove('is-blocked');
-      notifyBtn.title = 'Meldingen aanzetten voor de studie timer';
-      notifyBtn.setAttribute('aria-label', notifyBtn.title);
-    }
-  }
-
-  // The ONLY place permission is requested — a real click on a button
-  // that's clearly labelled as being about notifications, so the
-  // browser's native permission prompt makes sense in context instead
-  // of appearing out of nowhere.
-  function wireNotifyButton() {
-    if (!notifyBtn || !notificationsSupported) return;
-    notifyBtn.addEventListener('click', async () => {
-      if (Notification.permission === 'denied') {
-        // JS can't re-prompt once denied — only the browser's own site
-        // settings can. Explain that instead of silently doing
-        // nothing when clicked.
-        alert('Meldingen zijn geblokkeerd voor deze site. Klik op het slotje (of "i") naast de adresbalk, zet Meldingen op "Toestaan", en herlaad de pagina.');
-        return;
-      }
-      await Notification.requestPermission();
-      updateNotifyButton();
-      if (Notification.permission === 'granted') {
-        // Immediate confirmation so the person knows the click worked
-        // — otherwise "did that do anything?" is a reasonable
-        // question with an invisible feature like this one.
-        try { new Notification('Meldingen aan ⏰', { body: 'Je krijgt nu een melding als je studietimer afloopt terwijl je op een ander tabblad zit.', tag: 'study-timer-notify-confirm' }); } catch { /* best-effort confirmation only */ }
-      }
-    });
-  }
-
   function notifyStepFinished(label) {
-    if (!notificationsSupported || Notification.permission !== 'granted') return;
+    if (!('Notification' in window) || Notification.permission !== 'granted' || !notificationsWanted()) return;
     if (!document.hidden && document.hasFocus()) return; // only nudge when away from the tab
     try {
       const n = new Notification('Studie timer klaar ⏰', { body: label ? `"${label}" is afgelopen.` : 'Je sessie is afgelopen.', tag: 'study-timer-done', icon: 'assets/icons/favicon.svg' });
@@ -155,8 +166,6 @@ export function initStudyTimerBadge() {
     }
   }
 
-  wireNotifyButton();
-  updateNotifyButton();
   tick();
   setInterval(tick, CHECK_INTERVAL_MS);
 

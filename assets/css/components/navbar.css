@@ -150,15 +150,6 @@
   50% { opacity: .35; }
 }
 
-/* Explicit, visible opt-in for the "studie timer" desktop notification
-   (see study-timer-badge.js) — shown only while permission isn't
-   granted yet. Deliberately a plain, always-legible bell rather than
-   something that blends into the icon-btn hover state, since its
-   whole job is to be noticed and clicked once. */
-.study-timer-notify-btn.is-blocked {
-  opacity: .55;
-}
-
 /* Hamburger button, hidden on desktop and revealed by the media query below */
 #menuBtn {
   display: none;

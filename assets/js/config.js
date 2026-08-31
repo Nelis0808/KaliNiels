@@ -157,7 +157,6 @@ export const siteConfig = {
   settings: [
     // { label: 'Taal', emoji: '🌐' },
     // { label: 'Lettergrootte', emoji: '🔠' },
-    { label: 'Meldingen', emoji: '🔔' },
   ],
 
   // Config for the Ticketmaster page (assets/js/modules/ticketmaster.js).

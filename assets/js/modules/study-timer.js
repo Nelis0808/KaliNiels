@@ -9,14 +9,64 @@ const REWARD_CONFIG = Object.freeze({
   RATING_MULTIPLIER: Object.freeze([0, 0.5, 0.75, 1, 1.15, 1.3]),
 });
 
-// Voeg later eenvoudig bomen toe aan deze lijst. Na de laatste begint de cyclus opnieuw.
+// Each stage has a single dominant "base" glyph (the seedling/sprout/
+// trunk-and-canopy shape, rendered large and centered — see
+// renderTreeGraphic()) plus zero or more small "accents" (fruit,
+// blossom, decoration) that get positioned ON the base's canopy
+// instead of laid out next to it. Previously a stage was just one
+// flat emoji string (e.g. '🌳🍎🍎🌸'), which rendered as plain inline
+// text: every glyph the same size, side by side, left-to-right — so
+// on later stages the fruit landed to the RIGHT of the tree rather
+// than looking like it was growing on it, and the shrink-to-fit sizing
+// that kept 4-glyph stages from overflowing made the tree itself tiny
+// too, even at stage "seed" with only one glyph. Splitting base vs.
+// accents means the base can always render at one consistent large
+// size (set via .tree-graphic's font-size in study-timer.css) and
+// accents are layered on top of it via renderTreeGraphic()'s
+// .tree-accent-emoji positioning.
 const TREE_CATALOG = [
-  { id: 'apple', name: 'Appelboom', stages: ['🌱','🌿','🌳','🌳🍎','🌳🍎🍎','🌳🍎🍎🌸'] },
-  { id: 'cherry', name: 'Kersenboom', stages: ['🌱','🌿','🌸','🌸🌸','🌳🌸🌸','🌳🌸🌸🌸'] },
-  { id: 'pear', name: 'Perenboom', stages: ['🌱','🌿','🌳','🌳🍐','🌳🍐🍐','🌳🍐🍐🌼'] },
-  { id: 'oak', name: 'Eik', stages: ['🌱','🌿','🌳','🌳','🌳🍂','🌳🍂🍂'] },
-  { id: 'pine', name: 'Den', stages: ['🌱','🌲','🌲','🌲🌲','🌲🌲🌲','🌲🌲🌲❄️'] },
+  { id: 'apple', name: 'Appelboom', stages: [
+    { base: '🌱', accents: [] },
+    { base: '🌿', accents: [] },
+    { base: '🌳', accents: [] },
+    { base: '🌳', accents: ['🍎'] },
+    { base: '🌳', accents: ['🍎', '🍎'] },
+    { base: '🌳', accents: ['🍎', '🍎', '🍎'] },
+  ] },
+  { id: 'cherry', name: 'Kersenboom', stages: [
+    { base: '🌱', accents: [] },
+    { base: '🌿', accents: [] },
+    { base: '🌳', accents: [] },
+    { base: '🌳', accents: ['🌸'] },
+    { base: '🌳', accents: ['🌸', '🌸'] },
+    { base: '🌳', accents: ['🌸', '🌸', '🌸'] },
+  ] },
+  { id: 'pear', name: 'Perenboom', stages: [
+    { base: '🌱', accents: [] },
+    { base: '🌿', accents: [] },
+    { base: '🌳', accents: [] },
+    { base: '🌳', accents: ['🍐'] },
+    { base: '🌳', accents: ['🍐', '🍐'] },
+    { base: '🌳', accents: ['🍐', '🍐', '🍐'] },
+  ] },
+  { id: 'oak', name: 'Eik', stages: [
+    { base: '🌱', accents: [] },
+    { base: '🌿', accents: [] },
+    { base: '🌳', accents: [] },
+    { base: '🌳', accents: [] },
+    { base: '🌳', accents: ['🍂'] },
+    { base: '🌳', accents: ['🍂', '🍂'] },
+  ] },
+  { id: 'pine', name: 'Den', stages: [
+    { base: '🌱', accents: [] },
+    { base: '🌲', accents: [] },
+    { base: '🌲', accents: [] },
+    { base: '🌲', accents: [] },
+    { base: '🌲', accents: ['❄️'] },
+    { base: '🌲', accents: ['❄️', '❄️'] },
+  ] },
 ];
+
 
 const TREE_STAGES = ['Zaadje','Spruitje','Jong boompje','Bloeiende boom','Volle boom','Volgroeid'];
 const RATING_LABELS = ['Niet goed','Kon beter','Neutraal','Degelijk','Goed'];
@@ -71,6 +121,33 @@ function today() { return new Date().toISOString().slice(0, 10); }
 function format(seconds) {
   const s = Math.max(0, Math.round(seconds));
   return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+/** Renders a "HH:MM:SS" string into #timerDisplay with each character
+ * wrapped in its own fixed-width span. font-variant-numeric:tabular-nums
+ * (still set in CSS as a first line of defense) only works if the
+ * active font actually has real tabular-figure glyphs — Fraunces
+ * does, but this page has no @font-face/Google Fonts link loading it
+ * anywhere, so the display silently falls back to Georgia/Times New
+ * Roman, which don't reliably honor that feature on every platform.
+ * Giving every glyph (digits AND the ':' separators) the same
+ * per-character box width — sized in JS from the widest digit the
+ * current font actually renders — guarantees the display can never
+ * shift horizontally as digits change, regardless of which font
+ * ends up being used. */
+function renderTimerDisplay(el, text) {
+  const chars = text.split('');
+  // Reuse existing spans when the length matches (always does, for
+  // HH:MM:SS) instead of rebuilding the DOM every second.
+  if (el.childElementCount !== chars.length || el.dataset.digitFormat !== 'v1') {
+    el.textContent = '';
+    el.dataset.digitFormat = 'v1';
+    chars.forEach(() => el.appendChild(document.createElement('span')));
+  }
+  chars.forEach((ch, i) => {
+    const span = el.children[i];
+    if (span.textContent !== ch) span.textContent = ch;
+    span.className = ch === ':' ? 'timer-digit timer-digit-colon' : 'timer-digit';
+  });
 }
 /** Formats a duration given in (possibly fractional) minutes as e.g. "1u 5min", "45 min", "90 sec" — used for the preset-card totals. */
 function formatDuration(totalMinutes) {
@@ -184,9 +261,28 @@ export function initStudyTimer() {
       }
     }, TIMER_SOUND_FADE_MS / steps);
   }
+    // 1x is already the loudest the <audio> element itself can go
+  // (volume is clamped to [0,1]), so an actual 1.25x loudness boost
+  // has to happen via a Web Audio GainNode inserted between the
+  // element and the speakers instead of by setting .volume.
+  const TIMER_SOUND_GAIN = 1.25;
+  let audioCtx = null;
+  let gainNode = null;
+  function ensureGainChain() {
+    if (gainNode) return;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return; // very old browser — falls back to un-boosted playback
+    audioCtx = new Ctx();
+    const source = audioCtx.createMediaElementSource(completeAudio);
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = TIMER_SOUND_GAIN;
+    source.connect(gainNode).connect(audioCtx.destination);
+  }
   function playCompleteSound() {
     stopCompleteSoundImmediately();
     if (!completeAudio) completeAudio = new Audio(TIMER_COMPLETE_SOUND_SRC);
+    ensureGainChain();
+    if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
     completeAudio.currentTime = 0;
     completeAudio.volume = 1;
     completeAudio.play().catch(() => {}); // ignore autoplay-policy rejections
@@ -261,12 +357,101 @@ export function initStudyTimer() {
     const tree = currentTree();
     const points = Math.max(0, Math.min(REWARD_CONFIG.MAX_POINTS_PER_TREE, state.growth));
     const stage = Math.min(TREE_STAGES.length - 1, Math.floor((points / REWARD_CONFIG.MAX_POINTS_PER_TREE) * TREE_STAGES.length));
-    $('#treeTitle').textContent = state.treeName || `Mijn ${tree.name.toLowerCase()}`;
-    $('#treeGraphic').textContent = tree.stages[stage];
+    $('#treeTitle').textContent = state.treeName || 'Mijn boom';
+    // The tree's own visual size is driven by the CONTINUOUS progress
+    // percentage (points / MAX_POINTS_PER_TREE), not by which of the 6
+    // discrete stages it's in — so it keeps visibly growing smoothly
+    // between stage changes too, not just in 6 abrupt jumps. See
+    // renderTreeGraphic()'s progress param.
+    renderTreeGraphic(tree.stages[stage], undefined, null, points / REWARD_CONFIG.MAX_POINTS_PER_TREE);
     $('#growthPoints').textContent = `${points} / ${REWARD_CONFIG.MAX_POINTS_PER_TREE} groei`;
     $('#treeCountText').textContent = tree.name;
     $('#growthBar').style.width = `${(points / REWARD_CONFIG.MAX_POINTS_PER_TREE) * 100}%`;
     $('#treeNameInput').value = state.treeName || '';
+  }
+
+  // Renders a stage ({ base, accents }) as a layered graphic instead
+  // of one flat emoji string: the base glyph (seedling/sprout/tree) is
+  // one big centered emoji filling most of #treeGraphic's box, and any
+  // accent glyphs (fruit, blossom, decoration) are absolutely
+  // positioned in fixed slots that sit ON the base's canopy — see
+  // ACCENT_SLOTS below, tuned by eye against the actual 🌳/🌲/🌸 glyph
+  // shapes so 1-3 accents land inside the leafy area rather than
+  // beside it. Previously every glyph in a stage (tree AND fruit)
+  // was plain inline text at the same size, which is what made fruit
+  // render to the right of the tree instead of on it, and forced the
+  // whole stage to shrink as glyphs were added — including the
+  // single-glyph seedling stage, which is why the tree looked small
+  // even before any fruit appeared.
+  //
+  // #treeGraphic's OWN box size (width + font-size, in study-timer.css)
+  // is a fixed value that never changes — it is NOT what grows with
+  // progress. Only the tree ITSELF (this function's <span> contents)
+  // scales with growth, via a CSS transform on the whole element (see
+  // below) — .tree-scene and .tree-card stay exactly as tall as their
+  // CSS says regardless of growth, which is the fix for "de boom moet
+  // gelijk scalen met de progressie, niet de hele tree-scene/container".
+  // baseRem is only for one-off contexts that reuse this same
+  // renderer outside that scene, like the tree-completed celebration
+  // dialog's smaller, fixed-size showcase — passing it there sets an
+  // inline font-size instead of relying on the scene's CSS.
+  const ACCENT_SLOTS = [
+    [[50, 26]],
+    [[64, 22], [36, 30]],
+    [[66, 16], [34, 22], [50, 34]],
+  ];
+  // Per-glyph-type size multiplier, applied on top of whatever
+  // .tree-graphic's own font-size is. Seedling/sprout are drawn small
+  // relative to a full tree (they're meant to look like they've only
+  // just emerged from the ground), while an actual tree canopy (🌳/🌲)
+  // is drawn bigger so it dominates the scene once grown.
+  const GLYPH_SCALE = { '🌱': 0.5, '🌿': 0.5, '🌳': 1.5 };
+  // 🌿 (the sprout stage) is rotated so its stem reads as emerging at
+  // an angle out of the ground rather than standing perfectly
+  // upright — a small counter-clockwise tilt is what actually sells
+  // "just sprouted" versus "fully planted sapling". Keyed by glyph so
+  // it automatically follows 🌿 into whichever tree/stage uses it,
+  // rather than being tied to a specific TREE_CATALOG entry.
+  const GLYPH_ROTATE_DEG = { '🌿': -30 };
+  // Smallest the tree ever renders at, even at 0% progress — a literal
+  // 0 scale would make the very first seedling invisible, which reads
+  // as broken rather than "just planted".
+  const MIN_PROGRESS_SCALE = 0.22;
+  function renderTreeGraphic(stage, el = $('#treeGraphic'), baseRem = null, progress = 1) {
+    el.innerHTML = '';
+    el.classList.add('tree-graphic');
+    if (baseRem) el.style.fontSize = `${baseRem}rem`;
+    // Wrapping base+accents in one inner element and scaling THAT
+    // (rather than scaling the base's font-size alone, as before) is
+    // what keeps fruit locked onto the canopy at every size: the
+    // accents' percentage-based left/top coordinates are relative to
+    // this wrapper's own box, so shrinking the wrapper shrinks and
+    // repositions base and accents together as one rigid unit instead
+    // of the accents staying pinned to where a full-size canopy would
+    // have been.
+    const growthScale = Math.max(MIN_PROGRESS_SCALE, Math.min(1, progress));
+    const wrap = document.createElement('div');
+    wrap.className = 'tree-growth-wrap';
+    wrap.style.transform = `scale(${growthScale.toFixed(4)})`;
+    const base = document.createElement('span');
+    base.className = 'tree-base-emoji';
+    base.textContent = stage.base;
+    const glyphScale = GLYPH_SCALE[stage.base] ?? 1;
+    base.style.fontSize = `${glyphScale}em`;
+    const rotateDeg = GLYPH_ROTATE_DEG[stage.base];
+    if (rotateDeg) base.style.transform = `rotate(${rotateDeg}deg)`;
+    wrap.append(base);
+    const slots = ACCENT_SLOTS[Math.max(0, stage.accents.length - 1)] || [];
+    stage.accents.forEach((accent, i) => {
+      const [x, y] = slots[i] || [50, 30];
+      const span = document.createElement('span');
+      span.className = 'tree-accent-emoji';
+      span.textContent = accent;
+      span.style.left = `${x}%`;
+      span.style.top = `${y}%`;
+      wrap.append(span);
+    });
+    el.append(wrap);
   }
 
   function renderTimer() {
@@ -275,7 +460,12 @@ export function initStudyTimer() {
     if (!step) {
       $('#timerPhaseBadge').textContent = 'Klaar';
       $('#timerStepText').textContent = 'Vandaag';
-      $('#timerDisplay').textContent = '00:00:00';
+      renderTimerDisplay($('#timerDisplay'), '00:00:00');
+      // Geen actieve stap: de timer draait niet, dus de titel toont
+      // geen tijd (die zou anders altijd "00:00:00" zijn, wat geen
+      // nuttige informatie geeft).
+      document.title = 'Studie Timer';
+      $('#timerVisibilityHint').textContent = '';
       $('#currentTaskName').textContent = 'Maak eerst een preset';
       $('#currentTaskMeta').textContent = '';
       $('#timerToggle').disabled = true;
@@ -289,7 +479,15 @@ export function initStudyTimer() {
     const tasksDone = preset.steps.slice(0, currentStep).filter((s) => s.type === 'task').length;
     $('#timerStepText').textContent = `${tasksDone} / ${taskSteps.length} taken gedaan`;
     const isHidden = root.classList.contains('timer-blurred');
-    $('#timerDisplay').textContent = isHidden ? '00:00:00' : format(remaining);
+    const displayTime = isHidden ? '00:00:00' : format(remaining);
+    renderTimerDisplay($('#timerDisplay'), displayTime);
+    // Er is een actieve stap (ongeacht of de timer nu loopt of
+    // gepauzeerd is): zichtbaar toont de echte tijd, verborgen toont
+    // "Verborgen" in plaats van de tijd zelf — het tabblad mag niet
+    // alsnog de countdown lekken terwijl de persoon 'm bewust verborgen
+    // heeft.
+    document.title = isHidden ? 'Studie Timer — Verborgen' : `Studie Timer — ${displayTime}`;
+    $('#timerVisibilityHint').textContent = '';
     $('#currentTaskName').textContent = step.name;
     $('#currentTaskMeta').textContent = step.type === 'task' ? `Moeilijkheid ${step.difficulty} / 5` : 'Even opladen voor de volgende taak';
     const toggleBtn = $('#timerToggle');
@@ -499,14 +697,31 @@ export function initStudyTimer() {
     const gain = Math.max(1, Math.round(base * REWARD_CONFIG.RATING_MULTIPLIER[rating]));
     state.growth += gain;
     state.lifetimePoints += gain;
+    // Remember which tree(s) just got completed BEFORE switching
+    // treeIndex on to the next one, so the showcase (see
+    // showTreeCompleted() below) can display the tree that was just
+    // finished — its final, fully-grown stage and name — rather than
+    // the new seedling that's already replaced it by the time the
+    // rating modal closes and the UI re-renders.
+    const completedTrees = [];
     while (state.growth >= REWARD_CONFIG.MAX_POINTS_PER_TREE) {
-      state.growth -= REWARD_CONFIG.MAX_POINTS_PER_TREE;
+      // Any points earned beyond exactly what finished this tree are
+      // discarded rather than carried into the next tree's growth
+      // (previously `state.growth -= MAX_POINTS_PER_TREE`, which left
+      // the remainder sitting in state.growth). That leftover made the
+      // brand-new tree start partway grown — e.g. finishing an
+      // Appelboom with 15 points to spare meant the next tree (a
+      // Kersenboom) immediately rendered its stage-3 blossom instead
+      // of a fresh seedling, which is the "kers emoji already added"
+      // bug. Every tree now always starts at exactly 0.
+      state.growth = 0;
+      completedTrees.push({ tree: currentTree(), name: state.treeName || 'Mijn boom', number: state.treesCompleted + 1 });
       state.treesCompleted += 1;
       state.treeIndex = (state.treeIndex + 1) % TREE_CATALOG.length;
       state.claimed = [];
     }
     state.completed.push({ date: today(), minutes: step.minutes, rating, points: gain, preset: presetName(), task: step.name, at: Date.now() });
-    return gain;
+    return { gain, completedTrees };
   }
 
   function presetName() { return selectedPreset()?.name || ''; }
@@ -529,11 +744,73 @@ export function initStudyTimer() {
     const update = () => { const n = Number(range.value); output.textContent = `${n} / 5 · ${RATING_LABELS[n - 1]}`; };
     range.addEventListener('input', update);
     modal.querySelector('#ratingSave').addEventListener('click', () => {
-      const gain = addTaskCompletion(step, Number(range.value));
+      const { gain, completedTrees } = addTaskCompletion(step, Number(range.value));
       modal.remove();
       advanceStep();
       renderAll();
-      if (isDayComplete()) showDayReflection(gain);
+      // Show any just-finished tree(s) first, then the day reflection
+      // (if applicable) once those are dismissed — see
+      // showTreeCompleted()'s callback chaining below.
+      const afterTreeShowcases = () => { if (isDayComplete()) showDayReflection(gain); };
+      if (completedTrees.length) showTreeCompletedQueue(completedTrees, afterTreeShowcases);
+      else afterTreeShowcases();
+    });
+  }
+
+  // Displays one "🎉 boom voltooid" showcase per finished tree, one
+  // after another (showcase → dismissed → next showcase → ... →
+  // onAllDone), before handing off to whatever should happen after
+  // (e.g. the day-reflection popup). Queued (rather than all at once)
+  // because completing several trees from one single rating is rare
+  // but possible, and showing them one at a time is much clearer than
+  // stacking dialogs.
+  function showTreeCompletedQueue(completedTrees, onAllDone) {
+    const [next, ...rest] = completedTrees;
+    if (!next) { onAllDone(); return; }
+    showTreeCompleted(next, () => showTreeCompletedQueue(rest, onAllDone));
+  }
+
+  function showTreeCompleted({ tree, name, number }, onContinue) {
+    const old = root.querySelector('.rating-modal'); if (old) old.remove();
+    const modal = document.createElement('div');
+    modal.className = 'rating-modal';
+    modal.innerHTML = `<div class="rating-dialog tree-completed-dialog" role="dialog" aria-modal="true">
+      <span class="eyebrow">Boom voltooid 🎉</span>
+      <h2>${escapeHtml(name)} is uitgegroeid!</h2>
+      <p>Je hebt boom #${number} (${escapeHtml(tree.name)}) volledig laten groeien. Mooi werk — tijd voor een nieuwe boom.</p>
+      <div class="tree-completed-showcase" aria-hidden="true"></div>
+      <label class="tree-final-name-label" for="treeFinalNameInput">Geef je boom een definitieve naam:</label>
+      <input id="treeFinalNameInput" type="text" maxlength="30" class="tree-final-name-input" value="${escapeHtml(name)}" placeholder="Mijn boom">
+      <div class="timer-actions"><button type="button" id="treeCompletedContinue" class="btn btn-primary">🗂️ Toevoegen aan collectie</button></div>
+    </div>`;
+    root.append(modal);
+    // Same layered base+accents renderer as the live tree scene (see
+    // renderTreeGraphic()), not a flat emoji string — this showcase
+    // used to render the final stage as plain text (e.g. '🌳🍎🍎🌸',
+    // four glyphs at up to 9rem each), which overflowed the dialog
+    // and spilled fruit out past its edges instead of showing them
+    // sitting on the tree.
+    renderTreeGraphic(tree.stages[tree.stages.length - 1], modal.querySelector('.tree-completed-showcase'), 9);
+    const finalNameInput = modal.querySelector('#treeFinalNameInput');
+    // Same "click to select all" convenience as treeNameInput/presetName,
+    // so overwriting the pre-filled name doesn't require manually
+    // clearing it first.
+    finalNameInput.addEventListener('focus', (event) => event.target.select());
+    modal.querySelector('#treeCompletedContinue').addEventListener('click', () => {
+      // Collection page doesn't exist yet — completed trees already
+      // live in state.treesCompleted/lifetimePoints, so there's
+      // nothing extra to persist here yet (the chosen final name is
+      // only echoed back in this dialog's own heading for now; once
+      // the collection page is built, this is where a completed-tree
+      // record — including this final name — would get added to it).
+      // The new tree that's already growing behind this dialog starts
+      // fresh with the default name rather than inheriting the one
+      // just finalized here.
+      state.treeName = 'Mijn boom';
+      save();
+      renderTree();
+      modal.remove();
+      onContinue();
     });
   }
 
@@ -570,7 +847,7 @@ export function initStudyTimer() {
   function openEditor(id = null, sessionPreset = null) {
     editorId = id;
     editingSessionOnly = Boolean(sessionPreset);
-    const preset = sessionPreset || (id ? state.presets.find((p) => p.id === id) : { name: '', steps: [{ type: 'task', name: 'Nieuwe taak', minutes: 25, difficulty: 3 }] });
+    const preset = sessionPreset || (id ? state.presets.find((p) => p.id === id) : { name: '', steps: [{ type: 'task', name: 'Nieuwe taak', minutes: 30, difficulty: 3 }] });
     $('#editorTitle').textContent = editingSessionOnly ? 'Sessiepreset bewerken' : (id ? 'Preset bewerken' : 'Nieuwe preset');
     $('#presetName').value = preset.name;
     renderStepEditor(preset.steps);
@@ -625,6 +902,18 @@ export function initStudyTimer() {
       const row = event.target.closest('.step-editor');
       row.querySelector('.step-diff-value').textContent = `${event.target.value} / 5`;
     }
+  });
+
+  // Selecting the full text of a .step-name field on focus, same as
+  // treeNameInput/presetName, so overwriting an existing step name
+  // doesn't require manually clearing it first. Delegated on `root`
+  // (via the bubbling "focusin" rather than plain "focus", which
+  // doesn't bubble) rather than bound directly to each .step-name
+  // input, because renderStepEditor() rebuilds those inputs from
+  // scratch on every render — a direct binding would be lost as soon
+  // as a step is added, removed, or its type is switched.
+  root.addEventListener('focusin', (event) => {
+    if (event.target.matches('.step-name')) event.target.select();
   });
 
   // Number inputs (e.g. .step-min) silently bump their value by 1 per
@@ -698,8 +987,8 @@ export function initStudyTimer() {
     }
     if (event.target.closest('#newPresetBtn')) { openEditor(); return; }
     if (event.target.closest('#closeEditorBtn')) { $('#presetEditor').classList.add('hidden'); return; }
-    if (event.target.closest('#addStepBtn')) { const steps = readSteps(); steps.push({ type: 'task', name: 'Nieuwe taak', minutes: 25, difficulty: 3 }); renderStepEditor(steps); return; }
-    if (event.target.closest('.remove-step')) { const steps = readSteps(); const i = Number(event.target.closest('.step-editor').dataset.index); steps.splice(i, 1); if (!steps.length) steps.push({ type: 'task', name: 'Nieuwe taak', minutes: 25, difficulty: 3 }); renderStepEditor(steps); }
+    if (event.target.closest('#addStepBtn')) { const steps = readSteps(); steps.push({ type: 'task', name: 'Nieuwe taak', minutes: 30, difficulty: 3 }); renderStepEditor(steps); return; }
+    if (event.target.closest('.remove-step')) { const steps = readSteps(); const i = Number(event.target.closest('.step-editor').dataset.index); steps.splice(i, 1); if (!steps.length) steps.push({ type: 'task', name: 'Nieuwe taak', minutes: 30, difficulty: 3 }); renderStepEditor(steps); }
   });
 
   // Listeners bound directly to specific elements (rather than delegated
@@ -741,6 +1030,10 @@ export function initStudyTimer() {
       $('#presetEditor').classList.add('hidden');
       useSessionOnly(preset);
     });
+    // Clicking (or tabbing) into the preset-name field selects its
+    // full contents, so typing immediately replaces the existing name
+    // instead of having to manually select/clear it first.
+    $('#presetName').addEventListener('focus', (event) => event.target.select());
   }
 
   function startTreeNameEdit() {
@@ -759,7 +1052,7 @@ export function initStudyTimer() {
       state.treeName = input.value.trim();
       save();
     }
-    title.textContent = state.treeName || `Mijn ${currentTree().name.toLowerCase()}`;
+    title.textContent = state.treeName || 'Mijn boom';
     input.classList.add('hidden');
     title.classList.remove('hidden');
   }
