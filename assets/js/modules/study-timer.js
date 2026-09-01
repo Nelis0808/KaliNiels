@@ -24,47 +24,55 @@ const REWARD_CONFIG = Object.freeze({
 // size (set via .tree-graphic's font-size in study-timer.css) and
 // accents are layered on top of it via renderTreeGraphic()'s
 // .tree-accent-emoji positioning.
+//
+// Max 5 accents per stage (see ACCENT_POSITIONS below, which only has
+// 5 slots) — apple/cherry/pear build up steadily (1 accent partway
+// through, then 3, then all 5 at "Volgroeid"); oak/pine hold off
+// until later (0 accents until "Volle boom", then 3, then 5) to keep
+// their slower/quieter feel. The trailing comment on each entry below
+// lists other emoji that would also fit that tree if you want to swap
+// or mix them in — they're not used by default, just handy options.
 const TREE_CATALOG = [
   { id: 'apple', name: 'Appelboom', stages: [
     { base: '🌱', accents: [] },
     { base: '🌿', accents: [] },
     { base: '🌳', accents: [] },
     { base: '🌳', accents: ['🍎'] },
-    { base: '🌳', accents: ['🍎', '🍎'] },
     { base: '🌳', accents: ['🍎', '🍎', '🍎'] },
-  ] },
+    { base: '🌳', accents: ['🍎', '🍎', '🍎', '🍎', '🍎'] },
+  ] }, // also handy: 🍏 (green apple), 🐛 (worm in one), 🐝/🦋 (pollinators, pairs well on the blossom-era stages), 🍯 (honey)
   { id: 'cherry', name: 'Kersenboom', stages: [
     { base: '🌱', accents: [] },
     { base: '🌿', accents: [] },
     { base: '🌳', accents: [] },
     { base: '🌳', accents: ['🌸'] },
-    { base: '🌳', accents: ['🌸', '🌸'] },
     { base: '🌳', accents: ['🌸', '🌸', '🌸'] },
-  ] },
+    { base: '🌳', accents: ['🌸', '🌸', '🌸', '🌸', '🌸'] },
+  ] }, // also handy: 🍒 (actual cherries, if you'd rather show fruit than blossom), 🐝, 🦋
   { id: 'pear', name: 'Perenboom', stages: [
     { base: '🌱', accents: [] },
     { base: '🌿', accents: [] },
     { base: '🌳', accents: [] },
     { base: '🌳', accents: ['🍐'] },
-    { base: '🌳', accents: ['🍐', '🍐'] },
     { base: '🌳', accents: ['🍐', '🍐', '🍐'] },
-  ] },
+    { base: '🌳', accents: ['🍐', '🍐', '🍐', '🍐', '🍐'] },
+  ] }, // also handy: 🐝, 🦋, 🍃
   { id: 'oak', name: 'Eik', stages: [
     { base: '🌱', accents: [] },
     { base: '🌿', accents: [] },
     { base: '🌳', accents: [] },
-    { base: '🌳', accents: ['🍂'] },
-    { base: '🌳', accents: ['🍂', '🍂'] },
+    { base: '🌳', accents: [] },
     { base: '🌳', accents: ['🍂', '🍂', '🍂'] },
-  ] },
+    { base: '🌳', accents: ['🍂', '🍂', '🍂', '🍂', '🍂'] },
+  ] }, // also handy: 🍁 (maple leaf, same autumn look), 🌰 (stands in for an acorn), 🐿️ (squirrel)
   { id: 'pine', name: 'Den', stages: [
     { base: '🌱', accents: [] },
     { base: '🌲', accents: [] },
     { base: '🌲', accents: [] },
-    { base: '🌲', accents: ['❄️'] },
-    { base: '🌲', accents: ['❄️', '❄️'] },
+    { base: '🌲', accents: [] },
     { base: '🌲', accents: ['❄️', '❄️', '❄️'] },
-  ] },
+    { base: '🌲', accents: ['❄️', '❄️', '❄️', '❄️', '❄️'] },
+  ] }, // also handy: ⭐ (tree topper), 🎁, 🔔, 🕯️ — a christmas-tree take on the same base glyph
 ];
 
 
@@ -113,7 +121,7 @@ const DEFAULT_OTHER_PRESET = {
 // Fades out and stops as soon as the "session done" rating popup it
 // belongs to is closed — see the MutationObserver set up in
 // initStudyTimer() below.
-const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp3', import.meta.url).href;
+const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp4', import.meta.url).href;
 const TIMER_SOUND_FADE_MS = 600;
 
 function clone(value) { return structuredClone(value); }
@@ -376,7 +384,7 @@ export function initStudyTimer() {
   // accent glyphs (fruit, blossom, decoration) are absolutely
   // positioned in fixed slots that sit ON the base's canopy — see
   // ACCENT_POSITIONS below, tuned by eye against the actual 🌳/🌲/🌸
-  // glyph shapes so 1-3 accents land inside the leafy area rather than
+  // glyph shapes so 1-5 accents land inside the leafy area rather than
   // beside it. Previously every glyph in a stage (tree AND fruit)
   // was plain inline text at the same size, which is what made fruit
   // render to the right of the tree instead of on it, and forced the
@@ -401,17 +409,18 @@ export function initStudyTimer() {
   // exact same spot as more fruit are added later, instead of every
   // already-placed fruit also jumping to a new spot the moment a new
   // one appears (which happened before, since the 1-accent and
-  // 2-accent cases used entirely unrelated [x,y] arrays). Order:
-  // first fruit lands mid-right toward the top of the canopy, second
-  // lands mid-left, third lands bottom-right — tuned by eye against
-  // the actual 🌳/🌲/🌸 glyph shapes so all three sit inside the leafy
-  // area rather than beside it.
+  // 2-accent cases used entirely unrelated [x,y] arrays). Order: 1st
+  // fruit lands mid-right toward the top of the canopy, 2nd mid-left,
+  // 3rd bottom-right, 4th upper-center, 5th bottom-left — tuned by eye
+  // against the actual 🌳/🌲/🌸 glyph shapes so all five sit inside the
+  // leafy area, spread out, rather than piling on top of each other.
+  // 5 is the max — see TREE_CATALOG above — so there's no 6th slot.
   const ACCENT_POSITIONS = [
-    [45, 23], // mid-right, upper canopy
-    [32, 48], // mid-left
-    [62, 65], // bottom-right
-    [40, 70], // bottem
-    [53, 72], // bottem
+    [66, 18], // 1st — mid-right, upper canopy
+    [30, 42], // 2nd — mid-left
+    [62, 54], // 3rd — bottom-right
+    [46, 15], // 4th — upper-center
+    [38, 58], // 5th — bottom-left
   ];
   // Per-glyph-type size multiplier, applied on top of whatever
   // .tree-graphic's own font-size is. Seedling/sprout are drawn small

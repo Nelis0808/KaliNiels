@@ -126,7 +126,18 @@ export function initStudyTimerBadge() {
     if (!('Notification' in window) || Notification.permission !== 'granted' || !notificationsWanted()) return;
     if (!document.hidden && document.hasFocus()) return; // only nudge when away from the tab
     try {
-      const n = new Notification('Studie timer klaar ⏰', { body: label ? `"${label}" is afgelopen.` : 'Je sessie is afgelopen.', tag: 'study-timer-done', icon: 'assets/icons/favicon.svg' });
+      // renotify:true is the fix for "only the first one ever shows
+      // up": every call here uses the SAME tag ('study-timer-done')
+      // on purpose, so a still-open previous notification gets
+      // replaced instead of piling up — but per the Notification spec,
+      // replacing a same-tag notification is SILENT (no sound, no
+      // popup/toast) unless renotify is explicitly turned on. Without
+      // it, only the very first notification of a session ever
+      // actually alerts you; every one after that just swaps in
+      // quietly in the background, which looks/feels like it got
+      // muted. renotify:true keeps the one-at-a-time tag behavior but
+      // makes every replacement alert again too.
+      const n = new Notification('Studie timer klaar ⏰', { body: label ? `"${label}" is afgelopen.` : 'Je sessie is afgelopen.', tag: 'study-timer-done', renotify: true, icon: 'assets/icons/favicon.svg' });
       n.onclick = () => { window.focus(); n.close(); };
     } catch { /* Notification constructor can throw in odd embedded contexts — badge dot still covers it */ }
   }
