@@ -13,12 +13,46 @@
 // with whichever column's add-form was used.
 //
 // EDITING: clicking the ✏️ button on a card opens the SAME form
-// used for adding, but pre-filled and in "edit mode" — submitting it
-// sends a PATCH to /gifts/:id (updating title/url/note/person) instead
-// of appending a new entry. Cancelling restores the form to its
-// normal "add" state. Only one card can be edited at a time (opening
-// a second edit cancels the first) to keep the two-column layout from
-// getting confusing with multiple forms mid-edit.
+// used for adding, but pre-filled and in "edit mode". Submitting it
+// saves the FULL gift list back via PUT /gifts (same call
+// saveGifts() already uses for every other change here) rather than
+// a partial PATCH — deliberately, so the newer `price` field (see
+// below) round-trips correctly regardless of exactly which fields
+// this project's deployed gifts Worker's PATCH route happens to
+// whitelist; PUT /gifts stores whatever gift objects it's given
+// as-is, no server-side schema, same as every other "read it all,
+// write it all back" Worker in this project (see
+// ACTION-EXPANSION-PLAN.md §1.1). Cancelling restores the form to
+// its normal "add" state. Only one card can be edited at a time
+// (opening a second edit cancels the first) to keep the two-column
+// layout from getting confusing with multiple forms mid-edit.
+//
+// PRICE: every gift optionally has an integer `price` (whole euros).
+// Optional, not required, so the existing "just paste a link and go"
+// quick-add flow keeps working unchanged for anyone who doesn't care
+// about the reward system below. A gift needs a price before it can
+// be picked as a collectible reward (see "SET AS REWARD" below) —
+// cards without one show a small "Prijs onbekend" hint instead of a
+// price pill.
+//
+// SET AS REWARD: only Kalina's ('b') column can show this — see
+// siteConfig.collectibles.rewardGiftPerson — since collectible
+// rewards always come from her list regardless of who's earning the
+// collectibles. Each of her cards has an optional 🎯 button (only
+// shown once logged in, and only enabled once the gift has a price)
+// that assigns this exact gift — id, title, price, url — as the
+// chosen reward for one of the not-yet-unlocked reward rows across
+// EVERY configured collection (siteConfig.collectibles.collections —
+// picking the collection is part of the same picker once there's
+// more than one). If what's already been earned in that collection
+// already covers this gift's price outright, it's paid out
+// immediately and whatever's left over rolls into a brand-new reward
+// row automatically — see collectibles.js's setRewardGift() for that
+// logic. This is a convenience shortcut for the SAME assignment the
+// Collections page (collections.html) lets you make from the
+// reward's own side — both call the identical
+// assets/js/modules/collectibles.js setRewardGift(), so it doesn't
+// matter which page you use.
 //
 // PHOTOS: the add/edit form has an optional file picker. If a file is
 // chosen, it's uploaded to POST /gifts/upload?id=<id> right after the
@@ -39,10 +73,24 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml } from './utils.js';
+import { getAuth, onAuthChange } from './auth.js';
+import { getCollections, getCollection, getCollectionState, getRewardState, setRewardGift, getAllRewardConfigs, getRewardGiftPerson, previewAssignment } from './collectibles.js';
 
 const POLL_INTERVAL_MS = 8000;
 const PERSONS = ['b', 'a']; // b (Kalina) left, a (Niels) right — matches the markup order
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
+// Parses a raw form value into a valid integer-euro price, or null if
+// the field was left empty / isn't a usable number. Negative values
+// and fractions are clamped/rounded rather than rejected outright —
+// friendlier than an error for something this minor ("35.50" -> 36).
+function parsePriceInput(rawValue) {
+  const trimmed = String(rawValue ?? '').trim();
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100000, Math.round(n)));
+}
 
 export function initGifts() {
   const root = document.getElementById('giftsApp');
@@ -120,21 +168,37 @@ export function initGifts() {
           const linkAttrs = hasUrl
             ? `href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer"`
             : '';
+          const hasPrice = Number.isFinite(gift.price);
+          const priceMarkup = hasPrice
+            ? `<span class="gf-card-price">€${escapeHtml(String(gift.price))}</span>`
+            : `<span class="gf-card-price gf-card-price-unknown">Prijs onbekend</span>`;
+          // Only the reward-eligible column (Kalina's, by default —
+          // see siteConfig.collectibles.rewardGiftPerson) gets the 🎯
+          // button at all; a gift that literally can't be picked as a
+          // reward doesn't need a button implying otherwise.
+          const rewardButtonMarkup = gift.person === getRewardGiftPerson()
+            ? `<button type="button" class="gf-reward" aria-label="${escapeHtml(gift.title)} instellen als beloning" aria-haspopup="true" aria-expanded="false" title="Als beloning instellen">🎯</button>`
+            : '';
           return `
             <li class="gf-card" data-id="${escapeHtml(gift.id)}">
-              <${tag} class="gf-card-link${hasUrl ? '' : ' gf-card-link-nolink'}" ${linkAttrs}>
-                <div class="gf-card-image gf-card-loading" data-gift-image aria-hidden="true">
-                  <span class="gf-card-fallback">🎁</span>
+              <div class="gf-card-row">
+                <${tag} class="gf-card-link${hasUrl ? '' : ' gf-card-link-nolink'}" ${linkAttrs}>
+                  <div class="gf-card-image gf-card-loading" data-gift-image aria-hidden="true">
+                    <span class="gf-card-fallback">🎁</span>
+                  </div>
+                  <div class="gf-card-body">
+                    <span class="gf-card-title">${escapeHtml(gift.title)}</span>
+                    ${gift.note ? `<span class="gf-card-note">${escapeHtml(gift.note)}</span>` : ''}
+                    ${priceMarkup}
+                  </div>
+                </${tag}>
+                <div class="gf-card-actions">
+                  ${rewardButtonMarkup}
+                  <button type="button" class="gf-edit" aria-label="${escapeHtml(gift.title)} bewerken">✏️</button>
+                  <button type="button" class="gf-delete" aria-label="${escapeHtml(gift.title)} verwijderen">✕</button>
                 </div>
-                <div class="gf-card-body">
-                  <span class="gf-card-title">${escapeHtml(gift.title)}</span>
-                  ${gift.note ? `<span class="gf-card-note">${escapeHtml(gift.note)}</span>` : ''}
-                </div>
-              </${tag}>
-              <div class="gf-card-actions">
-                <button type="button" class="gf-edit" aria-label="${escapeHtml(gift.title)} bewerken">✏️</button>
-                <button type="button" class="gf-delete" aria-label="${escapeHtml(gift.title)} verwijderen">✕</button>
               </div>
+              <div class="gf-reward-panel hidden" data-reward-panel></div>
             </li>
           `;
         })
@@ -143,6 +207,7 @@ export function initGifts() {
       personGifts.forEach((gift) => {
         const card = list.querySelector(`.gf-card[data-id="${cssEscape(gift.id)}"] [data-gift-image]`);
         if (card) loadGiftImage(gift, card);
+        updateRewardButtonState(gift);
       });
     });
   }
@@ -152,6 +217,120 @@ export function initGifts() {
   // Escapes a value for safe use inside a CSS attribute selector
   function cssEscape(value) {
     return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/["\\]/g, '\\$&');
+  }
+
+  // ---- "Set as reward" (🎯) ------------------------------------------
+  // Lets a gift's own card assign itself as the chosen gift for one of
+  // the not-yet-unlocked reward rows in siteConfig.collectibles (see
+  // that config's comment, and assets/js/modules/collectibles.js).
+  // Uses the site-wide shared login (auth.js) to know WHOSE collection
+  // to assign into — there's no separate login on this page, but if a
+  // session already exists (from Profiel elsewhere) this reads it the
+  // same way every other gated feature does.
+
+  // Every not-yet-unlocked reward row, across every collection (config-
+  // defined AND any created dynamically — see getAllRewardConfigs()),
+  // for whoever is currently logged in. Empty if nobody's logged in.
+  function assignableRewardOptions() {
+    const who = getAuth()?.who;
+    if (!who) return [];
+    const options = [];
+    getCollections().forEach((collection) => {
+      const rewardConfigs = getAllRewardConfigs(who, collection.id);
+      rewardConfigs.forEach((rewardConfig, idx) => {
+        const rewardState = getRewardState(who, collection.id, rewardConfig.id);
+        if (rewardState.unlocked) return;
+        const current = rewardState.giftSnapshot?.title || null;
+        options.push({
+          collectionId: collection.id,
+          rewardId: rewardConfig.id,
+          collectedCount: getCollectionState(who, collection.id).collectedCount,
+          label: `${collection.emoji || ''} ${collection.name} — beloning ${idx + 1}${current ? ` (nu: ${current})` : ''}`.trim(),
+        });
+      });
+    });
+    return options;
+  }
+
+  // Enables/disables + labels a card's 🎯 button based on login state,
+  // whether the gift has a price yet, and whether there's anything to
+  // assign it to.
+  function updateRewardButtonState(gift) {
+    const card = qs(`.gf-card[data-id="${cssEscape(gift.id)}"]`, root);
+    const button = card && qs('.gf-reward', card);
+    if (!button) return;
+    const who = getAuth()?.who;
+    const hasPrice = Number.isFinite(gift.price);
+    const options = who ? assignableRewardOptions() : [];
+    if (!who) {
+      button.disabled = true;
+      button.title = 'Log in via Profiel om dit cadeau als beloning in te stellen.';
+    } else if (!hasPrice) {
+      button.disabled = true;
+      button.title = 'Voeg eerst een prijs toe om dit cadeau als beloning te kunnen instellen.';
+    } else if (options.length === 0) {
+      button.disabled = true;
+      button.title = 'Alle beloningen zijn al ontgrendeld — er is niets meer om aan toe te wijzen.';
+    } else {
+      button.disabled = false;
+      button.title = 'Als beloning instellen';
+    }
+  }
+
+  // Closes every open reward panel except (optionally) one.
+  function closeRewardPanels(exceptPanel = null) {
+    qsa('[data-reward-panel]', root).forEach((panel) => {
+      if (panel !== exceptPanel) panel.classList.add('hidden');
+    });
+    qsa('.gf-reward', root).forEach((btn) => {
+      if (!exceptPanel || btn.closest('.gf-card')?.querySelector('[data-reward-panel]') !== exceptPanel) {
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // Builds and opens the little "which reward row?" picker under a card
+  function openRewardPanel(gift, panel, button) {
+    const options = assignableRewardOptions();
+    if (options.length === 0) { closeRewardPanels(); return; }
+    panel.innerHTML = `
+      <label class="gf-reward-label" for="gfRewardSelect-${escapeHtml(gift.id)}">Gebruik als beloning voor:</label>
+      <select id="gfRewardSelect-${escapeHtml(gift.id)}" class="gf-reward-select">
+        ${options.map((o) => `<option value="${escapeHtml(o.collectionId)}::${escapeHtml(o.rewardId)}" data-collected-count="${o.collectedCount}">${escapeHtml(o.label)}</option>`).join('')}
+      </select>
+      <p class="gf-reward-hint hidden" data-reward-hint aria-live="polite"></p>
+      <div class="gf-reward-panel-buttons">
+        <button type="button" class="btn btn-primary btn-sm gf-reward-confirm">Instellen</button>
+        <button type="button" class="btn btn-ghost btn-sm gf-reward-cancel">Annuleren</button>
+      </div>
+      <p class="gf-reward-confirmed hidden" role="status">✅ Ingesteld als beloning.</p>
+    `;
+    panel.classList.remove('hidden');
+    button.setAttribute('aria-expanded', 'true');
+    updateRewardHint(gift, panel.querySelector('.gf-reward-select'));
+  }
+
+  // Shows a "this unlocks right away" hint under the picker's select
+  // when the currently-highlighted reward row is already fully
+  // affordable for this gift's price (see collectibles.js's
+  // previewAssignment/setRewardGift for the actual cash-out +
+  // rollover-into-a-new-reward logic this is just previewing).
+  function updateRewardHint(gift, select) {
+    const hintEl = select?.parentElement?.querySelector('[data-reward-hint]');
+    if (!select || !hintEl || !Number.isFinite(gift.price)) return;
+    const [collectionId] = String(select.value).split('::');
+    const collection = getCollection(collectionId);
+    const collectedCount = Number(select.selectedOptions[0]?.dataset.collectedCount) || 0;
+    const { willUnlockImmediately, remainingEUR } = previewAssignment(collection, collectedCount, gift.price);
+    if (!willUnlockImmediately) {
+      hintEl.classList.add('hidden');
+      hintEl.textContent = '';
+      return;
+    }
+    hintEl.textContent = remainingEUR > 0
+      ? `🎉 Dit cadeau is al bereikt en wordt meteen uitgekeerd! De resterende €${remainingEUR} start automatisch een nieuwe beloning.`
+      : '🎉 Dit cadeau is al bereikt en wordt meteen uitgekeerd!';
+    hintEl.classList.remove('hidden');
   }
 
   // Fetches a gift's thumbnail (custom photo or scraped og:image) via the Worker
@@ -211,26 +390,6 @@ export function initGifts() {
     }
   }
 
-  // Sends a partial update for one gift (used when editing)
-  async function patchGift(id, patch) {
-    try {
-      const response = await fetch(`${workerUrl}/gifts/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      gifts = Array.isArray(data.gifts) ? data.gifts : gifts;
-      render();
-      return true;
-    } catch (error) {
-      console.error('Kon cadeau niet bijwerken:', error);
-      await loadGifts({ silent: true });
-      return false;
-    }
-  }
-
   // Uploads a custom photo for a gift, taking priority over any scraped image
   async function uploadGiftPhoto(id, file) {
     try {
@@ -269,7 +428,7 @@ export function initGifts() {
   // ---- Mutations ---------------------------------------------------
 
   // Adds a new gift (optimistically), then uploads its photo if one was chosen
-  async function addGift(person, { url, title, note, photoFile }, formEls) {
+  async function addGift(person, { url, title, note, price, photoFile }, formEls) {
     const trimmedUrl = url.trim();
     let trimmedTitle = title.trim();
 
@@ -286,7 +445,7 @@ export function initGifts() {
     const id = crypto.randomUUID();
     gifts = [
       ...gifts,
-      { id, person, title: trimmedTitle, url: trimmedUrl, note: note.trim(), addedAt: Date.now() },
+      { id, person, title: trimmedTitle, url: trimmedUrl, note: note.trim(), price, addedAt: Date.now() },
     ];
     render();
     await saveGifts();
@@ -299,19 +458,28 @@ export function initGifts() {
     setFormBusy(formEls, false, 'Toevoegen');
   }
 
-  // Saves an edited gift via PATCH, then uploads a new photo if one was chosen
-  async function saveEdit(id, { url, title, note, person, photoFile }, formEls) {
+  // Saves an edited gift. Updates the LOCAL copy of the full gifts
+  // array and pushes it via the same saveGifts() (PUT /gifts) every
+  // other change here already uses, rather than patchGift() — see
+  // this file's header for why: it's what makes the newer `price`
+  // field reliably persist regardless of the deployed Worker's exact
+  // PATCH schema, with no Cloudflare code changes required.
+  async function saveEdit(id, { url, title, note, price, person, photoFile }, formEls) {
     setFormBusy(formEls, true, 'Opslaan…');
 
-    const ok = await patchGift(id, { url: url.trim(), title: title.trim(), note: note.trim(), person });
+    const index = gifts.findIndex((gift) => gift.id === id);
+    if (index === -1) { setFormBusy(formEls, false, 'Toevoegen'); return false; }
+    gifts = gifts.map((gift, i) => (i === index ? { ...gift, url: url.trim(), title: title.trim(), note: note.trim(), price, person } : gift));
+    render();
+    await saveGifts();
 
-    if (ok && photoFile) {
+    if (photoFile) {
       await uploadGiftPhoto(id, photoFile);
       render();
     }
 
     setFormBusy(formEls, false, 'Toevoegen');
-    return ok;
+    return true;
   }
 
   // Disables/re-labels a form's submit button while a save is in flight
@@ -331,8 +499,9 @@ export function initGifts() {
   // ---- Edit mode -----------------------------------------------------
   // Reuses each column's existing add-form: swapping its fields to the
   // gift's current values, changing the submit button's label, and
-  // remembering `editingId` so the submit handler below knows to PATCH
-  // instead of add. Only one edit can be open at once.
+  // remembering `editingId` so the submit handler below knows to save
+  // the edit instead of adding a new gift. Only one edit can be open
+  // at once.
 
   // Pre-fills a column's add-form with a gift's data and switches it into edit mode
   function enterEditMode(gift) {
@@ -347,6 +516,8 @@ export function initGifts() {
     qs('.gf-add-url', form).value = gift.url;
     qs('.gf-add-title', form).value = gift.title;
     qs('.gf-add-note', form).value = gift.note || '';
+    const priceEl = qs('.gf-add-price', form);
+    if (priceEl) priceEl.value = Number.isFinite(gift.price) ? String(gift.price) : '';
     qs('.gf-add-photo', form).value = '';
     const editFilenameEl = qs('.gf-add-photo-filename', form);
     if (editFilenameEl) editFilenameEl.textContent = editFilenameEl.dataset.defaultText || 'Kies bestand';
@@ -381,6 +552,7 @@ export function initGifts() {
     const urlInput = qs('.gf-add-url', form);
     const titleInput = qs('.gf-add-title', form);
     const noteInput = qs('.gf-add-note', form);
+    const priceInput = qs('.gf-add-price', form);
     const photoInput = qs('.gf-add-photo', form);
     const photoFilenameEl = qs('.gf-add-photo-filename', form);
     const errorEl = form.nextElementSibling; // .gf-add-error, right after the form
@@ -422,13 +594,19 @@ export function initGifts() {
         return;
       }
 
+      if (priceInput && priceInput.value.trim() && parsePriceInput(priceInput.value) === null) {
+        errorEl.textContent = 'Prijs moet een geheel getal in euro\u2019s zijn.';
+        return;
+      }
+
       const photoFile = photoInput?.files?.[0] || null;
       if (photoFile && photoFile.size > MAX_UPLOAD_BYTES) {
         errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB).`;
         return;
       }
 
-      const payload = { url: urlValue, title: titleInput.value, note: noteInput.value, photoFile, person };
+      const price = priceInput ? parsePriceInput(priceInput.value) : null;
+      const payload = { url: urlValue, title: titleInput.value, note: noteInput.value, price, photoFile, person };
 
       if (editingId) {
         const ok = await saveEdit(editingId, payload, { submitBtn });
@@ -446,6 +624,13 @@ export function initGifts() {
     }
   });
 
+  columnsEl.addEventListener('change', (event) => {
+    if (!event.target.matches('.gf-reward-select')) return;
+    const card = event.target.closest('.gf-card');
+    const gift = gifts.find((g) => g.id === card?.dataset.id);
+    if (gift) updateRewardHint(gift, event.target);
+  });
+
   columnsEl.addEventListener('click', (event) => {
     const deleteBtn = event.target.closest('.gf-delete');
     if (deleteBtn) {
@@ -459,7 +644,58 @@ export function initGifts() {
       const id = editBtn.closest('.gf-card')?.dataset.id;
       const gift = gifts.find((g) => g.id === id);
       if (gift) enterEditMode(gift);
+      return;
     }
+
+    const rewardBtn = event.target.closest('.gf-reward');
+    if (rewardBtn) {
+      const card = rewardBtn.closest('.gf-card');
+      const panel = card?.querySelector('[data-reward-panel]');
+      const id = card?.dataset.id;
+      const gift = gifts.find((g) => g.id === id);
+      if (!gift || !panel || rewardBtn.disabled) return;
+      const alreadyOpen = !panel.classList.contains('hidden');
+      closeRewardPanels();
+      if (!alreadyOpen) openRewardPanel(gift, panel, rewardBtn);
+      return;
+    }
+
+    const rewardCancelBtn = event.target.closest('.gf-reward-cancel');
+    if (rewardCancelBtn) { closeRewardPanels(); return; }
+
+    const rewardConfirmBtn = event.target.closest('.gf-reward-confirm');
+    if (rewardConfirmBtn) {
+      const panel = rewardConfirmBtn.closest('[data-reward-panel]');
+      const card = rewardConfirmBtn.closest('.gf-card');
+      const select = panel?.querySelector('.gf-reward-select');
+      const id = card?.dataset.id;
+      const gift = gifts.find((g) => g.id === id);
+      const who = getAuth()?.who;
+      if (!gift || !select || !who) return;
+      const [collectionId, rewardId] = String(select.value).split('::');
+      const applied = setRewardGift(who, collectionId, rewardId, {
+        giftId: gift.id, title: gift.title, price: gift.price, url: gift.url,
+      });
+      if (applied) {
+        panel.querySelector('.gf-reward-confirmed')?.classList.remove('hidden');
+        select.disabled = true;
+        rewardConfirmBtn.disabled = true;
+        setTimeout(() => { closeRewardPanels(); updateRewardButtonState(gift); }, 1400);
+      } else {
+        // Extremely rare race (the reward got unlocked in another tab
+        // between opening this panel and confirming it) — just refresh
+        // the picker so it drops the now-unlocked option.
+        const button = card?.querySelector('.gf-reward');
+        if (button) openRewardPanel(gift, panel, button);
+      }
+      return;
+    }
+  });
+
+  // Reward panels are per-page UI state, not tied to any one form —
+  // close them on outside clicks, same UX as the nav dropdowns.
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.gf-card')) closeRewardPanels();
   });
 
   // ---- Polling (picks up gifts added on the other person's device) ----
@@ -487,6 +723,15 @@ export function initGifts() {
       if (!editingId) loadGifts({ silent: true });
       startPolling();
     }
+  });
+
+  // Login/logout (via the shared "👤 Profiel" dropdown) changes which
+  // reward rows are assignable and to whom, so re-evaluate every card's
+  // 🎯 button and close any open picker rather than leaving it showing
+  // stale options for the previous session.
+  onAuthChange(() => {
+    closeRewardPanels();
+    gifts.forEach((gift) => updateRewardButtonState(gift));
   });
 
   // ---- Initial load --------------------------------------------------

@@ -47,8 +47,7 @@
 /* One gift-idea card: thumbnail, title/note, edit+delete actions */
 .gf-card {
   display: flex;
-  align-items: stretch;
-  gap: 0;
+  flex-direction: column;
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
@@ -63,6 +62,18 @@
   transform: translateY(-2px);
 }
 
+/* Row holding the clickable link area + the action buttons — kept
+   separate from .gf-card itself so the reward panel below (see
+   .gf-reward-panel) can sit in normal flow underneath it instead of
+   being squeezed into the same row. Tall enough to comfortably fit
+   the (up to) 3 stacked action buttons plus breathing room above and
+   below, rather than just barely fitting them. */
+.gf-card-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 140px;
+}
+
 /* Clickable area of the card (thumbnail + text), links out to the gift URL */
 .gf-card-link {
   display: flex;
@@ -70,8 +81,8 @@
   gap: var(--space-4);
   flex: 1;
   min-width: 0;
-  padding: var(--space-3);
-  padding-right: var(--space-9); /* room for the edit+delete button pair */
+  padding: var(--space-4);
+  padding-right: var(--space-9); /* room for the stacked action buttons */
   color: inherit;
   text-decoration: none;
 }
@@ -86,8 +97,8 @@
 /* Thumbnail box: custom photo, scraped og:image, or the fallback emoji */
 .gf-card-image {
   flex-shrink: 0;
-  width: 72px;
-  height: 72px;
+  width: 100px;
+  height: 100px;
   border-radius: var(--radius-sm);
   background-color: var(--color-bg);
   background-size: contain;
@@ -101,7 +112,7 @@
 
 /* 🎁 fallback emoji shown until/unless a real thumbnail loads */
 .gf-card-fallback {
-  font-size: 1.6rem;
+  font-size: 2rem;
 }
 
 /* Hide the fallback emoji once a real image has loaded */
@@ -146,6 +157,28 @@
   overflow-wrap: anywhere;
 }
 
+/* Price pill, shown under the title/note (or on its own if there's no note) */
+.gf-card-price {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
+/* Muted variant for gifts that don't have a price yet — can't be
+   picked as a reward until one is added (see gifts.js's
+   updateRewardButtonState). */
+.gf-card-price-unknown {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  font-weight: 600;
+}
+
 /* == CARD ACTIONS (edit + delete, stacked top-right) == */
 .gf-card-actions {
   position: absolute;
@@ -156,7 +189,8 @@
   gap: var(--space-2);
 }
 
-/* Shared circular sizing for the edit (✏️) and delete (✕) buttons */
+/* Shared circular sizing for the reward (🎯), edit (✏️) and delete (✕) buttons */
+.gf-reward,
 .gf-edit,
 .gf-delete {
   flex-shrink: 0;
@@ -168,7 +202,21 @@
   font-size: 0.9rem;
   line-height: 1;
   box-shadow: var(--shadow-sm);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+}
+
+/* Reward button turns accent-colored on hover/focus, dims when disabled
+   (no price yet / not logged in / nothing left to assign — see
+   gifts.js's updateRewardButtonState) */
+.gf-reward:hover:not(:disabled),
+.gf-reward:focus-visible:not(:disabled) {
+  background: var(--color-accent, var(--color-primary));
+  color: var(--color-white);
+}
+
+.gf-reward:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 /* Edit button turns primary-colored on hover/focus */
@@ -183,6 +231,56 @@
 .gf-delete:focus-visible {
   background: var(--color-danger);
   color: var(--color-white);
+}
+
+/* == REWARD PICKER PANEL (🎯 "als beloning instellen") == */
+/* Sits below the card's row in normal flow — the card just grows to
+   fit it, nothing gets clipped by .gf-card's overflow:hidden. */
+.gf-reward-panel {
+  padding: var(--space-3);
+  border-top: 1px dashed var(--color-border);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: gf-reward-panel-in var(--transition-fast) ease-out;
+}
+
+@keyframes gf-reward-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gf-reward-label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.gf-reward-select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.gf-reward-panel-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.gf-reward-panel-buttons .btn {
+  flex: 1;
+}
+
+.gf-reward-confirmed {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-success, #2e7d32);
+  margin: 0;
 }
 
 /* == EMPTY STATE == */
@@ -214,15 +312,18 @@
   box-shadow: var(--shadow);
 }
 
-/* Text/URL inputs in the add/edit form */
+/* Text/URL/price inputs in the add/edit form */
 .gf-add-form input[type='url'],
-.gf-add-form input[type='text'] {
+.gf-add-form input[type='text'],
+.gf-add-form input[type='number'] {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   font: inherit;
   min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Wraps the custom photo upload control with its own label text */

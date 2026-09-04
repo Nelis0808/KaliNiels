@@ -34,10 +34,13 @@ DateSite/
 ├── todo.html                   Synced TODO list (per-person, with priority)
 ├── snack-rating.html           Synced snack ratings (per-person, 0-5 stars + photo)
 ├── clothing.html                Synced clothing ratings (same pattern as snacks, + size)
-├── gifts.html                   Synced gift-idea lists, two columns, link-preview thumbnails
+├── gifts.html                   Synced gift-idea lists, two columns, link-preview thumbnails, optional price
+├── recepten.html                 Albert Heijn / Allerhande recepten op soort gerecht, met aantal personen + favorieten
 ├── ticketmaster.html            Concert search/upcoming/sales + a saved-artist "Favorieten" tab
 ├── photos.html                  Private photo gallery (login required)
 ├── reizen.html + reizen/land.html   Travel map: world map -> per-country page -> city photos (login required)
+├── timer.html                    Studie Timer — task/pomodoro timer that grows a reward tree
+├── collections.html              Collectibles/rewards page fed by the Studie Timer (login required) (§5)
 ├── valentine.html                "Will you be my Valentine" surprise page
 ├── template.html                 Starter file for new pages — NOT linked in navigation (see §4)
 ├── package.json                   npm start / npm run dev convenience scripts
@@ -77,10 +80,13 @@ depending on where you deploy.
 | `todo.html` | Shared TODO list, one column per person, with a priority level per item |
 | `snack-rating.html` | Rate snacks 0-5 stars, one column per person, with an optional photo |
 | `clothing.html` | Same as snacks, plus a free-text size field |
-| `gifts.html` | Two columns of gift ideas with auto-fetched link previews and optional custom photos |
+| `gifts.html` | Two columns of gift ideas with auto-fetched link previews, optional custom photos, and an optional price (€) that can be assigned as a collectible reward — see `collections.html` below |
+| `recepten.html` | Albert Heijn / Allerhande recipes browsed by "soort gerecht" (category) + subcategory keyword or free search, plus a shared "Favorieten" tab; opening a recipe shows the full ingredients + bereidingswijze, scaled live to however many people you set |
 | `ticketmaster.html` | Upcoming concerts / upcoming sales / search by artist, plus a saved-favorites tab |
 | `photos.html` | Private photo gallery — behind a shared login |
 | `reizen.html`, `reizen/land.html` | World map of visited/wishlist countries → per-country page with city pins → real photos, all behind the same shared login |
+| `timer.html` | Task/pomodoro Studie Timer — finishing a tree awards a Tree collectible (behind a shared login) |
+| `collections.html` | Collectibles/rewards page — item grid + progress toward configured gift rewards (§5), behind the same shared login |
 | `valentine.html` | A small "will you be my Valentine" interactive surprise |
 | `template.html` | Not linked anywhere — a starter file for building a new page (§4) |
 
@@ -150,7 +156,8 @@ Shared/site-wide modules:
 | `counters.js` | Animated number counters (`[data-target]`) |
 | `typewriter.js` | Typing animation for a hero heading |
 | `footer-year.js` | Keeps the footer copyright year current |
-| `page-gate.js` | Hides an entire page's content until logged in (used by Onze Reizen) |
+| `page-gate.js` | Hides an entire page's content until logged in (used by Onze Reizen, Studie Timer, Collecties) |
+| `collectibles.js` | Generic, collection-agnostic collectible/reward persistence + reward math — used by `study-timer.js` (awards Trees), `collections.js` (renders them + the unlock showcase), and `gifts.js` (the 🎯 "set as reward" button). See §5. |
 | `utils.js` | Small shared helpers with no DOM-specific logic |
 
 Every other module is page-specific (one per page/game listed in §1),
@@ -196,20 +203,35 @@ The one file you'll likely touch most often:
   disabled, non-clickable card.
 - `games` (in `games-hub.js`) — same idea, for the games grid.
 - One config block per server-backed feature (`shoppingList`, `todo`,
-  `snackRatings`, `clothing`, `gifts`, `ticketmaster`, `photos`,
-  `blackjack`, `spiderette`) — each holds that feature's Worker URL
-  and any per-feature settings (e.g. person display names). See
+  `snackRatings`, `clothing`, `gifts`, `recipes`, `ticketmaster`,
+  `photos`, `blackjack`, `spiderette`) — each holds that feature's
+  Worker URL and any per-feature settings (e.g. person display names,
+  or — for `recipes` — the curated category/subcategory menu itself).
+  See
   [ACTION-EXPANSION-PLAN.md](./ACTION-EXPANSION-PLAN.md) for what to
   put in each one.
+- `collectibles` — the Trees/rewards system (`timer.html` →
+  `collections.html`). `collectibleValueEUR` sets what one collectible
+  is worth in euros; `collections` is a list of collections (Trees is
+  the first — add more the same way), each with its own `items` (grid
+  size, generated from a small helper for Trees — see the comment
+  above `buildTreeCollectibleItems()`), `itemsPerRow`, and `rewards`
+  (one entry per reward row, with a `fallbackPriceEUR` used until/
+  unless a real gift is picked for it). *Which* gift fills a reward
+  row and how much progress has been made are runtime data, not
+  config — see `collectibles.js`'s own comment for where that's
+  stored (same local-per-browser pattern as the Studie Timer itself,
+  not a new Worker — no Cloudflare changes were needed for this
+  feature).
 
 ---
 
 ## 6. Server-backed features (Cloudflare Workers)
 
-Nine small features need something a static site can't do on its own
-— storing a shared list, keeping an API key secret, checking a login —
-so each one talks to its own small **Cloudflare Worker**
-(`cloudflare/<name>/`). The site stays 100% static either way: every
+Ten small features need something a static site can't do on its own
+— storing a shared list, keeping an API key secret, checking a login, or
+reading a page from another site server-side — so each one talks to
+its own small **Cloudflare Worker** (`cloudflare/<name>/`). The site stays 100% static either way: every
 page works with its Worker left unconfigured, it just shows a
 "⚠️ Nog geen Worker gekoppeld" message instead of breaking.
 
@@ -226,10 +248,22 @@ every Worker — live in
 | Snack ratings | `cloudflare/rating/` | No |
 | Clothing ratings | `cloudflare/clothing/` | No |
 | Gift ideas + image resolver | `cloudflare/gifts/` | No |
+| Recepten (Allerhande recipes) + favorites | `cloudflare/recepten/` | No |
 | Ticketmaster concert search | `cloudflare/ticketmaster/` | Yes — Ticketmaster API key |
 | Ticketmaster saved artists | `cloudflare/ticketmaster_favorite-artists/` | No |
 | Private photo gallery + shared login | `cloudflare/gallery/` | Yes — 2 passphrases + a token secret |
 | Shared chip balance (BlackJack + Spiderette) | `cloudflare/chips/` | Yes — same 3 secrets as gallery |
+
+The gifts Worker's `price` field (added alongside the Collecties
+feature) needed **no Worker changes** — it stores/returns whatever
+gift fields the page sends it, so the new field just rides along. The
+Collecties/rewards system itself (`timer.html` → `collections.html`)
+also has **no Worker of its own** — like the Studie Timer state that
+feeds it, collected/unlocked progress is stored locally per-browser
+(see `collectibles.js`), not synced through Cloudflare. If you'd
+rather have that progress sync across devices, that'd mean adding a
+tenth Worker — `collectibles.js`'s two storage functions
+(`readStore`/`writeStore`) are the only place that'd need to change.
 
 ### 6.2 One login, four features
 

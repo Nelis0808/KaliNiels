@@ -44,6 +44,8 @@ import { initTodo } from './modules/todo.js';
 import { initSnackRating } from './modules/snack-rating.js';
 import { initClothing } from './modules/clothing.js';
 import { initGifts } from './modules/gifts.js';
+import { initRecepten } from './modules/recepten.js';
+import { initCollections } from './modules/collections.js';
 import { initReizen } from './modules/reizen.js';
 import { initReizenLand } from './modules/reizen-land.js';
 import { initPageGate } from './modules/page-gate.js';
@@ -145,7 +147,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initSnackRating', initSnackRating);     // snack-rating.html
   safeInit('initClothing', initClothing);           // clothing.html
   safeInit('initGifts', initGifts);                 // gifts.html
-  safeInit('initPageGate', initPageGate);           // reizen.html + reizen/land.html — hides the whole page until logged in
+  safeInit('initRecepten', initRecepten);           // recepten.html
+  safeInit('initCollections', initCollections);     // collections.html
+  safeInit('initPageGate', initPageGate);           // reizen.html + reizen/land.html + collections.html — hides the whole page until logged in
   safeInit('initReizen', initReizen);               // reizen.html
   safeInit('initReizenLand', initReizenLand);       // reizen/land.html
   safeInit('initGamesHub', initGamesHub);           // games-hub.html

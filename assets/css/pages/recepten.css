@@ -1,0 +1,446 @@
+/* =============================================================
+   PAGE: recepten.html
+   -------------------------------------------------------------
+   Toolbar (category tabs -> subcategory chips -> free-text search
+   -> default "aantal personen"), a card grid (image, name, soort
+   gerecht), and a full-screen detail modal with a servings stepper
+   that rescales every ingredient live. Modal pattern mirrors
+   collections.css's unlock overlay (fixed, centered, body-scroll-lock
+   via .rpt-modal-open) rather than inventing a new one.
+   ============================================================= */
+
+#receptenApp {
+  padding-bottom: var(--space-8);
+}
+
+/* == TOOLBAR == */
+.rpt-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.rpt-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.rpt-tab {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-family: var(--font-body);
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.rpt-tab:hover, .rpt-tab:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.rpt-tab[aria-selected='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Subcategory chips — smaller/lighter than the main tabs so the
+   hierarchy (category -> subcategory) reads clearly at a glance */
+.rpt-subcats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.rpt-chip {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+
+.rpt-chip:hover, .rpt-chip:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.rpt-chip[aria-selected='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Free-text search row */
+.rpt-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.rpt-search-row input {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+/* Default "aantal personen" row */
+.rpt-servings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.rpt-servings-row label {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.rpt-servings-row input,
+.rpt-servings-stepper input {
+  width: 80px;
+  text-align: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.rpt-status {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+  min-height: 1.4em;
+}
+
+/* == RESULTS GRID == */
+.rpt-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-5);
+}
+
+.rpt-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+
+.rpt-card:hover, .rpt-card:focus-within {
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.rpt-card-favorite {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--shadow-sm);
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+.rpt-card-favorite:hover, .rpt-card-favorite:focus-visible {
+  transform: scale(1.12);
+}
+
+.rpt-card-image {
+  height: 150px;
+  background-color: var(--color-bg);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rpt-card-fallback {
+  font-size: 2.2rem;
+  opacity: 0.5;
+}
+
+.rpt-card-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rpt-card-title {
+  font-size: var(--fs-lg);
+  line-height: 1.25;
+}
+
+.rpt-card-tag {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rpt-card-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* == CONFIG WARNING == */
+.rpt-config-warning {
+  text-align: left;
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  color: var(--color-text-muted);
+}
+
+/* == DETAIL MODAL ==
+   Same fixed/centered/backdrop-blur shape as .col-unlock-overlay in
+   collections.css — kept as its own rpt- prefixed copy since the two
+   pages don't share a module, but intentionally not reinventing the
+   pattern. */
+.rpt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5) var(--space-4);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+
+.rpt-modal-overlay.hidden {
+  display: none;
+}
+
+body.rpt-modal-open {
+  overflow: hidden;
+}
+
+.rpt-modal-card {
+  position: relative;
+  width: min(94vw, 760px);
+  margin: var(--space-6) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+}
+
+.rpt-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.rpt-modal-close:hover, .rpt-modal-close:focus-visible {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+
+.rpt-modal-loading {
+  text-align: center;
+  padding: var(--space-8) 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.rpt-modal-content.hidden {
+  display: none;
+}
+
+.rpt-modal-image {
+  height: 220px;
+  border-radius: var(--radius);
+  background-color: var(--color-bg);
+  background-size: cover;
+  background-position: center;
+  margin-bottom: var(--space-5);
+}
+
+.rpt-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.rpt-modal-header h2 {
+  margin: 0;
+}
+
+.rpt-favorite-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  font-size: 1.3rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+
+.rpt-favorite-btn:hover, .rpt-favorite-btn:focus-visible {
+  transform: scale(1.1);
+}
+
+.rpt-modal-description {
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+.rpt-modal-description.hidden {
+  display: none;
+}
+
+.rpt-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.rpt-meta-pill {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.rpt-modal-servings {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.rpt-modal-servings label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.rpt-servings-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.rpt-servings-hint {
+  margin-top: var(--space-2);
+  margin-bottom: 0;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.rpt-modal-columns {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.rpt-modal-ingredients h3,
+.rpt-modal-steps h3 {
+  margin-bottom: var(--space-3);
+}
+
+.rpt-ingredients-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rpt-ingredients-list li {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.rpt-steps-list {
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.rpt-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.rpt-modal-error {
+  color: var(--color-danger);
+  text-align: center;
+  padding: var(--space-6) 0;
+}
+
+.rpt-modal-error.hidden {
+  display: none;
+}
+
+.rpt-modal-error a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* Stack ingredients/steps on narrower screens */
+@media (max-width: 760px) {
+  .rpt-modal-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .rpt-modal-card {
+    padding: var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rpt-card,
+  .rpt-card-favorite,
+  .rpt-favorite-btn {
+    transition: none;
+  }
+}

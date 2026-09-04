@@ -2,7 +2,7 @@
 
 This site is a static HTML/CSS/JS site with **no server of its own**.
 Every feature that needs to store data, keep an API key secret, or
-check a login talks to a small **Cloudflare Worker** instead — nine of
+check a login talks to a small **Cloudflare Worker** instead — ten of
 them in total, one per feature, each with its own URL, its own secrets,
 and (mostly) its own KV namespace or storage bucket. None of them know
 about each other's code; a couple of them share the same *login*
@@ -28,7 +28,7 @@ fine with its Worker un-configured — it just shows a
 
 ### 1.1 The shape every Worker follows
 
-All nine Workers are single JavaScript files (`export default { async
+All ten Workers are single JavaScript files (`export default { async
 fetch(request, env, ctx) { ... } }`) with no dependencies and no build
 step — copy-paste the file's contents straight into the Cloudflare
 dashboard's code editor, or deploy it with Wrangler. Every one of them
@@ -38,10 +38,13 @@ you understand the shape of all of them:
 - **CORS allowlist** — an `ALLOWED_ORIGINS` array at the top of the
   file. Update this to match wherever your site is actually served
   from (see §1.3).
-- **Daily call limit** — a shared `RATE_LIMIT_KV` namespace (see §1.4)
-  protects each Worker's own request budget from abuse, independent of
-  whatever storage/KV namespace that Worker actually uses for its
-  data.
+- **No default rate limiting** — most Workers here just read/write
+  small bits of JSON and don't need a request cap. One did use a
+  shared `RATE_LIMIT_KV` write-per-request counter; that's been
+  removed (see §1.4) after it exhausted Cloudflare's free KV write
+  quota on its own. If a Worker of yours proxies something metered
+  (an API key with a usage cap, e.g. `cloudflare/ticketmaster/`),
+  §1.4 covers the options that don't recreate that problem.
 - **JSON in, JSON out** — every route returns `Content-Type:
   application/json` (except the two Workers that proxy raw image
   bytes: gallery and gifts).
@@ -121,24 +124,70 @@ const ALLOWED_ORIGINS = [
   shows up as a CORS error in the browser console, with the request
   never even reaching the Worker's own logic.
 
-### 1.4 The shared rate-limit KV namespace
+### 1.4 Rate limiting — what happened, and what to do instead
 
-Every Worker checks a daily request cap against **one** shared KV
-namespace, bound as `RATE_LIMIT_KV`, so you only ever need to create
-this once and bind it to every Worker you deploy:
+This project used to recommend one shared KV namespace
+(`RATE_LIMIT_KV`) that every Worker wrote a counter to on every
+request. **Don't do that** — it's what caused a real
+`"You have exceeded the daily Workers KV free tier limit of 1000 put
+operations"` email. The free tier's 1,000-writes/day cap is
+**account-wide**, shared across every namespace and every Worker —
+and one write *per request* adds up fast: a debounced search box
+alone can fire a few requests a second while someone's typing, each
+one an extra `KV.put()`. You hit the ceiling from completely normal
+use, well before anything resembling abuse.
 
-1. **Workers & Pages → KV → Create a namespace**, name it something
-   like `rate-limits`.
-2. On **every** Worker: **Settings → Bindings → Add binding → KV
-   Namespace**, variable name `RATE_LIMIT_KV`, pick that same
-   namespace.
-3. Nothing else to configure — each Worker uses its own key prefix
-   (`ticketmaster:`, `lijstje:`, `photos:`, etc.) internally, so they
-   never collide with each other inside the shared namespace.
+**Default now: no rate limiting.** Every Worker in this project just
+reads/writes small bits of JSON (or, for `cloudflare/recepten/`, an
+already-cached page) for two people — there's very little to actually
+throttle, and the KV write itself was the bigger risk. Cache windows
+(§ per-Worker, e.g. `CACHE_TTL_MS` in `recepten_worker.js`) already
+keep real request volume low without spending any write quota on it.
 
-If you skip this binding on a given Worker, that Worker still works —
-it just logs a warning and doesn't enforce a limit. Not required, but
-recommended for anything whose URL might get shared or discovered.
+**If one specific Worker genuinely needs protecting** — mainly
+`cloudflare/ticketmaster/`, since it proxies a metered Ticketmaster API
+key and a bug or loop there could burn through that key's own quota,
+not just yours — pick one, roughly in order of effort:
+
+1. **Bucketed KV counter (simplest, still dashboard-only).** Same idea
+   as before, but write far less often: key the counter by hour
+   instead of by request (e.g. `ticketmaster:2026-09-04T14`) and only
+   increment it once per *batch* of requests using
+   [`waitUntil`](https://developers.cloudflare.com/workers/runtime-apis/context/)
+   or simply accept an approximate count by incrementing every Nth
+   request. Cuts writes by 1-2 orders of magnitude versus per-request.
+   Still KV, still simple, no new Cloudflare product to learn.
+2. **Cloudflare's native Rate Limiting API binding (zero KV).** A
+   built-in Workers binding designed exactly for this — no KV
+   namespace, no writes at all, backed by Cloudflare's edge
+   infrastructure directly:
+   [developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+   **Catch:** this binding isn't offered in the dashboard's
+   Settings → Bindings UI (Cloudflare's own docs note it's "not
+   currently visible in the Cloudflare dashboard") — it can only be
+   attached by adding a `[[ratelimits]]` block to `wrangler.toml` and
+   deploying with the Wrangler CLI (`npm install -g wrangler`,
+   `wrangler login`, `wrangler deploy` from the Worker's folder). Worth
+   it if you're comfortable installing that once; skip it if you want
+   to stay purely dashboard-based.
+3. **Zone-level WAF Rate Limiting Rules (what Cloudflare's own
+   support suggests, zero KV, dashboard-only).** Security →
+   Security rules → Rate limiting rules, matched on the Worker's
+   path, works entirely from the dashboard. **Catch:** this is a
+   *zone* feature — it only applies to a domain you actually own and
+   have added to your Cloudflare account. It does **not** apply to a
+   bare `<name>.workers.dev` address, which is what every Worker in
+   this project uses by default (Cloudflare's own domain, not your
+   zone). You'd first need to attach a **Custom Domain** to the Worker
+   (Worker → Settings → Domains & Routes → Add Custom Domain — this
+   part *is* dashboard-only) using a domain you own and have added to
+   Cloudflare; only then does that hostname become a zone you can
+   write WAF rules against. Worth it only if you already have (or are
+   happy to add) a domain for this; not a quick five-minute fix on
+   `workers.dev` alone.
+
+For two people planning dinner or a concert, option 1 (or nothing at
+all) is almost certainly enough.
 
 ### 1.5 Deploying any Worker, step by step
 
@@ -156,8 +205,8 @@ Worker needs.
    full contents of that feature's `*_worker.js` file from this repo
    (see the file path in each Part 2 section) → Deploy.
 4. **Add bindings.** Settings → Bindings → Add binding, for whatever
-   KV namespace(s) / R2 bucket that Worker needs (see Part 2) — plus
-   `RATE_LIMIT_KV` from §1.4.
+   KV namespace(s) / R2 bucket that Worker needs (see Part 2). No
+   rate-limit binding needed by default anymore — see §1.4.
 5. **Add secrets.** Settings → Variables and Secrets → Add → type
    **Secret** for anything sensitive (API keys, passphrases,
    `TOKEN_SECRET`) — never as a plain "Variable", and never pasted
@@ -211,7 +260,7 @@ actually stays secret.
 
 ## Part 2 — Specific implementation, per Worker
 
-Nine Workers live under `cloudflare/`, one subfolder each. Every one
+Ten Workers live under `cloudflare/`, one subfolder each. Every one
 of them follows the general shape in Part 1 — this section only lists
 what's unique to each.
 
@@ -223,7 +272,7 @@ in `config.js` — point both at the **same** Worker URL.
 
 - **Bindings:** `CHIPS_KV` (its own new KV namespace — nothing to
   pre-populate, the Worker seeds `1000` chips per person on first
-  login) + `RATE_LIMIT_KV` (§1.4).
+  login). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** `PASSPHRASE_A`, `PASSPHRASE_B`, `TOKEN_SECRET` — **must
   exactly match** the gallery Worker's (§1.2). They can be the same
   passphrases you chose for the gallery Worker, or different ones —
@@ -252,7 +301,7 @@ before chips, since chips reuses its secrets.
 
 - **Bindings:** `PHOTOS_BUCKET` (a new R2 bucket, kept fully private —
   never make it public, the Worker is the only thing allowed to read
-  it) + `RATE_LIMIT_KV` (§1.4).
+  it). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** `PASSPHRASE_A`, `PASSPHRASE_B`, `TOKEN_SECRET` (a long
   random string — a password generator's output is fine, nobody needs
   to remember it).
@@ -301,7 +350,7 @@ before chips, since chips reuses its secrets.
 **File:** `cloudflare/lijstje/lijstje_worker.js`
 **Config field:** `shoppingList.workerUrl` in `config.js`.
 
-- **Bindings:** `LIST_KV` (its own new KV namespace) + `RATE_LIMIT_KV`.
+- **Bindings:** `LIST_KV` (its own new KV namespace). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** none — no login for this feature (nothing sensitive,
   the Worker URL itself isn't public).
 - **Multiple named lists:** the first time `/lists` is called with no
@@ -316,7 +365,7 @@ before chips, since chips reuses its secrets.
 **File:** `cloudflare/todo/todo_worker.js`
 **Config field:** `todo.workerUrl` in `config.js`.
 
-- **Bindings:** `TODO_KV` (new KV namespace) + `RATE_LIMIT_KV`.
+- **Bindings:** `TODO_KV` (new KV namespace). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** none.
 - Same "read it all, write it all back" model as lijstje, with an
   added `person` (`a`/`b`) and `priority` field per item so one list
@@ -328,7 +377,7 @@ before chips, since chips reuses its secrets.
 **File:** `cloudflare/rating/rating_worker.js`
 **Config field:** `snackRatings.workerUrl` in `config.js`.
 
-- **Bindings:** `SNACKS_KV` (new KV namespace) + `RATE_LIMIT_KV`.
+- **Bindings:** `SNACKS_KV` (new KV namespace). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** none.
 - **Photos:** no R2 bucket needed — `snack-rating.js` downscales and
   JPEG-compresses a chosen photo client-side into a small data URL
@@ -342,7 +391,7 @@ before chips, since chips reuses its secrets.
 **File:** `cloudflare/clothing/clothing_worker.js`
 **Config field:** `clothing.workerUrl` in `config.js`.
 
-- **Bindings:** `CLOTHING_KV` (new KV namespace) + `RATE_LIMIT_KV`.
+- **Bindings:** `CLOTHING_KV` (new KV namespace). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** none.
 - Identical pattern to `rating` above (client-side-compressed photo
   data URLs, no R2), with one extra free-text `size` field per item
@@ -356,7 +405,7 @@ before chips, since chips reuses its secrets.
 
 - **Bindings:** `GIFTS_KV` (new KV namespace, the list itself) +
   `GIFTS_BUCKET` (new R2 bucket, public/no-login — it only ever holds
-  pictures of gift *ideas*) + `RATE_LIMIT_KV`.
+  pictures of gift *ideas*). No rate-limit binding needed by default — see §1.4.
 - **Secrets:** none.
 - **Image resolution order** for a gift's thumbnail: (1) a custom
   photo uploaded via the add/edit form (`POST /gifts/upload`, stored
@@ -369,6 +418,29 @@ before chips, since chips reuses its secrets.
   a visitor gives it.
 - Routes: `GET/PUT /gifts`, `PATCH /gifts/:id`, `GET /gifts/meta?url=`,
   `GET /gifts/image?id=&url=`, `POST /gifts/upload?id=`.
+- **`price` field:** gifts optionally carry an integer `price` (whole
+  euros), used by the Collecties/rewards system (see §2.10) to pick a
+  gift as a reward. This needed **no changes here** — `PUT /gifts`
+  already stores/returns whatever fields each gift object has, so
+  `price` just rides along like any other field. The site's own edit
+  form always saves via `PUT /gifts` (not `PATCH /gifts/:id`)
+  specifically so this keeps working regardless of which fields your
+  deployed `PATCH` route happens to whitelist.
+
+### 2.10 Collecties / rewards (`timer.html` → `collections.html`) — no Worker
+
+Unlike every feature above, this one has **no Cloudflare Worker of its
+own** and needed none added. Collected-collectible counts and which
+gift is chosen per reward row are stored in `localStorage`, namespaced
+per logged-in person — the exact same pattern the Studie Timer's own
+tree-growth state already uses (see `study-timer.js`'s `KEY`
+constant), just under its own key (see `collectibles.js`'s `KEY`).
+Login itself still goes through the shared identity Worker (§1.2) —
+this page is gated the same way Onze Reizen is (`page-gate.js`) — but
+nothing about *progress* is server-backed. If you'd rather have it
+sync across devices, `collectibles.js`'s `readStore()`/`writeStore()`
+are the only two functions that would need to change (swap them for
+`fetch` calls to a new Worker, following the same shape as §1.1).
 
 ### 2.8 `cloudflare/ticketmaster/` — Ticketmaster API proxy
 
@@ -380,8 +452,12 @@ before chips, since chips reuses its secrets.
    calls/day, 5 calls/second).
 2. Deploy this Worker (§1.5) with one secret:
    `TICKETMASTER_API_KEY` = that Consumer Key.
-3. `RATE_LIMIT_KV` binding as usual (§1.4) — no other bindings needed,
-   this Worker holds no data of its own.
+3. This is the one Worker in this project where request throttling
+   still genuinely matters — it proxies your Ticketmaster API key, and
+   a bug/loop here burns through *that key's* 5,000-calls/day quota,
+   not just Cloudflare's. See §1.4 for options (the 5-minute
+   edge-cache mentioned below already helps a lot on its own; avoid
+   recreating a per-request `RATE_LIMIT_KV` write on top of it).
 4. Paste the Worker URL into `ticketmaster.workerUrl`.
 
 The Worker builds Ticketmaster's exact query parameters server-side
@@ -396,14 +472,136 @@ for 5 minutes to protect your daily quota.
 `config.js` — a **separate** Worker/URL from `ticketmaster.workerUrl`
 above.
 
-- **Bindings:** `FAVORITE_ARTISTS_KV` (new KV namespace) +
-  `RATE_LIMIT_KV`.
+- **Bindings:** `FAVORITE_ARTISTS_KV` (new KV namespace). No
+  rate-limit binding needed by default — see §1.4.
 - **Secrets:** none.
 - This Worker never talks to Ticketmaster itself — it only stores the
   shared list of artist/band names. The front end still calls the
   `ticketmaster` proxy Worker (§2.8) once per saved artist and merges
   results client-side, so the two Workers stay fully independent.
 - Routes: `GET /artists`, `PUT /artists`.
+
+### 2.11 `cloudflare/recepten/` — Albert Heijn / Allerhande recipes + favorites
+
+**File:** `cloudflare/recepten/recepten_worker.js`
+**Config field:** `recipes.workerUrl` in `config.js` — the same field
+also carries the curated category/subcategory menu itself (see the
+comment above `recipes:` in `config.js`), so most day-to-day tweaks
+(add a category, rename a chip) don't touch this Worker at all.
+
+**⚠️ Already deployed and got the "exceeded daily Workers KV free
+tier limit of 1000 put operations" email?** That was this Worker's old
+`RATE_LIMIT_KV` counter, which wrote to KV on *every single request* —
+removed as of this version, see §1.4 for the full story. Do this now:
+
+1. Open the `recepten` Worker → **Settings → Bindings** → remove the
+   `RATE_LIMIT_KV` binding if present (this alone stops the writes
+   immediately, no redeploy needed — the code already no-ops without
+   it, but you're about to replace the code anyway in step 2).
+2. **Edit code** → replace the contents with this version of
+   `cloudflare/recepten/recepten_worker.js` (no `RATE_LIMIT_KV`
+   reference at all anymore) → Deploy.
+3. Nothing else to do — the account-wide write quota resets on its own
+   (Cloudflare's email told you exactly when); once it does, the
+   `RECIPES_KV` writes this Worker still makes (a handful a day, see
+   "Caching" below) are nowhere near the limit on their own.
+4. If other Workers of yours are also bound to a shared
+   `RATE_LIMIT_KV`/`rate-limits` namespace, repeat step 1 for each —
+   removing the binding is a dashboard-only action and safe even
+   without touching that Worker's code (every Worker in this project
+   already no-ops when the binding is missing).
+
+**⚠️ Unofficial and unsupported.** There is no public Albert Heijn
+recipe API. This Worker reads the same public, no-login
+`ah.nl/allerhande` pages a browser would and extracts what it needs —
+see the long comment at the top of `recepten_worker.js` for exactly
+how, and what happens when a curated category slug doesn't match AH's
+own (automatic fallback to a plain keyword search, surfaced to the
+front end as `fallbackUsed`). Albert Heijn can restructure `ah.nl` at
+any time without notice; if results ever look empty or wrong, that
+file's "EXTRACTION NOTES" section says exactly what to look at first.
+Nothing here bypasses a login, paywall, or AH's own rate limiting — it
+only reads pages any visitor's browser can already load, and only
+does so at most once a day per query (see "Caching" below).
+
+#### Step by step
+
+This is the same 6-step flow as §1.5, spelled out exactly for this
+Worker — do these in order:
+
+1. **Create a KV namespace for this feature.** Workers & Pages → KV →
+   Create a namespace → name it e.g. `recepten-cache`.
+2. **Create the Worker.** Workers & Pages → Create → Create Worker →
+   name it e.g. `recepten` → Deploy the default "Hello World" page —
+   you'll overwrite it in the next step.
+3. **Paste in the code.** Open the Worker → Edit code → select all,
+   delete → paste the full contents of
+   `cloudflare/recepten/recepten_worker.js` → Deploy.
+4. **Add one binding.** Settings → Bindings → Add binding → KV
+   Namespace → variable name `RECIPES_KV` → pick the `recepten-cache`
+   namespace from step 1 → Save/Deploy. (No second binding needed —
+   see the callout above if you're coming from an older version of
+   this Worker that also asked for `RATE_LIMIT_KV`.)
+5. **Secrets:** none needed — this Worker has no API keys or
+   passphrases. Skip this step.
+6. **Copy the Worker's URL and paste it into the site.** It looks like
+   `https://recepten.<your-subdomain>.workers.dev` (shown on the
+   Worker's overview page). Open `assets/js/config.js`, find
+   `recipes: { workerUrl: ... }`, and replace the placeholder URL
+   there with your real one.
+7. **Confirm your site's origin is allowed.** Default GitHub Pages URL
+   with no custom domain? Nothing to do — already covered (§1.3). Using
+   a custom domain? Add it to `ALLOWED_ORIGINS` near the top of
+   `recepten_worker.js`, then Deploy again.
+8. **Test it end to end.** Open `recepten.html` → click a category tab
+   (e.g. Pasta) → recipe cards with pictures should appear within a
+   few seconds. Click a card → ingredients + bereidingswijze should
+   load, and changing "aantal personen" should rescale every amount
+   live. Click the ⭐ on a card, reload the page, and check it's still
+   favorited (confirms the KV write worked).
+
+If step 8 shows the "⚠️ Nog geen Worker gekoppeld" banner, step 6
+wasn't saved — check `config.js` again. If the page loads but shows a
+request error, work through §1.7's table first; if the Worker responds
+but recipes are empty/wrong specifically here, see this file's own
+"EXTRACTION NOTES" section next.
+
+#### Reference
+
+- **Bindings:** `RECIPES_KV` only (its own KV namespace from step 1
+  above — caches scraped listing/detail pages for 24h, and also holds
+  the shared `favorites` list). No rate-limit binding — see §1.4.
+- **Secrets:** none.
+- **Favorites, on the SAME Worker:** unlike Ticketmaster's saved
+  artists (a separate Worker, §2.9), the shared "Favorieten" list here
+  is just one more KV key (`favorites`) on this same Worker, since
+  there's no separate secret-holding proxy to keep independent from —
+  simpler for a single-purpose feature like this one.
+- **Caching — scrapes `ah.nl` at most once a day, on purpose:** both
+  `/recipes` and `/recipe` cache their result in KV for 24h
+  (`CACHE_TTL_MS` in the Worker); AH is only actually re-scraped once
+  that entry is stale, and the result is shared across both
+  people/every device. On top of that, the browser keeps an identical
+  24h cache in `localStorage` (`CLIENT_CACHE_TTL_MS` in `recepten.js`),
+  so a repeat visit on the same device often never even reaches the
+  Worker. Neither layer is a scheduled/Cron pre-fetch — it's plain
+  lazy caching (fetch only when asked, then reuse for a day), which
+  needs no extra Cloudflare setup and is the minimal way to get "once
+  a day" for two people browsing dinner ideas. Want fresher results
+  sooner? Lower `CACHE_TTL_MS` in the Worker **and**
+  `CLIENT_CACHE_TTL_MS` in `recepten.js` together (keep them equal) —
+  at the cost of more requests to `ah.nl`.
+- Routes: `GET /recipes` (listing/search), `GET /recipe` (one recipe's
+  full detail), `GET /favorites`, `PUT /favorites`.
+- **CPU time:** parsing a full `ah.nl` results page (regex over the
+  raw HTML) is heavier than the other Workers here, which mostly just
+  read/write small JSON blobs. Cloudflare's free "Workers Free" plan
+  caps CPU time per request tighter than the paid plan; if listing
+  requests start failing with a CPU-limit error in the dashboard's
+  logs (not a normal `{"error": ...}` JSON response — those are
+  handled fine), that's the cause. The 24h cache above means this only
+  bites once per query per day at most; if it keeps happening, Workers
+  Paid ($5/mo, 30s CPU time) removes the ceiling entirely.
 
 ---
 

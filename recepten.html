@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<!--
+  RECEPTEN PAGE
+  Browse Albert Heijn / Allerhande recipes by "soort gerecht"
+  (category) and an optional subcategory keyword, free-text search,
+  or a shared "Favorieten" list — then open one for the full
+  ingredients + bereidingswijze, scaled to however many people you
+  set. Logic lives in assets/js/modules/recepten.js; this file only
+  contains the toolbar (tabs + filters + servings), the results grid,
+  and the detail modal it fills in.
+
+  There is no official AH recipe API — the Cloudflare Worker behind
+  this page (cloudflare/recepten/) reads the same public ah.nl/
+  allerhande pages a browser would, see that Worker's file header
+  for exactly how, and ACTION-EXPANSION-PLAN.md for how to deploy it.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Albert Heijn / Allerhande recepten zoeken op soort gerecht, met aantal personen en favorieten.">
+  <meta name="theme-color" content="#F5F5F5">
+
+  <title>Recepten</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/recepten.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om recepten op te halen.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🍳 Recepten</h1>
+        <p>Allerhande recepten van Albert Heijn, op soort gerecht — met aantal personen en favorieten.</p>
+      </div>
+    </section>
+
+    <section class="container" id="receptenApp">
+      <!-- Shown instead of the app if config.js's workerUrl is still the placeholder -->
+      <div id="reptConfigWarning" class="rpt-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld. Zie <strong>ACTION-EXPANSION-PLAN.md</strong>
+        om deze pagina werkend te krijgen.
+      </div>
+
+      <div id="reptMain">
+        <div class="rpt-toolbar">
+          <!-- Categorieën ("soort gerecht") + Favorieten + Zoeken, zelfde
+               tab-patroon als ticketmaster.html. Gevuld door recepten.js
+               vanuit siteConfig.recipes.categories. -->
+          <div id="reptCategoryTabs" class="rpt-tabs" role="tablist" aria-label="Categorie"></div>
+
+          <!-- Subcategorie-chips, alleen zichtbaar zodra een categorie
+               (geen Favorieten/Zoeken) actief is. Gevuld door recepten.js. -->
+          <div id="reptSubcategoryRow" class="rpt-subcats hidden" role="tablist" aria-label="Subcategorie"></div>
+
+          <!-- Vrije zoekterm — altijd bruikbaar als extra verfijning
+               binnen een categorie, of als hoofdingang op de Zoeken-tab. -->
+          <div id="reptSearchRow" class="rpt-search-row">
+            <label for="reptSearchInput" class="sr-only">Zoekterm</label>
+            <input type="search" id="reptSearchInput" placeholder="bv. kip, pittig, ovenschotel…" autocomplete="off">
+            <button type="button" id="reptSearchBtn" class="btn btn-primary">Zoeken</button>
+          </div>
+
+          <!-- Aantal personen: standaardwaarde voor elk recept dat je
+               opent (zie ook de stepper in de modal hieronder, die deze
+               waarde overneemt maar er per recept van kan afwijken). -->
+          <div class="rpt-servings-row">
+            <label for="reptServingsInput">🍽️ Aantal personen (standaard)</label>
+            <input type="number" id="reptServingsInput" min="1" max="20" step="1" value="4">
+          </div>
+        </div>
+
+        <p id="reptStatus" class="rpt-status" role="status" aria-live="polite"></p>
+
+        <div id="reptResults" class="rpt-results"></div>
+
+        <div class="text-center mt-2">
+          <button type="button" id="reptLoadMore" class="btn btn-primary hidden">Meer laden</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- DETAIL MODAL — gevuld door recepten.js zodra op een kaart wordt
+       geklikt. Haalt de volledige info (ingrediënten + bereidingswijze)
+       pas op dat moment op, geschaald naar #reptModalServings. -->
+  <div id="reptModalOverlay" class="rpt-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="reptModalTitle">
+    <div class="rpt-modal-card">
+      <button type="button" id="reptModalClose" class="rpt-modal-close" aria-label="Sluiten">✕</button>
+
+      <div id="reptModalBody" class="rpt-modal-body">
+        <div id="reptModalLoading" class="rpt-modal-loading">Recept laden…</div>
+
+        <div id="reptModalContent" class="rpt-modal-content hidden">
+          <div id="reptModalImage" class="rpt-modal-image" role="img"></div>
+
+          <div class="rpt-modal-header">
+            <h2 id="reptModalTitle"></h2>
+            <button type="button" id="reptModalFavorite" class="rpt-favorite-btn" aria-pressed="false" aria-label="Toevoegen aan favorieten">🤍</button>
+          </div>
+
+          <p id="reptModalDescription" class="rpt-modal-description"></p>
+
+          <div id="reptModalMeta" class="rpt-modal-meta"></div>
+
+          <div class="rpt-modal-servings">
+            <label for="reptModalServings">🍽️ Aantal personen voor dit recept</label>
+            <div class="rpt-servings-stepper">
+              <button type="button" id="reptModalServingsMinus" class="btn btn-outline btn-sm" aria-label="Minder personen">−</button>
+              <input type="number" id="reptModalServings" min="1" max="20" step="1" value="4">
+              <button type="button" id="reptModalServingsPlus" class="btn btn-outline btn-sm" aria-label="Meer personen">+</button>
+            </div>
+            <p id="reptModalServingsHint" class="rpt-servings-hint"></p>
+          </div>
+
+          <div class="rpt-modal-columns">
+            <section class="rpt-modal-ingredients" aria-labelledby="reptIngredientsHeading">
+              <h3 id="reptIngredientsHeading">Ingrediënten</h3>
+              <ul id="reptModalIngredients" class="rpt-ingredients-list"></ul>
+            </section>
+
+            <section class="rpt-modal-steps" aria-labelledby="reptStepsHeading">
+              <h3 id="reptStepsHeading">Bereidingswijze</h3>
+              <ol id="reptModalSteps" class="rpt-steps-list"></ol>
+            </section>
+          </div>
+
+          <a id="reptModalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline mt-2">
+            Bekijk op AH.nl
+          </a>
+        </div>
+
+        <p id="reptModalError" class="rpt-modal-error hidden" role="alert"></p>
+      </div>
+    </div>
+  </div>
+
+  <div data-include="chrome-end"></div>
+
+  <script src="assets/js/main-watchdog.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

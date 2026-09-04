@@ -1,6 +1,7 @@
 import { siteConfig } from '../config.js';
 import { getAuth, currentPersonLabel, onAuthChange } from './auth.js';
 import { escapeHtml } from './utils.js';
+import { awardCollectible } from './collectibles.js';
 
 // Achter-de-schermen spelbalans. Niet als instellingen op de website tonen.
 const REWARD_CONFIG = Object.freeze({
@@ -827,6 +828,7 @@ export function initStudyTimer() {
       <label class="tree-final-name-label" for="treeFinalNameInput">Geef je boom een definitieve naam:</label>
       <input id="treeFinalNameInput" type="text" maxlength="30" class="tree-final-name-input" value="${escapeHtml(name)}" placeholder="Mijn boom">
       <div class="timer-actions"><button type="button" id="treeCompletedContinue" class="btn btn-primary">🗂️ Toevoegen aan collectie</button></div>
+      <p class="tree-completed-collection-hint">Bekijk je verzamelde bomen en beloningen op de <a href="collections.html">Collecties</a>-pagina.</p>
     </div>`;
     root.append(modal);
     // Same layered base+accents renderer as the live tree scene (see
@@ -842,15 +844,18 @@ export function initStudyTimer() {
     // clearing it first.
     finalNameInput.addEventListener('focus', (event) => event.target.select());
     modal.querySelector('#treeCompletedContinue').addEventListener('click', () => {
-      // Collection page doesn't exist yet — completed trees already
-      // live in state.treesCompleted/lifetimePoints, so there's
-      // nothing extra to persist here yet (the chosen final name is
-      // only echoed back in this dialog's own heading for now; once
-      // the collection page is built, this is where a completed-tree
-      // record — including this final name — would get added to it).
-      // The new tree that's already growing behind this dialog starts
-      // fresh with the default name rather than inheriting the one
-      // just finalized here.
+      // Adds one Tree collectible to this person's collection (see
+      // assets/js/modules/collectibles.js) — completed trees already
+      // live in state.treesCompleted/lifetimePoints for this module's
+      // own purposes (which species/stage is currently growing), but
+      // the Collections page's persistent count is a separate,
+      // generic store so it can work the same way for any future
+      // collection, not just this one. The final name given above is
+      // passed along as a personal label on that collectible's history
+      // entry. The new tree that's already growing behind this dialog
+      // starts fresh with the default name rather than inheriting the
+      // one just finalized here.
+      awardCollectible(selectedWho, 'trees', { label: finalNameInput.value.trim() || name });
       state.treeName = 'Mijn boom';
       save();
       renderTree();
