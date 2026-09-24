@@ -1,14 +1,13 @@
 // =================================================================
 // RECEPTEN (recepten.html)
 // -----------------------------------------------------------------
-// Browses Albert Heijn / Allerhande recipes through the Cloudflare
+// Browses recipes from TheMealDB (free, English) through the Cloudflare
 // Worker configured as siteConfig.recipes.workerUrl (see
-// cloudflare/recepten/ + ACTION-EXPANSION-PLAN.md). There is no
-// official AH recipe API — the Worker reads the same public
-// ah.nl/allerhande pages a browser would; see that Worker's file
-// header for exactly how, and for what "fallbackUsed" in a response
-// means (a curated category slug didn't match AH's own, so it fell
-// back to a plain keyword search instead of showing nothing).
+// cloudflare/recepten/ + ACTION-EXPANSION-PLAN.md). This used to read
+// Albert Heijn's Allerhande, but ah.nl blocks Cloudflare's servers with
+// a 403 — see the Worker's file header for what the new source can and
+// can't do, and for what "fallbackUsed" in a response means (nothing
+// matched inside the category, so plain keyword results are shown).
 //
 // THREE "TABS" (siteConfig.recipes.categories drives the food ones):
 //   - one per configured category (Pasta, Rijst, Taco's, Wrap's, ...),
@@ -53,7 +52,7 @@
 // =================================================================
 
 import { siteConfig } from '../config.js';
-import { qs, qsa, escapeHtml, debounce } from './utils.js';
+import { qs, qsa, escapeHtml, debounce, preventNumberInputScroll } from './utils.js';
 
 const SERVINGS_STORAGE_KEY = 'recepten-personen';
 const MIN_SERVINGS = 1;
@@ -114,7 +113,11 @@ function formatQuantity(n) {
 // query/recipe on a given day. Only used for AH-scraped data (recipe
 // lists + recipe detail) — favorites are live shared user data and
 // are always fetched fresh so both people see each other's changes.
-const CLIENT_CACHE_PREFIX = 'recepten-cache:';
+// "v2": bumped when a bad/empty Worker answer got cached for a full day
+// and made the page look permanently broken. Entries from the old
+// "recepten-cache:" prefix are ignored and removed by pruneClientCache().
+const CLIENT_CACHE_PREFIX = 'recepten-cache-v2:';
+const LEGACY_CACHE_PREFIXES = ['recepten-cache:'];
 const CLIENT_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // keep in sync with the Worker's CACHE_TTL_MS
 
 function readClientCache(key) {
@@ -143,7 +146,12 @@ function pruneClientCache() {
   try {
     for (let i = localStorage.length - 1; i >= 0; i -= 1) {
       const key = localStorage.key(i);
-      if (!key || !key.startsWith(CLIENT_CACHE_PREFIX)) continue;
+      if (!key) continue;
+      if (LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+        localStorage.removeItem(key); // old format — drop it
+        continue;
+      }
+      if (!key.startsWith(CLIENT_CACHE_PREFIX)) continue;
       try {
         const entry = JSON.parse(localStorage.getItem(key));
         if (Date.now() - entry.savedAt > CLIENT_CACHE_TTL_MS) localStorage.removeItem(key);
@@ -160,12 +168,15 @@ function pruneClientCache() {
 async function fetchRecipeList(workerUrl, params) {
   const cacheKey = `list:${params.toString()}`;
   const cached = readClientCache(cacheKey);
-  if (cached) return cached;
+  if (cached && Array.isArray(cached.recipes) && cached.recipes.length > 0) return cached;
 
   const response = await fetch(`${workerUrl}/recipes?${params.toString()}`);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-  writeClientCache(cacheKey, data);
+  // Only remember lists that actually contain recipes: caching an empty
+  // answer (AH hiccup, changed markup, ...) would keep the page empty for
+  // the full 24h even after the problem is fixed.
+  if (Array.isArray(data.recipes) && data.recipes.length > 0) writeClientCache(cacheKey, data);
   return data;
 }
 
@@ -263,7 +274,7 @@ export function initRecepten() {
   // ---- Tabs + subcategory chips -----------------------------------
 
   function renderTabs() {
-    const favTab = `<button type="button" class="rpt-tab" data-mode="favorites" role="tab" aria-selected="${state.mode === 'favorites'}">⭐ Favorieten</button>`;
+    const favTab = `<button type="button" class="rpt-tab" data-mode="favorites" role="tab" aria-selected="${state.mode === 'favorites'}">❤️ Favorieten</button>`;
     const categoryTabs = categories
       .map(
         (cat) => `
@@ -374,8 +385,8 @@ export function initRecepten() {
       qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
 
       const shownCount = resultsEl.children.length;
-      let statusText = `${shownCount} recept${shownCount === 1 ? '' : 'en'} getoond${data.count ? ` (van ${data.count.toLocaleString('nl-NL')} totaal bij AH)` : ''}.`;
-      if (data.fallbackUsed) statusText += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
+      let statusText = `${shownCount} recept${shownCount === 1 ? '' : 'en'} getoond${data.count ? ` (van ${data.count.toLocaleString('nl-NL')} totaal)` : ''}.`;
+      if (data.fallbackUsed) statusText += ' Niets gevonden binnen deze categorie — er is op trefwoord gezocht.';
       statusEl.textContent = statusText;
       loadMoreBtn.classList.remove('hidden');
     } catch (error) {
@@ -398,9 +409,10 @@ export function initRecepten() {
 
     return `
       <article class="rpt-card fade-up visible" data-id="${escapeHtml(recipe.id)}">
-        <button type="button" class="rpt-card-favorite" data-id="${escapeHtml(recipe.id)}" aria-pressed="${fav}" aria-label="${fav ? 'Verwijder uit favorieten' : 'Toevoegen aan favorieten'}">${fav ? '⭐' : '🤍'}</button>
-        <div class="rpt-card-image" ${recipe.image ? `style="background-image:url('${escapeHtml(recipe.image)}')"` : ''} role="img" aria-label="${escapeHtml(recipe.title)}">
-          ${!recipe.image ? '<span class="rpt-card-fallback" aria-hidden="true">🍽️</span>' : ''}
+        <button type="button" class="rpt-card-favorite" data-id="${escapeHtml(recipe.id)}" aria-pressed="${fav}" aria-label="${fav ? 'Verwijder uit favorieten' : 'Toevoegen aan favorieten'}">${fav ? '❤️' : '🤍'}</button>
+        <div class="rpt-card-image" role="img" aria-label="${escapeHtml(recipe.title)}">
+          ${recipe.image ? `<img src="${escapeHtml(recipe.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='';">` : ''}
+          <span class="rpt-card-fallback" aria-hidden="true" style="${recipe.image ? 'display:none' : ''}">🍽️</span>
         </div>
         <div class="rpt-card-body">
           <h3 class="rpt-card-title">${escapeHtml(recipe.title)}</h3>
@@ -460,12 +472,12 @@ export function initRecepten() {
     const fav = isFavorite(id);
     qsa('.rpt-card-favorite', resultsEl).forEach((btn) => {
       if (btn.dataset.id !== id) return;
-      btn.textContent = fav ? '⭐' : '🤍';
+      btn.textContent = fav ? '❤️' : '🤍';
       btn.setAttribute('aria-pressed', String(fav));
       btn.setAttribute('aria-label', fav ? 'Verwijder uit favorieten' : 'Toevoegen aan favorieten');
     });
     if (currentDetail && currentDetail.id === id) {
-      modalFavoriteBtn.textContent = fav ? '⭐' : '🤍';
+      modalFavoriteBtn.textContent = fav ? '❤️' : '🤍';
       modalFavoriteBtn.setAttribute('aria-pressed', String(fav));
     }
   }
@@ -528,14 +540,30 @@ export function initRecepten() {
       currentDetail = null;
       modalLoading.classList.add('hidden');
       modalError.classList.remove('hidden');
-      const fallbackUrl = error.sourceUrl || `https://www.ah.nl${path}`;
-      modalError.innerHTML = `❌ Kon de volledige receptgegevens niet laden (${escapeHtml(error.message)}). <a href="${escapeHtml(fallbackUrl)}" target="_blank" rel="noopener noreferrer">Bekijk dit recept rechtstreeks op AH.nl</a>.`;
+      modalError.innerHTML = `❌ Kon de volledige receptgegevens niet laden (${escapeHtml(error.message)}).${
+        error.sourceUrl ? ` <a href="${escapeHtml(error.sourceUrl)}" target="_blank" rel="noopener noreferrer">Bekijk het originele recept</a>.` : ''
+      }`;
     }
   }
 
   function renderModalContent(data) {
-    modalImageEl.style.backgroundImage = data.image ? `url('${data.image}')` : '';
-    modalImageEl.setAttribute('aria-label', data.title || '');
+    // Real <img> (see recepten.html) rather than a CSS background so a
+    // failed/blocked load can be caught via onerror (falls back to
+    // hiding the element, same idea as the card grid's fallback icon —
+    // see renderCard()) instead of just silently showing nothing.
+    // referrerpolicy="no-referrer" is set once in the HTML; it matters
+    // here specifically because some image hosts (AH's included)
+    // refuse a hotlinked image whose Referer header names a different
+    // site than their own.
+    modalImageEl.onerror = () => { modalImageEl.classList.add('hidden'); };
+    if (data.image) {
+      modalImageEl.classList.remove('hidden');
+      modalImageEl.src = data.image;
+    } else {
+      modalImageEl.removeAttribute('src');
+      modalImageEl.classList.add('hidden');
+    }
+    modalImageEl.alt = data.title || '';
     modalTitleEl.textContent = data.title || 'Recept';
 
     modalDescriptionEl.textContent = data.description || '';
@@ -550,8 +578,8 @@ export function initRecepten() {
     modalMetaEl.innerHTML = metaBits.map((bit) => `<span class="rpt-meta-pill">${escapeHtml(bit)}</span>`).join('');
 
     modalServingsHint.textContent = data.servingsEstimated
-      ? `AH geeft voor dit recept geen aantal personen op — we gaan uit van ${data.servings}.`
-      : `Bij AH is dit recept voor ${data.servings} personen.`;
+      ? `De bron geeft geen aantal personen op — we gaan uit van ${data.servings} (hoeveelheden zijn dus een schatting).`
+      : `Dit recept is voor ${data.servings} personen.`;
 
     sourceLinkEl.href = data.sourceUrl || '#';
 
@@ -573,14 +601,14 @@ export function initRecepten() {
       return `<li><strong>${escapeHtml(formatQuantity(scaled))}</strong> ${escapeHtml(ingredient.rest)}</li>`;
     });
 
-    ingredientsListEl.innerHTML = items.join('') || '<li class="rpt-empty">Geen ingrediënten gevonden — bekijk het volledige recept op AH.nl.</li>';
+    ingredientsListEl.innerHTML = items.join('') || '<li class="rpt-empty">Geen ingrediënten gevonden.</li>';
   }
 
   function renderSteps(steps) {
     stepsListEl.innerHTML =
       steps && steps.length
         ? steps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')
-        : '<li class="rpt-empty">Geen bereidingswijze gevonden — bekijk het volledige recept op AH.nl.</li>';
+        : '<li class="rpt-empty">Geen bereidingswijze gevonden.</li>';
   }
 
   // ---- Wiring ------------------------------------------------------
@@ -630,6 +658,13 @@ export function initRecepten() {
     state.page += 1;
     runQuery({ replace: false });
   });
+
+  // Native number inputs also change value on mouse-wheel scroll while
+  // focused, and browsers already draw their own up/down arrows on top
+  // of the custom −/+ buttons here — neither is wanted (see recepten.css
+  // for the arrows). See preventNumberInputScroll() in utils.js.
+  preventNumberInputScroll(servingsInput);
+  preventNumberInputScroll(modalServingsInput);
 
   servingsInput.addEventListener('change', () => {
     defaultServings = clampServings(parseInt(servingsInput.value, 10));
@@ -685,11 +720,18 @@ export function initRecepten() {
   });
 
   // ---- Initial load --------------------------------------------------
-  (async function init() {
+  // Favorites are fetched in parallel instead of awaited first: a slow or
+  // failing favorites request must never hold up the recipe grid itself.
+  (function init() {
     pruneClientCache();
-    await loadFavorites();
     renderTabs();
     renderSubcategoryChips();
     runQuery({ replace: true });
+    loadFavorites().then(() => {
+      // Sync the hearts on whatever is already on screen (or re-render the
+      // Favorieten tab if that's the one that's open by now).
+      if (state.mode === 'favorites') renderFavoritesView();
+      else favorites.forEach((fav) => updateFavoriteButtonsFor(fav.id));
+    });
   })();
 }

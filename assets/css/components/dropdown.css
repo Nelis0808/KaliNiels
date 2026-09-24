@@ -10,6 +10,14 @@
   position: relative;
 }
 
+@media (min-width: 769px) {
+  /* Let the menu position itself against the whole navbar instead of
+     against the small "Meer" button (see .nav-dropdown-menu). */
+  .nav-dropdown {
+    position: static;
+  }
+}
+
 /* Hover/focus/active states for the nav dropdown trigger */
 .nav-dropdown-trigger {
   display: inline-flex;
@@ -38,24 +46,39 @@
   transform: rotate(180deg);
 }
 
-/*  Root-level styles for the nav dropdown menu, including positioning and display. */
+/*  Root-level styles for the nav dropdown menu, including positioning and display.
+    A multi-column grid rather than one long single-column list — with
+    ~15+ pages configured, a single column turned into a very tall
+    dropdown. Filling left-to-right, top-to-bottom across a few
+    columns first (and only growing taller, a row at a time, once
+    those columns are full) keeps it compact and saves vertical
+    space, especially on shorter screens. */
 .nav-dropdown-menu {
   position: absolute;
-  top: calc(100% + var(--space-3));
-  right: 0;
-  min-width: 220px;
+  /* Desktop: centered horizontally on the page and flush with the
+     underside of header.navbar. The menu is positioned against the
+     navbar itself (.navbar is `position: sticky`, so it is the nearest
+     positioned ancestor once .nav-dropdown is made static below):
+     `top: 100%` is the bottom of its padding box, +1px for the
+     navbar's border-bottom. */
+  top: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(560px, 90vw);
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   padding: var(--space-2);
   display: none;
-  flex-direction: column;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: var(--space-1);
   z-index: var(--z-navbar);
 }
 
 /* Show the nav dropdown menu when the nav dropdown is open */
 .nav-dropdown.open .nav-dropdown-menu {
-  display: flex;
+  display: grid;
 }
 
 /*  Styles for nav dropdown menu items, including flexbox layout, padding,
@@ -64,11 +87,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
   font-size: var(--fs-sm);
-  white-space: nowrap;
+  /* Columns are narrower than the old full-width single-column list,
+     so long titles wrap onto a 2nd line instead of forcing wide
+     columns (or clipping) — the grid's row-height just adapts. */
+  white-space: normal;
+  text-align: left;
 }
 
 /* Hover/focus/active states for nav dropdown menu items */
@@ -99,9 +126,17 @@
 @media (max-width: 768px) {
   .nav-dropdown-menu {
     position: static;
+    transform: none;
+    width: auto;
+    max-width: none;
     box-shadow: none;
     padding-left: var(--space-4);
     border-radius: 0;
+    /* Back to a single column here — the multi-column grid is a
+       desktop-dropdown space-saver; inside the mobile hamburger menu
+       (already a full-width vertical accordion) one column per row
+       is the more natural, easier-to-tap layout. */
+    grid-template-columns: 1fr;
   }
 
   .nav-dropdown-trigger {

@@ -61,7 +61,7 @@ export function initCollections() {
 
   const emptyEl = document.getElementById('collectionsEmpty');
   const mainEl = document.getElementById('collectionsMain');
-  const tabsEl = document.getElementById('collectionsTabs');
+  const switcherEl = document.getElementById('collectionsSwitcher');
   const panelEl = document.getElementById('collectionsPanel');
 
   const collections = getCollections();
@@ -132,43 +132,53 @@ export function initCollections() {
     }
   }
 
-  // ---- Tabs ----------------------------------------------------------
+  // ---- Collection tabs --------------------------------------------
+  // A plain tab bar (Bomen / Planten / ...) rather than a dropdown —
+  // the set of collections is fixed (from siteConfig), so there's no
+  // rename, reorder, or add-new here, only picking which one to
+  // view, same pill-tab pattern as recepten.html's category tabs.
 
-  function buildTabs() {
-    if (collections.length <= 1) { tabsEl.classList.add('hidden'); tabsEl.innerHTML = ''; return; }
-    tabsEl.classList.remove('hidden');
-    tabsEl.innerHTML = collections.map((c) => {
-      const selected = c.id === activeCollectionId;
-      return `<button type="button" class="col-tab" role="tab" id="colTab-${escapeHtml(c.id)}" aria-controls="collectionsPanel" aria-selected="${selected}" tabindex="${selected ? '0' : '-1'}" data-collection-id="${escapeHtml(c.id)}">${escapeHtml(c.emoji || '')} ${escapeHtml(c.name)}</button>`;
-    }).join('');
+  function renderSwitcher() {
+    if (collections.length <= 1) { switcherEl.classList.add('hidden'); return; }
+    switcherEl.classList.remove('hidden');
+    switcherEl.innerHTML = collections.map((c) => `
+      <button
+        type="button"
+        id="colTab-${escapeHtml(c.id)}"
+        class="col-tab"
+        role="tab"
+        aria-selected="${c.id === activeCollectionId}"
+        aria-controls="collectionsPanel-${escapeHtml(c.id)}"
+        tabindex="${c.id === activeCollectionId ? '0' : '-1'}"
+        data-collection-id="${escapeHtml(c.id)}"
+      >${c.emoji ? `${c.emoji} ` : ''}${escapeHtml(c.name)}</button>
+    `).join('');
   }
 
-  tabsEl.addEventListener('click', (event) => {
-    const btn = event.target.closest('.col-tab');
+  switcherEl.addEventListener('click', (event) => {
+    const btn = event.target.closest('.col-tab[data-collection-id]');
     if (btn) switchCollection(btn.dataset.collectionId);
   });
 
-  // Standard roving-tabindex arrow-key navigation for the tablist
-  tabsEl.addEventListener('keydown', (event) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    const tabs = qsa('.col-tab', tabsEl);
+  // Left/right arrow-key navigation between tabs, standard ARIA
+  // tablist behaviour (same axis convention as recepten.html's tabs).
+  switcherEl.addEventListener('keydown', (event) => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    const tabs = qsa('.col-tab', switcherEl);
     if (tabs.length === 0) return;
-    const currentIndex = tabs.findIndex((t) => t.dataset.collectionId === activeCollectionId);
-    let nextIndex = currentIndex;
-    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
-    if (event.key === 'Home') nextIndex = 0;
-    if (event.key === 'End') nextIndex = tabs.length - 1;
     event.preventDefault();
+    const currentIndex = tabs.indexOf(document.activeElement);
+    const delta = event.key === 'ArrowRight' ? 1 : -1;
+    const nextIndex = (currentIndex + delta + tabs.length) % tabs.length;
     switchCollection(tabs[nextIndex].dataset.collectionId);
-    qs(`[data-collection-id="${tabs[nextIndex].dataset.collectionId}"]`, tabsEl)?.focus();
+    qs(`[data-collection-id="${tabs[nextIndex].dataset.collectionId}"]`, switcherEl)?.focus();
   });
 
   function switchCollection(collectionId) {
     if (!getCollection(collectionId)) return;
     activeCollectionId = collectionId;
     openPickerRewardId = null;
-    buildTabs();
+    renderSwitcher();
     renderPanel();
   }
 
@@ -563,7 +573,7 @@ export function initCollections() {
 
   // ---- Initial load ----------------------------------------------------
 
-  buildTabs();
+  renderSwitcher();
   renderPanel(); // paint immediately with fallback data, then refine once gifts load
   loadLiveGifts().then(renderPanel);
   startPolling();

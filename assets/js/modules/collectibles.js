@@ -465,3 +465,71 @@ function notify(who, collectionId) {
     try { fn({ who, collectionId }); } catch (error) { console.error('Collectibles listener error:', error); }
   });
 }
+
+// ---- Dev / admin helpers ----------------------------------------------
+// Used only by the dev page (dev.html/dev.js — its own custom login,
+// separate from the site-wide one, see that module's own comment) to
+// make testing/tweaking easy: jump a collection's progress to a
+// specific count, or wipe progress/rewards back to nothing. Not used
+// by any normal page — awardCollectible() above (which also appends a
+// history entry) is still the real "earning" path for actual features.
+
+/**
+ * Directly sets a collection's collectedCount for `who` (clamped
+ * between 0 and the collection's own item count) — e.g. the dev
+ * page's "Zet op X" input. Leaves history/rewards untouched. Returns
+ * the new count, or null if the collection/who is invalid.
+ */
+export function setCollectedCount(who, collectionId, count) {
+  if (!who || !collectionId) return null;
+  const collection = getCollection(collectionId);
+  if (!collection) return null;
+  const max = collection.items.length;
+  const clamped = Math.max(0, Math.min(max, Math.floor(Number(count)) || 0));
+  const store = readStore();
+  const state = ensureCollectionState(store, who, collectionId);
+  state.collectedCount = clamped;
+  writeStore(store);
+  notify(who, collectionId);
+  return clamped;
+}
+
+/**
+ * Resets a collection's ITEMS ONLY for `who`: collectedCount back to
+ * 0 and history cleared. Reward rows/gift assignments are left alone
+ * — see resetCollectionRewards() for that, kept as a separate action
+ * on purpose (the dev page offers both as distinct buttons).
+ */
+export function resetCollectionProgress(who, collectionId) {
+  if (!who || !collectionId) return false;
+  const store = readStore();
+  const state = ensureCollectionState(store, who, collectionId);
+  state.collectedCount = 0;
+  state.history = [];
+  writeStore(store);
+  notify(who, collectionId);
+  return true;
+}
+
+/**
+ * Resets a collection's REWARDS ONLY for `who`: every reward row
+ * (config-defined and dynamically-created alike) goes back to
+ * locked/unassigned, as if no gift had ever been picked or unlocked.
+ * collectedCount/history are left alone — see resetCollectionProgress()
+ * for that.
+ */
+export function resetCollectionRewards(who, collectionId) {
+  if (!who || !collectionId) return false;
+  const store = readStore();
+  const state = ensureCollectionState(store, who, collectionId);
+  state.rewards = {};
+  state.extraRewards = [];
+  writeStore(store);
+  notify(who, collectionId);
+  return true;
+}
+
+/** Every person who has ANY saved collectibles state at all, e.g. for the dev page's per-person pickers. Returns e.g. ['a','b'], possibly []. */
+export function getKnownPeople() {
+  return Object.keys(readStore());
+}

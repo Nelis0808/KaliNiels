@@ -249,6 +249,14 @@
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   margin-bottom: var(--space-5);
+  /* This class is shared by lijstje.html (narrow app column, so this
+     is a no-op there), and by todo.html/clothing.html/snack-rating.html,
+     which each put it inside a full `.container` (up to 1200px) — wide
+     enough that the global `p { max-width: 65ch }` rule (typography.css)
+     caps this line and, having no auto margin of its own, leaves it
+     flush left instead of centered under the (inherited) text-align:
+     center on those pages' app wrapper. */
+  margin-inline: auto;
 }
 
 /* Error variant of the status line, e.g. failed to load/save */
@@ -463,6 +471,8 @@
   font-size: var(--fs-sm);
   min-height: 1.2em;
   margin-bottom: var(--space-5);
+  /* Same fix as .sl-status above. */
+  margin-inline: auto;
 }
 
 /* == CONFIG WARNING (shown instead of the app if the worker URL

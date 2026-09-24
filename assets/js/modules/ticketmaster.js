@@ -47,6 +47,15 @@ import { qs, qsa, escapeHtml, debounce } from './utils.js';
 const PAGE_SIZE = 12;
 const FAVORITES_PAGE_SIZE = 6; // per artist, since results from every saved artist get merged into one list
 
+// "Aankomende sales" filters client-side (see isUpcomingSale()), which can
+// leave a raw Ticketmaster page with few or no matches. So this tab asks
+// for the biggest page the proxy allows and keeps fetching following pages
+// (up to SALES_MAX_PAGES_PER_LOAD requests) until it has about one page of
+// real results — instead of showing "nothing found" after a page of
+// already-on-sale shows.
+const SALES_PAGE_SIZE = 20;
+const SALES_MAX_PAGES_PER_LOAD = 5;
+
 const COUNTRY_LABELS = {
   NL: 'Nederland',
   BE: 'België',
@@ -135,6 +144,16 @@ export function initTicketmaster() {
     return `${workerUrl}?${params.toString()}`;
   }
 
+  // Fetches one raw page from the proxy for the current tab (throws on HTTP errors)
+  async function fetchEventsPage(page, options = {}) {
+    const response = await fetch(buildUrl(page, options));
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || body.fault?.faultstring || `HTTP ${response.status}`);
+    }
+    return response.json();
+  }
+
   // Runs the query for the current tab (or delegates to runFavoritesQuery), renders results
   async function runQuery({ replace }) {
     if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
@@ -162,23 +181,39 @@ export function initTicketmaster() {
     loadMoreBtn.classList.add('hidden');
 
     try {
-      const response = await fetch(buildUrl(state.page));
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error || body.fault?.faultstring || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
       // Ticketmaster still returns cancelled/postponed shows (e.g. Anouk's
       // cancelled dates) mixed in with the rest — filter those out before
       // rendering so "aankomende sales" only shows shows that are actually
-      // still happening.
-      const events = (data._embedded?.events ?? []).filter(isStillHappening);
-      const pageInfo = data.page ?? { number: 0, totalPages: 0, totalElements: 0 };
+      // still happening. On the sales tab, also drop everything whose
+      // public sale has already started (see isUpcomingSale()).
+      const salesMode = state.mode === 'sales';
+      const events = [];
+      let inspected = 0; // raw events looked at, only used to explain an empty sales tab
+      const seenIds = new Set(qsa('.tm-card', resultsEl).map((card) => card.dataset.eventId));
+      let pageInfo = { number: 0, totalPages: 0, totalElements: 0 };
+
+      for (let fetched = 0; ; fetched += 1) {
+        const data = await fetchEventsPage(state.page, salesMode ? { size: SALES_PAGE_SIZE } : {});
+        pageInfo = data.page ?? pageInfo;
+        inspected += (data._embedded?.events ?? []).length;
+
+        (data._embedded?.events ?? [])
+          .filter(isStillHappening)
+          .filter((event) => !salesMode || isUpcomingSale(event))
+          .forEach((event) => {
+            if (event.id && seenIds.has(event.id)) return;
+            if (event.id) seenIds.add(event.id);
+            events.push(event);
+          });
+
+        const morePages = pageInfo.number < pageInfo.totalPages - 1;
+        if (!salesMode || !morePages || events.length >= PAGE_SIZE || fetched + 1 >= SALES_MAX_PAGES_PER_LOAD) break;
+        state.page += 1; // state.page always points at the last page actually fetched
+      }
 
       if (replace && events.length === 0) {
         resultsEl.innerHTML = '';
-        statusEl.textContent = emptyMessage(state.mode);
+        statusEl.textContent = emptyMessage(state.mode) + (salesMode ? ` (${inspected} concerten bekeken)` : '');
         loadMoreBtn.classList.add('hidden');
         return;
       }
@@ -299,6 +334,24 @@ export function initTicketmaster() {
     return statusCode !== 'cancelled' && statusCode !== 'postponed';
   }
 
+  /** True only for events whose PUBLIC ticket sale has not started yet.
+   *  This is the real definition of the "Aankomende sales" tab. It's
+   *  checked here (on top of the proxy's onsaleStartDateTime filter)
+   *  because Ticketmaster's own filter isn't reliable enough to trust
+   *  on its own: shows that are already on sale kept slipping through.
+   *  Events without a known public-sale start (unknown/TBD) are left
+   *  out: there's nothing to count down to. */
+  function isUpcomingSale(event) {
+    const now = Date.now();
+    const publicStart = event.sales?.public?.startDateTime;
+    if (publicStart) {
+      const startMs = new Date(publicStart).getTime();
+      return Number.isFinite(startMs) && startMs > now;
+    }
+    // No public sale date at all: still "coming up" if a presale is.
+    return (event.sales?.presales ?? []).some((presale) => new Date(presale.startDateTime).getTime() > now);
+  }
+
   // "No results" status text, worded per tab
   function emptyMessage(mode) {
     if (mode === 'sales') return 'Geen aankomende ticketverkoop gevonden voor dit land.';
@@ -323,7 +376,7 @@ export function initTicketmaster() {
     const saleBadges = renderSaleBadges(event.sales);
 
     return `
-      <article class="tm-card fade-up visible">
+      <article class="tm-card fade-up visible" data-event-id="${escapeHtml(event.id ?? '')}">
         ${image ? `<div class="tm-card-image" style="background-image:url('${escapeHtml(image)}')" role="img" aria-label="${escapeHtml(event.name)}"></div>` : ''}
         <div class="tm-card-body">
           <h3>${escapeHtml(event.name)}</h3>

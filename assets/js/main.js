@@ -62,6 +62,7 @@ import { initWallz } from './modules/wallz.js';
 import { initStudyTimer } from './modules/study-timer.js';
 import { initStudyTimerBadge } from './modules/study-timer-badge.js';
 import { initValentine } from './modules/valentine.js';
+import { initDevPage } from './modules/dev.js';
 
 // Tells the plain <script> watchdog in every page's HTML (right
 // before this script's own <script type="module"> tag) that this
@@ -164,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initWallz', initWallz);
   safeInit('initStudyTimer', initStudyTimer);                 // games/wallz.html
   safeInit('initValentine', initValentine);         // valentine.html
+  safeInit('initDevPage', initDevPage);              // dev.html (hidden admin/testing tools)
 
   console.log(`${document.title} — initialized ✅`);
 });

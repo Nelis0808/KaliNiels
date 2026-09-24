@@ -174,6 +174,23 @@ function formatDuration(totalMinutes) {
 function readAll() {
   try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; }
 }
+
+/**
+ * Wipes one person's ENTIRE Studie Timer state (presets, growth,
+ * lifetime points, current tree, completed/claimed history, daily
+ * plan, reflections, ...) back to nothing -- used by the dev page
+ * (dev.html/dev.js) as its "Studie Timer resetten" action. Next time
+ * study-timer.js runs for this person, ensureUser() recreates a
+ * completely fresh default state, so this only ever needs to delete,
+ * never reconstruct that shape itself. Safe to call for a `who` with
+ * no saved state at all (no-op).
+ */
+export function resetStudyTimerState(who) {
+  if (!who) return;
+  const store = readAll();
+  delete store[who];
+  localStorage.setItem(KEY, JSON.stringify(store));
+}
 function ensureUser(store, who) {
   if (!store[who]) {
     store[who] = {

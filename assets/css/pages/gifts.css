@@ -26,8 +26,15 @@
 .gf-column {
   min-width: 0;
   /* Generic `section { padding: var(--space-9) 0; }` (layout.css)
-     leaves too much air above each column, override just the top. */
-  padding-top: var(--space-3);
+     leaves too much air around each column — override both sides
+     (not just top): #giftsApp already carries its own bottom padding
+     for trailing space at the end of the page, so a column doesn't
+     need 6rem of its own. Left as just padding-top before, the
+     leftover 6rem bottom padding was invisible side-by-side on
+     desktop (just extra space below the whole grid) but became a
+     huge gap BETWEEN Kalina's and Niels' columns once they stack on
+     narrow screens (see the max-width:800px media query below). */
+  padding: var(--space-3) 0 0;
 }
 
 /* Person name heading at the top of each column */

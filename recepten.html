@@ -20,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Albert Heijn / Allerhande recepten zoeken op soort gerecht, met aantal personen en favorieten.">
+  <meta name="description" content="Recepten zoeken op soort gerecht, met aantal personen en favorieten.">
   <meta name="theme-color" content="#F5F5F5">
 
   <title>Recepten</title>
@@ -49,7 +49,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🍳 Recepten</h1>
-        <p>Allerhande recepten van Albert Heijn, op soort gerecht — met aantal personen en favorieten.</p>
+        <p>Recepten op soort gerecht (Engelstalig) — met aantal personen en favorieten.</p>
       </div>
     </section>
 
@@ -110,16 +110,26 @@
         <div id="reptModalLoading" class="rpt-modal-loading">Recept laden…</div>
 
         <div id="reptModalContent" class="rpt-modal-content hidden">
-          <div id="reptModalImage" class="rpt-modal-image" role="img"></div>
+          <!-- Hero image: bleeds out to the modal card's own edges
+               (negative margins in recepten.css) so it sits above
+               everything else in the modal, edge-to-edge, with the
+               close (✕) button floating on top of it. -->
+          <img id="reptModalImage" class="rpt-modal-image" alt="" referrerpolicy="no-referrer" loading="lazy">
 
-          <div class="rpt-modal-header">
-            <h2 id="reptModalTitle"></h2>
-            <button type="button" id="reptModalFavorite" class="rpt-favorite-btn" aria-pressed="false" aria-label="Toevoegen aan favorieten">🤍</button>
-          </div>
+          <h2 id="reptModalTitle" class="rpt-modal-title"></h2>
 
           <p id="reptModalDescription" class="rpt-modal-description"></p>
 
-          <div id="reptModalMeta" class="rpt-modal-meta"></div>
+          <!-- Meta pills (tijd/kcal/categorie/rating) + the favorite
+               heart share one row, heart pinned to the right — see
+               recepten.js's renderModalContent() for why the heart
+               button itself lives outside #reptModalMeta (that
+               element's innerHTML gets fully replaced on every
+               render). -->
+          <div class="rpt-modal-meta-row">
+            <div id="reptModalMeta" class="rpt-modal-meta"></div>
+            <button type="button" id="reptModalFavorite" class="rpt-favorite-btn" aria-pressed="false" aria-label="Toevoegen aan favorieten">🤍</button>
+          </div>
 
           <div class="rpt-modal-servings">
             <label for="reptModalServings">🍽️ Aantal personen voor dit recept</label>
@@ -143,9 +153,11 @@
             </section>
           </div>
 
-          <a id="reptModalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline mt-2">
-            Bekijk op AH.nl
-          </a>
+          <div class="text-center mt-2">
+            <a id="reptModalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+              Bekijk bron
+            </a>
+          </div>
         </div>
 
         <p id="reptModalError" class="rpt-modal-error hidden" role="alert"></p>

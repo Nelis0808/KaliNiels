@@ -175,12 +175,28 @@
   min-height: 1.5em;
   margin-bottom: var(--space-4);
   text-align: center;
+  /* Without this, the global `p { max-width: 65ch }` rule
+     (typography.css) caps this line well below the panel's actual
+     width and, having no auto margin of its own, leaves it flush
+     left — so text-align:center only centered the text WITHIN that
+     now-too-narrow box, not the box itself across the full width. */
+  margin-inline: auto;
 }
 
-/* == RESULTS GRID == */
+/* == RESULTS GRID ==
+   Flex-wrap instead of `grid-template-columns: repeat(auto-fill,
+   minmax(280px, 1fr))`: with a grid, an incomplete last row (very
+   common once you've paged through a few "Meer laden" loads) has its
+   `1fr` tracks stretch to fill the full row width regardless of how
+   many cards are actually in it, so a lone card left over on its own
+   row balloons out far wider than every other card. Flex-wrap with a
+   fixed max-width per card + justify-content:center keeps every card
+   the same size and keeps a short trailing row centered instead of
+   stretched — tidy at 8 results or 80. */
 .tm-results {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-5);
 }
 
@@ -188,6 +204,11 @@
 .tm-card {
   display: flex;
   flex-direction: column;
+  /* Fixed-ish size (grow to fill leftover space in a row, but never
+     past 340px) now that .tm-results is flex, not grid — see the
+     comment there. */
+  flex: 1 1 280px;
+  max-width: 340px;
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);

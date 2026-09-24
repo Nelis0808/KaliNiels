@@ -81,6 +81,19 @@ export function pinEdgeClasses(xPercent, yPercent) {
 }
 
 /** Delays calling `fn` until `wait` ms after the last call — handy for scroll/resize listeners. */
+// Stops the mouse wheel from silently incrementing/decrementing a
+// focused <input type="number"> — a native browser behaviour most
+// people never asked for, and especially surprising on fields like
+// recepten.html's servings stepper, which already has its own
+// explicit −/+ buttons: scrolling the page while the cursor happens
+// to be over the field shouldn't also change its value. Pair with
+// hiding the native spin-button arrows in CSS (see recepten.css) so
+// there's exactly one way to change the number: the −/+ buttons.
+export function preventNumberInputScroll(input) {
+  if (!input) return;
+  input.addEventListener('wheel', () => input.blur(), { passive: true });
+}
+
 export function debounce(fn, wait = 150) {
   let timeoutId;
   return (...args) => {

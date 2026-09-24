@@ -47,10 +47,14 @@
   min-height: 1.2em;
 }
 
-/* == TABS (switch between collections) ==
-   Same visual language as .tm-tabs/.tm-tab (ticketmaster.css) — only
-   rendered/visible once there's more than one collection configured
-   (see collections.js buildTabs()). */
+/* == TABS (pick which collection to view) ==
+   Plain pill tab bar — Bomen / Planten / ... — same visual pattern as
+   recepten.html's category tabs (.rpt-tabs/.rpt-tab in recepten.css),
+   just its own rpt-independent copy since the two pages don't share a
+   module. Static: the set of collections is fixed from siteConfig
+   (see collections.js's renderSwitcher()) rather than user-editable.
+   Only rendered/visible once there's more than one collection
+   configured — with just Trees, the page goes straight to the panel. */
 .col-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -63,25 +67,24 @@
 }
 
 .col-tab {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text-muted);
   font-weight: 700;
-  font-size: var(--fs-sm);
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  font-family: var(--font-body);
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
 }
 
-.col-tab:hover,
-.col-tab:focus-visible {
+.col-tab:hover, .col-tab:focus-visible {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
 .col-tab[aria-selected='true'] {
-  background: var(--color-primary);
   border-color: var(--color-primary);
+  background: var(--color-primary);
   color: var(--color-white);
 }
 
@@ -138,12 +141,20 @@
 .col-panel-desc {
   color: var(--color-text-muted);
   margin: 0;
+  /* Without this, the global `p { max-width: 65ch }` rule
+     (typography.css) caps this well below .col-panel-intro's actual
+     width, leaving a big empty gap on the right instead of the
+     description filling the card the way .col-panel-intro's own
+     comment above intends. */
+  max-width: none;
 }
 
 .col-panel-source {
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
   margin: 0;
+  /* Same fix as .col-panel-desc above. */
+  max-width: none;
 }
 
 .col-panel-source a {
@@ -191,7 +202,14 @@
 
 .col-item-collected .col-item-slot {
   background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
-  animation: col-item-pop 0.4s ease-out;
+  /* No entrance animation here on purpose — renderPanel() (see
+     collections.js) rebuilds this whole grid from scratch on every
+     re-render (each poll tick, tab switch, reward pick, ...), not
+     just the one time an item is actually newly collected. An
+     animation tied to this class used to replay every single time,
+     making already-collected items look like they kept "popping"
+     back in — this grid is meant to be static once an item is
+     collected. */
 }
 
 .col-item-locked .col-item-slot {
@@ -203,12 +221,6 @@
   color: var(--color-text-muted);
   font-weight: 700;
   font-size: clamp(0.75rem, 1.6vw, 0.95rem);
-}
-
-@keyframes col-item-pop {
-  0% { transform: scale(0.7); }
-  60% { transform: scale(1.08); }
-  100% { transform: scale(1); }
 }
 
 .col-item-name {
@@ -558,8 +570,7 @@ body.col-modal-open {
 
 @media (prefers-reduced-motion: reduce) {
   .col-unlock-burst,
-  .col-unlock-image-wrap,
-  .col-item-collected .col-item-slot {
+  .col-unlock-image-wrap {
     animation: none;
   }
   .col-unlock-card {

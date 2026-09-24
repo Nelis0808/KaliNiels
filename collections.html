@@ -80,10 +80,14 @@
         </div>
 
         <div id="collectionsMain" class="hidden">
-          <!-- Tab bar — one tab per configured collection. Only rendered
-               (and only visible) once there's more than one collection;
-               with just Trees, the page goes straight to the panel. -->
-          <div id="collectionsTabs" class="col-tabs hidden" role="tablist" aria-label="Collecties"></div>
+          <!-- Tab bar for picking which collection to view (Bomen /
+               Planten / ...) — same pill-tab pattern as recepten.html's
+               category tabs. Filled by collections.js's renderSwitcher()
+               straight from siteConfig.collectibles.collections; only
+               rendered (and only visible) once there's more than one
+               collection — with just Trees, the page goes straight to
+               the panel. -->
+          <div id="collectionsSwitcher" class="col-tabs hidden" role="tablist" aria-label="Collectie"></div>
 
           <!-- Filled per-collection by collections.js switchCollection() -->
           <div id="collectionsPanel"></div>

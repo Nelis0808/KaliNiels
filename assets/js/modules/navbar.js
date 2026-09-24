@@ -66,8 +66,18 @@ export function initScrolledShadow() {
 export function initSmoothScroll() {
   qsa('a[href^="#"]').forEach((link) => {
     link.addEventListener('click', (event) => {
+      // Re-read the href at click time rather than trusting the
+      // selector this listener was originally bound under: some links
+      // (e.g. recepten.js's "Bekijk op AH.nl" modal link) start out as
+      // a bare "#" placeholder — matching the a[href^="#"] selector
+      // above — and get rewritten to a real external URL once JS fills
+      // them in. Without the startsWith('#') check, a rewritten link
+      // like "https://www.ah.nl/allerhande/recept/..." would get
+      // passed straight into document.querySelector() below, which
+      // throws (it's not a valid CSS selector) instead of just letting
+      // the browser follow the link normally.
       const targetId = link.getAttribute('href');
-      if (!targetId || targetId === '#') return;
+      if (!targetId || targetId === '#' || !targetId.startsWith('#')) return;
 
       const target = document.querySelector(targetId);
       if (!target) return; // not every "#something" link necessarily has a matching element

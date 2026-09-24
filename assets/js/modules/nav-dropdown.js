@@ -2,7 +2,7 @@
 // NAV "MEER" DROPDOWN
 // -----------------------------------------------------------------
 // Renders every page from siteConfig.pages that ISN'T one of the
-// permanent nav links (Home / Date Ideeën / Ticketmaster) into a
+// permanent nav links (Home / Lijstje / Ticketmaster) into a
 // dropdown — including "coming soon" placeholders, shown disabled.
 // Add a new page to config.js's `pages` array and it appears here
 // automatically; no HTML edits needed for that part.
@@ -13,10 +13,10 @@ import { qsa, escapeHtml, siteRootUrl } from './utils.js';
 
 // hrefs that already have their own permanent link in the nav —
 // keep this in sync with the <nav> markup in every HTML file.
-const PERMANENT_LINKS = new Set(['index.html', 'date.html', 'ticketmaster.html']);
+const PERMANENT_LINKS = new Set(['index.html', 'lijstje.html', 'ticketmaster.html']);
 
 // Renders one dropdown row: a real link if available, else a disabled
-// "Binnenkort" placeholder.
+// (greyed out) placeholder.
 function renderItem(page) {
   const isAvailable = page.status === 'available' && page.href;
 
@@ -24,12 +24,8 @@ function renderItem(page) {
     return `<a href="${siteRootUrl(page.href)}" role="menuitem">${escapeHtml(page.title)}</a>`;
   }
 
-  return `
-    <span class="dropdown-item-disabled" role="menuitem" aria-disabled="true">
-      ${escapeHtml(page.title)}
-      <span class="dropdown-badge">Binnenkort</span>
-    </span>
-  `;
+  // Not available yet: shown greyed out and unclickable, without a badge.
+  return `<span class="dropdown-item-disabled" role="menuitem" aria-disabled="true">${escapeHtml(page.title)}</span>`;
 }
 
 // Builds the "Meer" dropdown from config.js and wires up open/close.

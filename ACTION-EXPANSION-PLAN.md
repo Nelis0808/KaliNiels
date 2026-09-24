@@ -481,7 +481,17 @@ above.
   results client-side, so the two Workers stay fully independent.
 - Routes: `GET /artists`, `PUT /artists`.
 
-### 2.11 `cloudflare/recepten/` — Albert Heijn / Allerhande recipes + favorites
+### 2.11 `cloudflare/recepten/` — recipes (TheMealDB) + favorites
+
+**⚠️ Source changed:** this Worker used to scrape Albert Heijn's Allerhande, but ah.nl
+answers every request from Cloudflare with `403 Access Denied` (bot protection), so it now
+uses the free [TheMealDB](https://www.themealdb.com) API (no key needed). Recipes are English,
+without cooking time / servings. Only the Worker code changed: redeploy
+`recepten_worker.js`; bindings (`RECIPES_KV`) stay the same. Category → TheMealDB mapping lives in
+`TYPE_SOURCES` at the top of the Worker, Dutch → English search words in `NL_TO_EN`.
+Older favorites saved from AH can't open their details anymore (they still show as cards).
+The sections below still describe the old AH scraping in places — ignore the AH-specific parts.
+
 
 **File:** `cloudflare/recepten/recepten_worker.js`
 **Config field:** `recipes.workerUrl` in `config.js` — the same field

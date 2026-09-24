@@ -26,7 +26,7 @@ function buildTreeCollectibleItems({ rows, perRow }) {
     { name: 'Appelboom', emoji: '🌳🍎' },
     { name: 'Kersenboom', emoji: '🌳🌸' },
     { name: 'Perenboom', emoji: '🌳🍐' },
-    { name: 'Eik', emoji: '🍂🌳' },
+    { name: 'Eik', emoji: '🌳🍂' },
     { name: 'Den', emoji: '🌲❄️' },
   ];
   const roman = ['', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
@@ -55,7 +55,7 @@ export const siteConfig = {
   // <header class="navbar">. Add a new page? Add a link here too.
   nav: [
     { label: 'Home'         , href: 'index.html' },
-    { label: 'Date Ideeën'  , href: 'date.html' },
+    { label: 'Lijstje'      , href: 'lijstje.html' },
     { label: 'Ticketmaster' , href: 'ticketmaster.html' },
   ],
 
@@ -138,7 +138,7 @@ export const siteConfig = {
     },
     {
       title: 'Recepten',
-      description: 'Allerhande recepten op soort gerecht, met favorieten.',
+      description: 'Recepten op soort gerecht, met favorieten.',
       href: 'recepten.html',
       emoji: '🍳',
       status: 'available',
@@ -262,17 +262,16 @@ export const siteConfig = {
   //   - id:    used internally, keep it unique
   //   - label: what's shown on the tab/chip
   //   - emoji: shown next to the label (optional)
-  //   - type:  the value sent to AH's own "soort gerecht" filter
-  //            (?soort-gerecht=<type> on ah.nl/allerhande/recepten-zoeken).
-  //            Best-effort/curated — if AH doesn't recognise it (renamed
-  //            or never existed), the Worker automatically retries as a
-  //            plain keyword search instead of showing nothing (see
-  //            "fallbackUsed" handling in recepten.js).
+  //   - type:  slug sent to the recipes Worker, which maps it to
+  //            TheMealDB categories/cuisines/ingredients (see TYPE_SOURCES
+  //            in cloudflare/recepten/recepten_worker.js — a NEW slug needs
+  //            an entry there, otherwise it is used as a plain search word).
   //   - subcategories: optional list of { id, label, query } chips
   //            shown once this category is active ("Alles" is added
   //            automatically) — `query` is just extra free text
-  //            combined with `type` when asking the Worker, so any
-  //            word AH's own search understands works here.
+  //            combined with `type` when asking the Worker; Dutch words
+  //            are translated to English by the Worker (NL_TO_EN there),
+  //            unknown words are passed through unchanged.
   recipes: {
     workerUrl: 'https://recepten.niels-luijten7.workers.dev',
     categories: [
@@ -342,6 +341,56 @@ export const siteConfig = {
           { id: 'puree', label: 'Pur\u00e9e', query: 'puree' },
           { id: 'gebakken', label: 'Gebakken', query: 'gebakken' },
           { id: 'salade', label: 'Salade', query: 'salade' },
+        ],
+      },
+      // --- Toegevoegd: Aziatisch, Sushi + verschillende soorten vlees
+      // (en, voor de symmetrie, vis/vegetarisch erbij) — zie punt 2.
+      // `type` is best-effort: als AH's eigen soort-gerecht-filter deze
+      // slug niet herkent, valt recepten_worker.js vanzelf terug op een
+      // gewone trefwoordzoekopdracht (zie dat bestand se eigen comments),
+      // dus zelfs een net-niet-goede slug levert nog steeds bruikbare
+      // resultaten op.
+      {
+        id: 'aziatisch', label: 'Aziatisch', emoji: '🥢', type: 'aziatisch',
+        subcategories: [
+          { id: 'wok', label: 'Wok', query: 'wok' },
+          { id: 'curry', label: 'Curry', query: 'curry' },
+          { id: 'noedels', label: 'Noedels', query: 'noedels' },
+          { id: 'rijst', label: 'Rijst', query: 'rijst' },
+        ],
+      },
+      {
+        id: 'sushi', label: 'Sushi', emoji: '🍣', type: 'sushi',
+        subcategories: [
+          { id: 'zalm', label: 'Zalm', query: 'zalm' },
+          { id: 'maki', label: 'Maki', query: 'maki' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+        ],
+      },
+      {
+        id: 'vlees', label: 'Vlees', emoji: '🥩', type: 'vlees',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'rund', label: 'Rund', query: 'rundvlees' },
+          { id: 'varken', label: 'Varken', query: 'varkensvlees' },
+          { id: 'gehakt', label: 'Gehakt', query: 'gehakt' },
+          { id: 'lam', label: 'Lam', query: 'lamsvlees' },
+        ],
+      },
+      {
+        id: 'vis', label: 'Vis', emoji: '🐟', type: 'vis',
+        subcategories: [
+          { id: 'zalm', label: 'Zalm', query: 'zalm' },
+          { id: 'garnalen', label: 'Garnalen', query: 'garnalen' },
+          { id: 'kabeljauw', label: 'Kabeljauw', query: 'kabeljauw' },
+        ],
+      },
+      {
+        id: 'vegetarisch', label: 'Vegetarisch', emoji: '🥦', type: 'vegetarisch',
+        subcategories: [
+          { id: 'vegan', label: 'Vegan', query: 'vegan' },
+          { id: 'peulvruchten', label: 'Peulvruchten', query: 'peulvruchten' },
+          { id: 'groente', label: 'Groente', query: 'groenteschotel' },
         ],
       },
     ],
@@ -416,7 +465,33 @@ export const siteConfig = {
         ],
       },
 
-      // Add a second collection here whenever you're ready — e.g.:
+      // Second collection: Planten. Same shape as Trees above, just
+      // nothing feeds it yet — there's no "grow a plant" feature on
+      // the site to earn these from (unlike Trees, fed by the Studie
+      // Timer), so `source.label` is left as the literal placeholder
+      // "X" until a real feature exists to link here. Swap items /
+      // rewards / source for the real thing whenever that's built —
+      // this collection (and its "Planten" tab on collections.html)
+      // works exactly like Trees the moment `items` isn't empty.
+      {
+        id: 'plants',
+        name: 'Planten',
+        emoji: '🌱',
+        description: 'Elke plant die je in de X helemaal laat groeien, komt hier in je collectie terecht.',
+        source: { label: 'X', href: '#' },
+        itemsPerRow: 7,
+        items: [
+          { id: 'plant-1', name: 'Zonnebloem', emoji: '🌱🌻' },
+          { id: 'plant-2', name: 'Tulp', emoji: '🌱🌷' },
+          { id: 'plant-3', name: 'Cactus', emoji: '🌱🌵' },
+          { id: 'plant-4', name: 'Klaver', emoji: '🌱🍀' },
+        ],
+        rewards: [
+          { id: 'reward-1', giftId: null, fallbackPriceEUR: 25 },
+        ],
+      },
+
+      // Add further collections here the same way — e.g.:
       // {
       //   id: 'stars',
       //   name: 'Sterren',
@@ -499,5 +574,33 @@ export const siteConfig = {
   // `blackjack` above by design — see the note there.
   spiderette: {
     workerUrl: 'https://blackjack.niels-luijten7.workers.dev',
+  },
+
+  // Config for the dev page (dev.html/assets/js/modules/dev.js) — a
+  // hidden admin/testing page (not linked in nav, not in `pages`
+  // below, not in the sitemap; reachable only by typing the URL) for
+  // quickly tweaking chips, collectibles progress, and reward state
+  // while building/testing, instead of hand-editing localStorage or
+  // the Cloudflare KV dashboard every time.
+  //
+  // ITS OWN LOGIN: deliberately separate from the shared "👤 Profiel"
+  // site login (auth.js) — this page only reads/writes per-browser
+  // localStorage directly (no Worker of its own), so a lightweight
+  // client-side password is enough here. IMPORTANT: this is NOT a
+  // real security boundary — anyone who opens this file (or the
+  // browser's dev tools) can read the password below, same as any
+  // other purely client-side check. It's meant to keep the page off
+  // the beaten path for casual visitors, not to protect anything
+  // sensitive; don't put anything here you wouldn't want visible to
+  // someone determined to look at the page's source.
+  //
+  // The Chips section on that page is the one exception that DOES
+  // touch a Worker (cloudflare/chips/chips_worker.js, same one as
+  // `blackjack`/`spiderette` above) — it reuses whatever "👤 Profiel"
+  // session is already active (see auth.js) rather than asking for
+  // another login, since that Worker only ever lets a token adjust
+  // its OWN person's balance (see that Worker's file header).
+  dev: {
+    password: 'admin-ww',
   },
 };

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!--
+  DEV PAGE — hidden admin/testing tools.
+  Not linked anywhere in the nav, not in assets/js/config.js's `pages`
+  list (so it doesn't show up as a home card or in the "Meer"
+  dropdown either) — reachable only by typing dev.html directly. See
+  siteConfig.dev in assets/js/config.js for the full explanation of
+  this page's own (deliberately lightweight, NOT secure) login gate,
+  and assets/js/modules/dev.js for all the actual logic. This file is
+  markup only.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Dev-tools: chips, collecties en beloningen snel aanpassen tijdens het testen.">
+  <meta name="theme-color" content="#F5F5F5">
+
+  <title>Dev — KaliNiels</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/dev.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🛠️ Dev</h1>
+        <p>Chips, collecties en beloningen snel aanpassen tijdens het testen.</p>
+      </div>
+    </section>
+
+    <section class="container" id="devApp">
+      <!-- GATE — this page's own custom login, separate from the
+           shared "👤 Profiel" site login (see siteConfig.dev in
+           config.js). Synchronous inline script below shows/hides
+           this the same way collections.html/reizen.html avoid a
+           flash of the wrong state before main.js runs. -->
+      <div id="devGate" class="dev-gate">
+        <div class="dev-gate-card">
+          <p class="dev-gate-emoji" aria-hidden="true">🔒</p>
+          <h2>Dev-toegang</h2>
+          <p>Deze pagina heeft zijn eigen wachtwoord, los van de normale site-login.</p>
+          <form id="devGateForm" class="dev-gate-form">
+            <label for="devGatePassword" class="sr-only">Wachtwoord</label>
+            <input type="password" id="devGatePassword" placeholder="Wachtwoord" autocomplete="off" required>
+            <button type="submit" class="btn btn-primary">Ontgrendelen</button>
+          </form>
+          <p id="devGateError" class="dev-gate-error" role="alert"></p>
+        </div>
+      </div>
+
+      <!-- CONTENT — everything below only ever touches this browser's
+           own localStorage, EXCEPT the Chips section (server-side,
+           reuses whatever "👤 Profiel" session is already active). -->
+      <div id="devContent" class="dev-content hidden">
+        <div class="dev-toolbar">
+          <p class="dev-hint">🔓 Dev-toegang ontgrendeld op dit apparaat.</p>
+          <button type="button" id="devLockBtn" class="btn btn-outline btn-sm">Vergrendelen</button>
+        </div>
+
+        <!-- SITE SESSION — quick status + logout for the shared
+             "👤 Profiel" login, since several sections below depend on
+             who (if anyone) is currently logged in that way. -->
+        <div class="dev-panel">
+          <h2>👤 Site-sessie</h2>
+          <p id="devSessionStatus" class="dev-panel-hint">Niet ingelogd.</p>
+          <button type="button" id="devSessionLogoutBtn" class="btn btn-outline btn-sm hidden">Uitloggen (👤 Profiel)</button>
+        </div>
+
+        <!-- CHIPS — the one section that needs a real "👤 Profiel"
+             session: chips live server-side (cloudflare/chips/), and
+             that Worker only ever lets a token adjust its OWN
+             person's balance. -->
+        <div class="dev-panel">
+          <h2>🪙 Chips</h2>
+
+          <div id="devChipsLoggedOut" class="dev-panel-hint">
+            Log in via <strong>👤 Profiel</strong> rechtsboven om chips aan te passen — chips zijn gekoppeld aan die sessie.
+          </div>
+
+          <div id="devChipsLoggedIn" class="hidden">
+            <p class="dev-panel-hint">Ingelogd als <strong id="devChipsWho"></strong> — huidig saldo: <strong id="devChipsCurrent">…</strong> chips.</p>
+            <form id="devChipsForm" class="dev-inline-form">
+              <label for="devChipsInput" class="sr-only">Nieuw aantal chips</label>
+              <input type="number" id="devChipsInput" min="0" max="1000000" step="1" inputmode="numeric">
+              <button type="submit" class="btn btn-primary btn-sm">Opslaan</button>
+            </form>
+            <p id="devChipsStatus" class="dev-status" role="status"></p>
+          </div>
+        </div>
+
+        <!-- COLLECTIES — set a collection's progress directly, or
+             reset its items/rewards, for whichever person is picked
+             below (independent of any "👤 Profiel" session). -->
+        <div class="dev-panel">
+          <h2>🗂️ Collecties</h2>
+
+          <div class="dev-field-row">
+            <div class="dev-field">
+              <label for="devCollectionSelect">Collectie</label>
+              <select id="devCollectionSelect"></select>
+            </div>
+            <div class="dev-field">
+              <label for="devPersonSelect">Persoon</label>
+              <select id="devPersonSelect">
+                <option value="a">Niels</option>
+                <option value="b">Kalina</option>
+              </select>
+            </div>
+          </div>
+
+          <p id="devCollectionProgress" class="dev-panel-hint"></p>
+
+          <form id="devCountForm" class="dev-inline-form">
+            <label for="devCountInput" class="sr-only">Aantal verzameld</label>
+            <input type="number" id="devCountInput" min="0" step="1" inputmode="numeric">
+            <button type="submit" class="btn btn-primary btn-sm">Zet aantal</button>
+          </form>
+
+          <div class="dev-button-row">
+            <button type="button" id="devResetItemsBtn" class="btn btn-outline btn-sm dev-btn-danger">Items resetten</button>
+            <button type="button" id="devResetRewardsBtn" class="btn btn-outline btn-sm dev-btn-danger">Beloningen resetten</button>
+          </div>
+
+          <p id="devCountStatus" class="dev-status" role="status"></p>
+        </div>
+
+        <!-- STUDIE TIMER — the feature that feeds the "Bomen"
+             collection above; wiping it here is the "start over
+             completely" button for someone's whole tree-growing
+             progress (not just what's already landed in Collecties). -->
+        <div class="dev-panel">
+          <h2>⏱️ Studie Timer</h2>
+
+          <div class="dev-field-row">
+            <div class="dev-field">
+              <label for="devTimerPersonSelect">Persoon</label>
+              <select id="devTimerPersonSelect">
+                <option value="a">Niels</option>
+                <option value="b">Kalina</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dev-button-row">
+            <button type="button" id="devTimerResetBtn" class="btn btn-outline btn-sm dev-btn-danger">Studie Timer resetten</button>
+          </div>
+
+          <p id="devTimerStatus" class="dev-status" role="status"></p>
+        </div>
+
+        <!-- DANGER ZONE — nuclear option, wipes every localStorage key
+             this site uses (both people, every feature) in this
+             browser only. -->
+        <div class="dev-panel dev-panel-danger">
+          <h2>☢️ Alles wissen</h2>
+          <p class="dev-panel-hint">Wist ALLE lokale gegevens van deze site in deze browser: collecties, beloningen, Studie Timer, favorieten, instellingen, sessies — alles. Andere apparaten/browsers blijven ongemoeid.</p>
+          <button type="button" id="devWipeAllBtn" class="btn btn-outline btn-sm dev-btn-danger">Alles wissen op dit apparaat</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Synchronous, runs immediately (before main.js's module
+         script) — same flash-prevention technique as
+         collections.html/reizen.html, just checking this page's own
+         'devUnlockedV1' flag instead of the shared site session. -->
+    <script>
+      (function () {
+        try {
+          var unlocked = localStorage.getItem('devUnlockedV1') === '1';
+          var gate = document.getElementById('devGate');
+          var content = document.getElementById('devContent');
+          if (gate && content) {
+            gate.classList.toggle('hidden', unlocked);
+            content.classList.toggle('hidden', !unlocked);
+          }
+        } catch (e) { /* leave default (locked) markup as-is */ }
+      })();
+    </script>
+  </main>
+
+  <div data-include="chrome-end"></div>
+
+  <script src="assets/js/main-watchdog.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

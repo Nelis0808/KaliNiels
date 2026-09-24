@@ -119,6 +119,20 @@
   background: var(--color-bg);
   color: var(--color-text);
   font: inherit;
+  /* Removes the native up/down spinner arrows — redundant (and,
+     worse, DIFFERENT from) the custom −/+ buttons already sitting
+     right next to this field in .rpt-servings-stepper. Scroll-wheel
+     changing a focused number input's value is blocked separately in
+     JS (see preventNumberInputScroll() in utils.js / recepten.js). */
+  -moz-appearance: textfield;
+}
+
+.rpt-servings-row input::-webkit-outer-spin-button,
+.rpt-servings-row input::-webkit-inner-spin-button,
+.rpt-servings-stepper input::-webkit-outer-spin-button,
+.rpt-servings-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .rpt-status {
@@ -126,12 +140,30 @@
   color: var(--color-text-muted);
   margin-bottom: var(--space-5);
   min-height: 1.4em;
+  width: 100%;
+  max-width: none;
+  /* Without this, the global `p { max-width: 65ch }` rule
+     (typography.css) caps this line well below the toolbar's actual
+     width and, having no auto margin of its own, leaves it flush
+     left — so text-align:center only centered the text WITHIN that
+     now-too-narrow box, not the box itself across the full width. */
+  margin-inline: auto;
 }
 
-/* == RESULTS GRID == */
+/* == RESULTS GRID ==
+   Flex-wrap instead of `grid-template-columns: repeat(auto-fill,
+   minmax(220px, 1fr))`: with a grid, an incomplete last row (very
+   common once you've paged through a few "Meer laden" loads) has its
+   `1fr` tracks stretch to fill the full row width regardless of how
+   many cards are actually in it, so a lone card left over on its own
+   row balloons out far wider than every other card. Flex-wrap with a
+   fixed max-width per card + justify-content:center keeps every card
+   the same size and keeps a short trailing row centered instead of
+   stretched — tidy at 8 results or 80. */
 .rpt-results {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-5);
 }
 
@@ -139,6 +171,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  /* Fixed-ish size (grow to fill leftover space in a row, but never
+     past 280px) now that .rpt-results is flex, not grid — see the
+     comment there. */
+  flex: 1 1 220px;
+  max-width: 280px;
   background: var(--color-surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
@@ -173,13 +210,30 @@
 }
 
 .rpt-card-image {
+  position: relative;
   height: 150px;
   background-color: var(--color-bg);
-  background-size: cover;
-  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Real <img> (not a CSS background) so a broken/blocked image can
+   fall back to .rpt-card-fallback via its onerror handler (see
+   renderCard() in recepten.js) instead of just rendering nothing.
+   object-fit:cover fills the fixed-height box horizontally edge to
+   edge and crops top/bottom as needed, same idea as a background with
+   background-size:cover, just on a real image element — which also
+   lets referrerpolicy="no-referrer" apply (some image hosts, AH's
+   included, reject a hotlinked image whose Referer header names a
+   different site; skipping that header sidesteps the problem). */
+.rpt-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .rpt-card-fallback {
@@ -286,39 +340,41 @@ body.rpt-modal-open {
   display: none;
 }
 
+/* Hero image — bleeds past .rpt-modal-card's own padding on every
+   side (negative margins = -padding) so it sits flush with the
+   card's rounded top corners and reads as "above everything else"
+   in the modal, with .rpt-modal-close floating on top of it (that
+   button is position:absolute with its own z-index, so it paints
+   above this normal-flow image regardless of DOM order). The
+   max-width:760px rule further down repeats this with the smaller
+   mobile padding value so the bleed still lines up exactly. */
 .rpt-modal-image {
-  height: 220px;
-  border-radius: var(--radius);
+  display: block;
+  width: calc(100% + var(--space-6) * 2);
+  height: 260px;
+  margin: calc(var(--space-6) * -1) calc(var(--space-6) * -1) var(--space-5);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background-color: var(--color-bg);
-  background-size: cover;
-  background-position: center;
-  margin-bottom: var(--space-5);
+  /* Real <img> now, not a CSS background (see recepten.js's
+     renderModalContent()) — object-fit:cover gets the same "fill the
+     box horizontally, keep aspect ratio, crop top/bottom, zoom toward
+     the center" behaviour a background-size:cover gave, but on an
+     element that can actually fail to load and fall back gracefully
+     (onerror hides it) instead of just rendering nothing. */
+  object-fit: cover;
+  object-position: center;
 }
 
-.rpt-modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
+/* When there's no image (or it fails to load — see recepten.js's
+   renderModalContent()/onerror), collapse its reserved space/margins
+   entirely instead of leaving an empty gap where the hero used to be. */
+.rpt-modal-image.hidden {
+  display: none;
+  margin-bottom: 0;
 }
 
-.rpt-modal-header h2 {
+.rpt-modal-title {
   margin: 0;
-}
-
-.rpt-favorite-btn {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  background: var(--color-bg);
-  font-size: 1.3rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast);
-}
-
-.rpt-favorite-btn:hover, .rpt-favorite-btn:focus-visible {
-  transform: scale(1.1);
 }
 
 .rpt-modal-description {
@@ -330,11 +386,37 @@ body.rpt-modal-open {
   display: none;
 }
 
+/* Meta pills (tijd/kcal/categorie/rating) + the favorite heart share
+   one row, heart pinned to the far right — see recepten.html's
+   comment for why the heart button lives outside #reptModalMeta. */
+.rpt-modal-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
 .rpt-modal-meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  flex: 1 1 auto;
+}
+
+.rpt-favorite-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  font-size: 1.15rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+
+.rpt-favorite-btn:hover, .rpt-favorite-btn:focus-visible {
+  transform: scale(1.1);
 }
 
 .rpt-meta-pill {
@@ -371,6 +453,8 @@ body.rpt-modal-open {
   text-align: center;
   font-size: var(--fs-sm);
   color: var(--color-text-muted);
+  /* See .rpt-status above — same global `p{max-width:65ch}` fix. */
+  margin-inline: auto;
 }
 
 .rpt-modal-columns {
@@ -415,6 +499,8 @@ body.rpt-modal-open {
   color: var(--color-danger);
   text-align: center;
   padding: var(--space-6) 0;
+  /* See .rpt-status above — same global `p{max-width:65ch}` fix. */
+  margin-inline: auto;
 }
 
 .rpt-modal-error.hidden {
