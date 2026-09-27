@@ -615,6 +615,84 @@ but recipes are empty/wrong specifically here, see this file's own
 
 ---
 
+---
+
+### 2.12 `cloudflare/ah-recepten/` — AH-Recepten (Albert Heijn scraper + mobile-API fallback)
+
+**Separate page + separate Worker from `cloudflare/recepten/` above** —
+that one reads TheMealDB (English) because ah.nl blocks Cloudflare's
+requests outright; this one is the original "read ah.nl directly"
+version, kept as its own page (`ah-recepten.html`) since the AH block
+is unofficial/undocumented and could change either way.
+
+**⚠️ This Worker will likely still get blocked by ah.nl at least some
+of the time — see the big warning at the top of
+`ah_recepten_worker.js` before you spend time debugging it.** ah.nl
+fronts itself with bot-detection that has been observed answering
+every request from a Cloudflare Worker with `403 Access Denied`,
+regardless of headers — most likely IP-range and/or TLS-fingerprint
+based, which no amount of header tweaking fully defeats. This Worker
+still does real, non-theatrical anti-blocking on that path (rotates
+through a few realistic browser header profiles — see
+`FETCH_HEADER_PROFILES`), and, when that path is blocked outright,
+falls back to the API that powers AH's own "Appie" phone app
+(`api.ah.nl`, unauthenticated/anonymous, no ah.nl website WAF in the
+way) — but **that fallback's exact GraphQL query was written from
+public reverse-engineered documentation, not a live test against
+`api.ah.nl`**, so its field/argument names may need a tweak once you
+can see a real response.
+
+**Setup (separate from `cloudflare/recepten/` — its own Worker, its
+own KV namespace):**
+1. Cloudflare dashboard → Workers & Pages → **Create** → paste in
+   `cloudflare/ah-recepten/ah_recepten_worker.js` → Deploy.
+2. Create a new **KV namespace** (e.g. `ah_recepten_kv` — pick any
+   name, it's just a label) and bind it to this Worker as `RECIPES_KV`
+   (**Settings → Variables → KV Namespace Bindings**) — the same
+   binding *name* as the other Worker's, but it must be a **different
+   namespace**; sharing one namespace between the two Workers would mix
+   their caches and their separate favorites lists together.
+3. Copy the Worker's `*.workers.dev` URL into `assets/js/config.js` →
+   `siteConfig.ahRecipes.workerUrl` (replace the
+   `YOUR-SUBDOMAIN.ah-recepten.workers.dev` placeholder) — until you
+   do, `ah-recepten.html` shows a "nog geen Worker gekoppeld" notice
+   instead of trying to load anything.
+4. If your site isn't served from `https://nelis0808.github.io` (or
+   `localhost:8080`/`5500`), add its origin to `ALLOWED_ORIGINS` near
+   the top of the Worker file too.
+
+**Diagnosing an empty page:** open
+`<worker-url>/recipes?type=pasta&debug=1` in a browser tab. It bypasses
+every cache and reports, for one query:
+- `html.attempts`: every header profile tried and its HTTP status —
+  `403`/`429`/`451`/`503` on all of them means the bot-block above is
+  what you're hitting.
+- `html.cards` / `html.permalinkHits`: if `html` did get a normal `200`
+  but `cards` is `0`, ah.nl likely changed its page structure — see
+  "EXTRACTION NOTES" in the Worker file.
+- `mobileApi.tokenOk`: whether the anonymous app-token request
+  succeeded at all.
+- `mobileApi.listing`: the outcome of the fallback GraphQL search —
+  `{ok:false, errors:[...]}` here is the GraphQL API rejecting the
+  guessed query shape; paste that `errors` array back and the query in
+  `RECIPE_SEARCH_QUERY`/`RECIPE_DETAIL_QUERY` (top of the Worker file)
+  can be corrected against it.
+
+**Config field:** `ahRecipes.workerUrl` in `config.js` — same
+`categories` menu shape as `recipes` above (these are AH's own
+"soort-gerecht" slugs directly, not a mapping table, since this Worker
+talks to AH itself).
+
+**Caching / rate limiting / CPU / routes:** identical story to
+`cloudflare/recepten/` above (24h KV cache, best-effort — a KV outage
+degrades to "no cache", never a 500; Cache-API rate limiter, no KV
+writes; same routes plus the extra `debug=1` mode) — see that
+section's notes, they apply here unchanged. The 24h cache doubles as
+the main defense against tripping AH's rate limiting/bot detection
+further: don't lower `CACHE_TTL_MS` without a good reason.
+
+---
+
 ## Appendix — "Onze Reizen" map data (not a Worker, but related setup)
 
 The world map and per-country borders that power `reizen.html` /

@@ -144,6 +144,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'AH-Recepten',
+      description: 'Allerhande recepten van Albert Heijn, met favorieten.',
+      href: 'ah-recepten.html',
+      emoji: '🛒',
+      status: 'available',
+    },
+    {
       title: 'TODO Lijst',
       description: 'Met prioriteit per taak.',
       href: 'todo.html',
@@ -274,6 +281,152 @@ export const siteConfig = {
   //            unknown words are passed through unchanged.
   recipes: {
     workerUrl: 'https://recepten.niels-luijten7.workers.dev',
+    categories: [
+      {
+        id: 'pasta', label: 'Pasta', emoji: '🍝', type: 'pasta',
+        subcategories: [
+          { id: 'kip', label: 'Met kip', query: 'kip' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+          { id: 'romig', label: 'Romig', query: 'romig' },
+          { id: 'oven', label: 'Ovenpasta', query: 'ovenpasta' },
+        ],
+      },
+      {
+        id: 'rijst', label: 'Rijst', emoji: '🍚', type: 'rijst',
+        subcategories: [
+          { id: 'nasi', label: 'Nasi', query: 'nasi' },
+          { id: 'risotto', label: 'Risotto', query: 'risotto' },
+          { id: 'curry', label: 'Curry', query: 'curry' },
+          { id: 'wok', label: 'Wok', query: 'wok' },
+        ],
+      },
+      {
+        id: 'taco', label: 'Taco\u2019s', emoji: '🌮', type: 'taco',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'gehakt', label: 'Gehakt', query: 'gehakt' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+          { id: 'vis', label: 'Vis', query: 'vis' },
+        ],
+      },
+      {
+        id: 'wrap', label: 'Wrap\u2019s', emoji: '🌯', type: 'wrap',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'falafel', label: 'Falafel', query: 'falafel' },
+          { id: 'burrito', label: 'Burrito', query: 'burrito' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+        ],
+      },
+      {
+        id: 'salade', label: 'Salade', emoji: '🥗', type: 'salade',
+        subcategories: [
+          { id: 'pasta', label: 'Pastasalade', query: 'pasta' },
+          { id: 'kip', label: 'Met kip', query: 'kip' },
+          { id: 'zomer', label: 'Zomers', query: 'zomer' },
+        ],
+      },
+      {
+        id: 'soep', label: 'Soep', emoji: '🍲', type: 'soep',
+        subcategories: [
+          { id: 'tomaat', label: 'Tomaat', query: 'tomaat' },
+          { id: 'kip', label: 'Met kip', query: 'kip' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+        ],
+      },
+      {
+        id: 'ovenschotel', label: 'Ovenschotel', emoji: '🍛', type: 'ovenschotel',
+        subcategories: [
+          { id: 'aardappel', label: 'Aardappel', query: 'aardappel' },
+          { id: 'gehakt', label: 'Gehakt', query: 'gehakt' },
+          { id: 'kip', label: 'Kip', query: 'kip' },
+        ],
+      },
+      {
+        id: 'aardappel', label: 'Aardappel', emoji: '🥔', type: 'aardappel',
+        subcategories: [
+          { id: 'puree', label: 'Pur\u00e9e', query: 'puree' },
+          { id: 'gebakken', label: 'Gebakken', query: 'gebakken' },
+          { id: 'salade', label: 'Salade', query: 'salade' },
+        ],
+      },
+      // --- Toegevoegd: Aziatisch, Sushi + verschillende soorten vlees
+      // (en, voor de symmetrie, vis/vegetarisch erbij) — zie punt 2.
+      // `type` is best-effort: als AH's eigen soort-gerecht-filter deze
+      // slug niet herkent, valt recepten_worker.js vanzelf terug op een
+      // gewone trefwoordzoekopdracht (zie dat bestand se eigen comments),
+      // dus zelfs een net-niet-goede slug levert nog steeds bruikbare
+      // resultaten op.
+      {
+        id: 'aziatisch', label: 'Aziatisch', emoji: '🥢', type: 'aziatisch',
+        subcategories: [
+          { id: 'wok', label: 'Wok', query: 'wok' },
+          { id: 'curry', label: 'Curry', query: 'curry' },
+          { id: 'noedels', label: 'Noedels', query: 'noedels' },
+          { id: 'rijst', label: 'Rijst', query: 'rijst' },
+        ],
+      },
+      {
+        id: 'sushi', label: 'Sushi', emoji: '🍣', type: 'sushi',
+        subcategories: [
+          { id: 'zalm', label: 'Zalm', query: 'zalm' },
+          { id: 'maki', label: 'Maki', query: 'maki' },
+          { id: 'vegetarisch', label: 'Vegetarisch', query: 'vegetarisch' },
+        ],
+      },
+      {
+        id: 'vlees', label: 'Vlees', emoji: '🥩', type: 'vlees',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'rund', label: 'Rund', query: 'rundvlees' },
+          { id: 'varken', label: 'Varken', query: 'varkensvlees' },
+          { id: 'gehakt', label: 'Gehakt', query: 'gehakt' },
+          { id: 'lam', label: 'Lam', query: 'lamsvlees' },
+        ],
+      },
+      {
+        id: 'vis', label: 'Vis', emoji: '🐟', type: 'vis',
+        subcategories: [
+          { id: 'zalm', label: 'Zalm', query: 'zalm' },
+          { id: 'garnalen', label: 'Garnalen', query: 'garnalen' },
+          { id: 'kabeljauw', label: 'Kabeljauw', query: 'kabeljauw' },
+        ],
+      },
+      {
+        id: 'vegetarisch', label: 'Vegetarisch', emoji: '🥦', type: 'vegetarisch',
+        subcategories: [
+          { id: 'vegan', label: 'Vegan', query: 'vegan' },
+          { id: 'peulvruchten', label: 'Peulvruchten', query: 'peulvruchten' },
+          { id: 'groente', label: 'Groente', query: 'groenteschotel' },
+        ],
+      },
+    ],
+  },
+
+  // Config for the AH-Recepten page (assets/js/modules/ah-recepten.js).
+  // See cloudflare/ah-recepten/ + ACTION-EXPANSION-PLAN.md for setup.
+  // No login — same reasoning as shoppingList/gifts/todo above; the
+  // shared "favorites" list lives on this same Worker. This is the
+  // ORIGINAL Albert Heijn / Allerhande version — see `recipes` above
+  // for the separate TheMealDB-backed page (recepten.html) that
+  // exists alongside it.
+  //
+  // `categories` is the curated menu of "soort gerecht" tabs shown on
+  // the page — THIS is the file to edit to add/remove/rename a
+  // category or its subcategories, no Worker redeploy needed:
+  //   - id:    used internally, keep it unique
+  //   - label: what's shown on the tab/chip
+  //   - emoji: shown next to the label (optional)
+  //   - type:  the value sent to AH's own "soort-gerecht" filter as-is
+  //            (ah_recepten_worker.js falls back to a plain keyword
+  //            search when AH doesn't recognize it — see that file).
+  //   - subcategories: optional list of { id, label, query } chips
+  //            shown once this category is active ("Alles" is added
+  //            automatically) — `query` is just extra free text
+  //            combined with `type` when asking the Worker, so any
+  //            word AH's own search understands works here.
+  ahRecipes: {
+    workerUrl: 'https://ah-recepten.niels-luijten7.workers.dev',
     categories: [
       {
         id: 'pasta', label: 'Pasta', emoji: '🍝', type: 'pasta',

@@ -9,7 +9,10 @@
    via .rpt-modal-open) rather than inventing a new one.
    ============================================================= */
 
-#receptenApp {
+/* #ahReceptenApp = ah-recepten.html's root (see the comment on that
+   element in the HTML for why it can't share recepten.html's id) —
+   both pages share this stylesheet and all of its .rpt-* classes. */
+#receptenApp, #ahReceptenApp {
   padding-bottom: var(--space-8);
 }
 

@@ -45,6 +45,7 @@ import { initSnackRating } from './modules/snack-rating.js';
 import { initClothing } from './modules/clothing.js';
 import { initGifts } from './modules/gifts.js';
 import { initRecepten } from './modules/recepten.js';
+import { initAhRecepten } from './modules/ah-recepten.js';
 import { initCollections } from './modules/collections.js';
 import { initReizen } from './modules/reizen.js';
 import { initReizenLand } from './modules/reizen-land.js';
@@ -149,6 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initClothing', initClothing);           // clothing.html
   safeInit('initGifts', initGifts);                 // gifts.html
   safeInit('initRecepten', initRecepten);           // recepten.html
+  safeInit('initAhRecepten', initAhRecepten);        // ah-recepten.html
   safeInit('initCollections', initCollections);     // collections.html
   safeInit('initPageGate', initPageGate);           // reizen.html + reizen/land.html + collections.html — hides the whole page until logged in
   safeInit('initReizen', initReizen);               // reizen.html
