@@ -22,14 +22,21 @@
 .eyebrow{display:block;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;font-weight:800;color:var(--color-primary);margin-bottom:2px}
 .progress-track,.growth-track{height:10px;background:var(--color-bg);border-radius:var(--radius-full);overflow:hidden}.progress-fill{height:100%;width:0;background:var(--color-primary);border-radius:inherit}
 .timer-card{text-align:center;min-height:0;flex:1;display:flex;flex-direction:column;justify-content:center}.timer-topline{font-size:var(--fs-sm);color:var(--color-text-muted)}.phase-badge{padding:.35rem .75rem;border-radius:var(--radius-full);background:color-mix(in srgb,var(--color-primary) 12%,transparent);color:var(--color-primary);font-weight:800}
-.timer-display{font-family:var(--font-display);font-size:clamp(5.2rem,9vw,8.6rem);line-height:.95;margin:clamp(1.6rem,4vh,2.6rem) 0 .7rem;letter-spacing:.02em;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;display:inline-flex;justify-content:center}
+.timer-display{font-family:var(--timer-font);font-weight:600;font-size:clamp(5.2rem,9vw,8.6rem);line-height:1;height:1em;margin:clamp(1.6rem,4vh,2.6rem) 0 .7rem;letter-spacing:0;white-space:nowrap;font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1;display:inline-flex;justify-content:center;align-items:center}
+/* Timer digits use a SYSTEM sans stack on purpose. The site's display font
+   (Fraunces → Georgia fallback) uses old-style numerals, where 0/1/2 are
+   short and 3/4/5/7/9 hang below the baseline, so the numbers looked like
+   different sizes. Every font in this stack has lining figures (all digits
+   the same height) with tabular widths. The page doesn't load web fonts,
+   so nothing here can fall back to an old-style font either. */
+:root{--timer-font:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
 /* Each digit/colon gets its own fixed-width box (see
    renderTimerDisplay() in study-timer.js) so the display can never
    shift horizontally as digits change — this is the real fix;
    font-variant-numeric above is only a first line of defense that
    depends on the active font actually supporting tabular figures. */
-.timer-digit{display:inline-block;width:.62em;text-align:center}
-.timer-digit-colon{width:.32em}
+.timer-digit{display:inline-block;width:1.08ch;height:1em;line-height:1;text-align:center;font-variant-numeric:lining-nums tabular-nums}
+.timer-digit-colon{width:.5ch}
 .timer-task{font-size:var(--fs-lg);font-weight:800;min-height:1.4em}.timer-task-meta{font-size:var(--fs-sm);color:var(--color-text-muted);min-height:1.3em;margin-top:.2rem}
 .timer-actions{justify-content:center;margin:var(--space-4) 0;flex-wrap:wrap}.next-session-box{border-top:1px solid var(--color-border);padding-top:var(--space-4);text-align:left}.next-session-heading{font-weight:800;margin-bottom:var(--space-3)}
 /* Fixed min-width so the combined start/pause button doesn't change
@@ -260,3 +267,39 @@
 .study-tree-column .tree-card{position:relative;top:auto}
 
 @media(max-width:800px){.study-tree-column .tree-card{position:relative;top:auto}}
+/* ---- Narrow / split-screen fix --------------------------------------
+   The wide layout caps .study-top-row and its columns at max-height:725px
+   (so the timer card and tree card line up side by side). Below 800px the
+   grid collapses to ONE column — tree card on top, timer card below —
+   which together are taller than 725px. With the cap still applied, the
+   timer overflowed the grid and ended up underneath the presets, with
+   only its top edge peeking out. In a single column nothing needs to
+   line up with anything, so every height cap is removed and the columns
+   just grow to fit their content. */
+@media (max-width: 800px) {
+  .study-top-row { grid-template-columns: minmax(0, 1fr); max-height: none; align-items: start; }
+  .study-left-column,
+  .study-tree-column { height: auto; max-height: none; overflow: visible; }
+  .study-tree-column .tree-card { height: auto; max-height: none; }
+  .study-main-top,
+  .timer-card { flex: none; }
+  /* Timer first, tree below: the countdown is the primary content, so it
+     should never be pushed down the page by the (tall) tree scene. */
+  .study-tree-column { order: 0; }
+}
+
+/* Very narrow screens (small phones, narrow split-screen panes): the
+   digits scale with the viewport instead of having a rem floor that is
+   wider than the card, which made the whole page scroll sideways. */
+@media (max-width: 620px) {
+  .timer-display { font-size: clamp(2.2rem, 17vw, 6.3rem); }
+}
+
+/* Size the countdown from the CARD's own width (container query units), not
+   the viewport, so it always fits whatever column/split-screen width the
+   card ends up in — wide, half-screen or phone. Browsers without container
+   units ignore this and keep the viewport-based sizes above. Higher
+   specificity than the older media-query font-size rules, so it wins
+   regardless of source order. */
+.timer-card{container-type:inline-size}
+.timer-card .timer-display{font-size:clamp(2.2rem,18cqw,8.6rem)}
