@@ -122,7 +122,7 @@ const DEFAULT_OTHER_PRESET = {
 // Fades out and stops as soon as the "session done" rating popup it
 // belongs to is closed — see the MutationObserver set up in
 // initStudyTimer() below.
-const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp4', import.meta.url).href;
+const TIMER_COMPLETE_SOUND_SRC = new URL('../../audio/timer-complete.mp3', import.meta.url).href;
 const TIMER_SOUND_FADE_MS = 600;
 
 function clone(value) { return structuredClone(value); }
@@ -294,24 +294,53 @@ export function initStudyTimer() {
   const TIMER_SOUND_GAIN = 1.25;
   let audioCtx = null;
   let gainNode = null;
+  function ensureAudio() {
+    if (!completeAudio) {
+      completeAudio = new Audio(TIMER_COMPLETE_SOUND_SRC);
+      completeAudio.preload = 'auto';
+    }
+    return completeAudio;
+  }
   function ensureGainChain() {
     if (gainNode) return;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return; // very old browser — falls back to un-boosted playback
-    audioCtx = new Ctx();
-    const source = audioCtx.createMediaElementSource(completeAudio);
-    gainNode = audioCtx.createGain();
-    gainNode.gain.value = TIMER_SOUND_GAIN;
-    source.connect(gainNode).connect(audioCtx.destination);
+    try {
+      audioCtx = new Ctx();
+      const source = audioCtx.createMediaElementSource(ensureAudio());
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = TIMER_SOUND_GAIN;
+      source.connect(gainNode).connect(audioCtx.destination);
+    } catch (err) {
+      // If the boost chain can't be built, plain <audio> playback is used.
+      audioCtx = null; gainNode = null;
+    }
+  }
+  // Browsers only allow audio to start after a user gesture. The timer
+  // ends long after the click on Start, so the audio is "unlocked"
+  // during that click: the context is created/resumed and the element
+  // is briefly played muted, so the sound can play later on its own.
+  function primeAudio() {
+    ensureAudio();
+    ensureGainChain();
+    if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
+    const a = completeAudio;
+    const prevVolume = a.volume;
+    a.muted = true;
+    const p = a.play();
+    const restore = () => { a.pause(); a.currentTime = 0; a.muted = false; a.volume = prevVolume; };
+    if (p && typeof p.then === 'function') p.then(restore).catch(() => { a.muted = false; });
+    else restore();
   }
   function playCompleteSound() {
     stopCompleteSoundImmediately();
-    if (!completeAudio) completeAudio = new Audio(TIMER_COMPLETE_SOUND_SRC);
+    ensureAudio();
     ensureGainChain();
     if (audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
+    completeAudio.muted = false;
     completeAudio.currentTime = 0;
     completeAudio.volume = 1;
-    completeAudio.play().catch(() => {}); // ignore autoplay-policy rejections
+    completeAudio.play().catch((err) => console.warn('Timer sound could not play:', err));
   }
   // Leaving the "session done" rating popup (however that happens: the
   // save button, or any other future way to close it) fades the sound
@@ -527,7 +556,7 @@ export function initStudyTimer() {
       // Geen actieve stap: de timer draait niet, dus de titel toont
       // geen tijd (die zou anders altijd "00:00:00" zijn, wat geen
       // nuttige informatie geeft).
-      document.title = 'Studie Timer';
+      document.title = 'Study Timer <3';
       $('#timerVisibilityHint').textContent = '';
       $('#currentTaskName').textContent = 'Maak eerst een preset';
       $('#currentTaskMeta').textContent = '';
@@ -549,7 +578,7 @@ export function initStudyTimer() {
     // "Verborgen" in plaats van de tijd zelf — het tabblad mag niet
     // alsnog de countdown lekken terwijl de persoon 'm bewust verborgen
     // heeft.
-    document.title = isHidden ? 'Studie Timer — Verborgen' : `Studie Timer — ${displayTime}`;
+    document.title = isHidden ? 'Verborgen - Study Timer <3' : `${displayTime} - Study Timer <3`;
     $('#timerVisibilityHint').textContent = '';
     $('#currentTaskName').textContent = step.name;
     $('#currentTaskMeta').textContent = step.type === 'task' ? `Moeilijkheid ${step.difficulty} / 5` : 'Even opladen voor de volgende taak';
@@ -1026,7 +1055,7 @@ export function initStudyTimer() {
       }
       return;
     }
-    if (event.target.closest('#timerToggle')) { running ? pause() : start(); return; }
+    if (event.target.closest('#timerToggle')) { if (!running) primeAudio(); running ? pause() : start(); return; }
     if (event.target.closest('#timerReset')) { running = false; clearInterval(interval); persistRunningTimer(null); setRemainingFromStep(); renderTimer(); return; }
     if (event.target.closest('#skipStep')) {
       const preset = selectedPreset();
