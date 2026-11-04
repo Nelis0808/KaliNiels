@@ -137,6 +137,15 @@ alone can fire a few requests a second while someone's typing, each
 one an extra `KV.put()`. You hit the ceiling from completely normal
 use, well before anything resembling abuse.
 
+> **Update (november 2026):** every Worker now has a built-in daily budget
+> (requests + KV-writes per day, see `const BUDGET` at the top of each file),
+> the pages stop polling when nobody touches them, and the R2 photo bucket of
+> `gifts` has hard caps. Cache-API caveat: Cloudflare only guarantees
+> `caches.default` on custom domains, so on `*.workers.dev` the per-minute
+> limiters below and the edge response caches may do nothing; the daily budget
+> therefore also keeps an in-memory counter. Full explanation (Dutch) and the
+> dashboard checklist: **`NOOIT-BETALEN.md`**.
+
 **Default now: no rate limiting.** Every Worker in this project just
 reads/writes small bits of JSON (or, for `cloudflare/recepten/`, an
 already-cached page) for two people — there's very little to actually

@@ -2,6 +2,7 @@ import { siteConfig } from '../config.js';
 import { getAuth, currentPersonLabel, onAuthChange } from './auth.js';
 import { escapeHtml } from './utils.js';
 import { awardCollectible } from './collectibles.js';
+import { isTimerHidden, setTimerHidden } from './study-timer-badge.js';
 
 // Achter-de-schermen spelbalans. Niet als instellingen op de website tonen.
 const REWARD_CONFIG = Object.freeze({
@@ -546,7 +547,22 @@ export function initStudyTimer() {
     el.append(wrap);
   }
 
+  // Single source of truth for "timer verborgen": the shared preference
+  // in study-timer-badge.js (also what hides/shows the clock in the
+  // header). This only mirrors it onto the page: the blur class and the
+  // eye button's label.
+  function syncVisibilityUi() {
+    const hidden = isTimerHidden();
+    root.classList.toggle('timer-blurred', hidden);
+    const button = $('#timerVisibility');
+    if (button) {
+      button.setAttribute('aria-label', hidden ? 'Timer tonen' : 'Timer verbergen');
+      button.title = hidden ? 'Timer tonen' : 'Timer verbergen';
+    }
+  }
+
   function renderTimer() {
+    syncVisibilityUi();
     const preset = selectedPreset();
     const step = preset?.steps[currentStep];
     if (!step) {
@@ -1073,11 +1089,10 @@ export function initStudyTimer() {
       return;
     }
     if (event.target.closest('#timerVisibility')) {
-      root.classList.toggle('timer-blurred');
-      const hidden = root.classList.contains('timer-blurred');
-      const button = $('#timerVisibility');
-      button.setAttribute('aria-label', hidden ? 'Timer tonen' : 'Timer verbergen');
-      button.title = hidden ? 'Timer tonen' : 'Timer verbergen';
+      // Also hides/shows the live clock in the header (see
+      // study-timer-badge.js) — and remembers the choice, so it holds
+      // on other pages and after a reload.
+      setTimerHidden(!isTimerHidden());
       renderTimer();
       return;
     }
@@ -1165,6 +1180,12 @@ export function initStudyTimer() {
     setRemainingFromStep();
     resumeRunningTimerIfAny();
     renderAll();
+  });
+
+  // The eye button was clicked in ANOTHER tab: mirror it here too (the
+  // same-tab case is handled right in the click handler above).
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'studyTimerHiddenV1' && state) renderTimer();
   });
 
   if (state) {

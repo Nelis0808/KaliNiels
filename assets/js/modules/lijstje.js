@@ -39,6 +39,7 @@
 
 import { siteConfig } from '../config.js';
 import { qs, escapeHtml } from './utils.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
 
 const POLL_INTERVAL_MS = 5000;
 const ACTIVE_LIST_STORAGE_KEY = 'lijstje-active-list-id';
@@ -1045,7 +1046,8 @@ export function initLijstje() {
       // for renamingItemId: render() would blow away the open rename
       // <input> (and whatever's been typed into it) before Enter/blur
       // ever commits it.
-      if (!saveInFlight && !draggingLi && !renamingItemId) loadList({ silent: true });
+      // Also skip while nobody is touching the page (poll-guard.js).
+      if (isUserActive() && !saveInFlight && !draggingLi && !renamingItemId) loadList({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -1063,6 +1065,8 @@ export function initLijstje() {
       startPolling();
     }
   });
+  // Back after being idle: refresh right away instead of waiting for the next tick.
+  onPollResume(() => { if (!saveInFlight && !draggingLi && !renamingItemId) loadList({ silent: true }); });
 
   // ---- Initial load --------------------------------------------------
 

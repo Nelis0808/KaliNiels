@@ -36,11 +36,21 @@
   margin-bottom: var(--space-4);
 }
 
-/* == SHARED GRID (placeholder + real results) == */
+/* == SHARED GRID (placeholder + real results) ==
+   A centred, wrapping row of tiles instead of a left-aligned grid: 1 photo
+   sits in the middle, 2 photos sit side by side in the middle, and an
+   incomplete last row is centred too. Tiles grow from 220px up to 320px. */
 .pg-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-5);
+}
+
+.pg-grid > * {
+  flex: 1 1 220px;
+  max-width: 320px;
+  min-width: 0;
 }
 
 /* == PLACEHOLDER (logged-out) TILES == */

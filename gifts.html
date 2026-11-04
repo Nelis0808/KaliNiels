@@ -48,7 +48,7 @@
     <section id="hero" class="hero">
       <div class="container">
         <h1>🎁 Cadeau Ideeën</h1>
-        <p>Zet een linkje klaar (optioneel), wij zoeken er zelf een plaatje bij, of upload er zelf een.</p>
+        <p>Zet een linkje klaar (optioneel), wij zoeken er zelf een plaatje bij, of upload, plak of sleep er zelf een.</p>
       </div>
     </section>
 
@@ -58,6 +58,27 @@
         ⚠️ Nog geen Worker gekoppeld. Zie <strong>ACTION-EXPANSION-PLAN.md</strong>
         om deze pagina werkend te krijgen.
       </div>
+
+      <!-- Binnenkomend cadeau via de bladwijzer (zie gifts.js, "Bladwijzer"): hier kies je voor wie. -->
+      <div id="giftsIncoming" class="gf-incoming hidden" role="status">
+        <p class="gf-incoming-text">🛍️ <strong id="giftsIncomingTitle"></strong><br>Voor wie is dit cadeau?</p>
+        <div class="gf-incoming-buttons">
+          <button type="button" class="btn btn-primary btn-sm" data-incoming-person="b">Kalina</button>
+          <button type="button" class="btn btn-primary btn-sm" data-incoming-person="a">Niels</button>
+          <button type="button" class="btn btn-outline btn-sm" id="giftsIncomingCancel">Annuleren</button>
+        </div>
+      </div>
+
+      <!-- Bladwijzer: werkt ook als een winkel (bol.com, HEMA, ...) onze server blokkeert,
+           omdat hij in JOUW browser draait op de pagina die je al open hebt. -->
+      <details class="gf-bookmarklet">
+        <summary>📌 Winkel geeft geen plaatje of prijs? Gebruik de bladwijzer</summary>
+        <ol>
+          <li>Sleep deze knop naar je bladwijzerbalk (Ctrl+Shift+B toont die balk): <a id="giftsBookmarklet" class="btn btn-outline btn-sm" href="#">➕ Naar cadeaus</a></li>
+          <li>Open het product in de winkel en klik op die bladwijzer.</li>
+          <li>Je komt hier terug met link, titel, prijs en plaatje al ingevuld; kies voor wie en klik <em>Toevoegen</em>.</li>
+        </ol>
+      </details>
 
       <div id="giftsColumns" class="gf-columns">
         <!-- LEFT: Kalina (person "b") -->
@@ -77,6 +98,11 @@
               <span class="gf-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
               <input type="file" class="gf-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Eigen foto voor het cadeau voor Kalina">
             </label>
+            <p class="gf-dropzone-hint">…of sleep een plaatje hierheen (ook van een andere website) of plak het met Ctrl+V.</p>
+            <div class="gf-photo-preview hidden">
+              <img class="gf-photo-preview-img" alt="Voorbeeld van de gekozen foto" referrerpolicy="no-referrer">
+              <button type="button" class="gf-photo-clear" aria-label="Gekozen foto verwijderen">✕</button>
+            </div>
             <div class="gf-add-form-buttons">
               <button type="submit" class="btn btn-primary">Toevoegen</button>
               <button type="button" class="btn btn-outline gf-edit-cancel hidden">Annuleren</button>
@@ -102,6 +128,11 @@
               <span class="gf-add-photo-filename" data-default-text="Kies bestand" aria-hidden="true">Kies bestand</span>
               <input type="file" class="gf-add-photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Eigen foto voor het cadeau voor Niels">
             </label>
+            <p class="gf-dropzone-hint">…of sleep een plaatje hierheen (ook van een andere website) of plak het met Ctrl+V.</p>
+            <div class="gf-photo-preview hidden">
+              <img class="gf-photo-preview-img" alt="Voorbeeld van de gekozen foto" referrerpolicy="no-referrer">
+              <button type="button" class="gf-photo-clear" aria-label="Gekozen foto verwijderen">✕</button>
+            </div>
             <div class="gf-add-form-buttons">
               <button type="submit" class="btn btn-primary">Toevoegen</button>
               <button type="button" class="btn btn-outline gf-edit-cancel hidden">Annuleren</button>

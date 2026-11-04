@@ -57,6 +57,10 @@ export const siteConfig = {
     { label: 'Home'         , href: 'index.html' },
     { label: 'Lijstje'      , href: 'lijstje.html' },
     { label: 'Ticketmaster' , href: 'ticketmaster.html' },
+    // Tussen Ticketmaster en 'Studie Timer' staat in de header ook nog de
+    // live "Timer"-klok (assets/partials/header.html, study-timer-badge.js);
+    // die is geen pagina en staat dus niet in deze lijst.
+    { label: 'Studie Timer' , href: 'timer.html' },
   ],
 
   // The clickable "hub" cards on the home page. This is the main

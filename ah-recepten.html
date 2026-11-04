@@ -107,9 +107,13 @@
 
         <div id="reptResults" class="rpt-results"></div>
 
-        <div class="text-center mt-2">
+        <div class="text-center mt-2 rpt-bottom-actions">
           <button type="button" id="reptLoadMore" class="btn btn-primary hidden">Meer laden</button>
         </div>
+
+        <!-- Recepten komen uit de opgeslagen backup (laatst opgehaald). Het
+             ophalen bij AH.nl gebeurt op dev.html, met één knop voor alles. -->
+        <p id="reptBackupInfo" class="rpt-backup-info" role="status" aria-live="polite"></p>
       </div>
     </section>
   </main>

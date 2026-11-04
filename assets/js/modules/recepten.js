@@ -388,7 +388,9 @@ export function initRecepten() {
       let statusText = `${shownCount} recept${shownCount === 1 ? '' : 'en'} getoond${data.count ? ` (van ${data.count.toLocaleString('nl-NL')} totaal)` : ''}.`;
       if (data.fallbackUsed) statusText += ' Niets gevonden binnen deze categorie — er is op trefwoord gezocht.';
       statusEl.textContent = statusText;
-      loadMoreBtn.classList.remove('hidden');
+      // "Meer laden" only while there is more to load: fewer shown than the total, and this page was full.
+      const more = data.count ? shownCount < data.count : recipes.length > 0;
+      loadMoreBtn.classList.toggle('hidden', !more);
     } catch (error) {
       console.error('Recepten worker error:', error);
       statusEl.textContent = `❌ Kon geen recepten ophalen (${error.message}). Probeer het later opnieuw.`;

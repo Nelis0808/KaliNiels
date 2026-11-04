@@ -255,6 +255,310 @@ export function initDevPage() {
     timerStatus.textContent = '✅ Studie Timer gereset.';
   });
 
+  // ---- AH-recepten: alles in één keer ophalen -------------------------------
+  // ÉÉN knop. Stap 1: een proefaanvraag via de Worker (live=1). Lukt dat, dan
+  // loopt hij langs elke categorie + subcategorie uit config.js (ahRecipes) en
+  // laat de Worker alles bij AH ophalen en als backup bewaren (rustig tempo;
+  // mislukt iets, dan blijft de oude backup staan).
+  // Stap 2, als AH de Worker blokkeert (meestal): het stappenplan hieronder
+  // verschijnt. Je draait tools/ah-browser-export.js eenmalig op ah.nl in je
+  // eigen browser (die wordt niet geblokkeerd), dat slaat een bestand op, en dit
+  // scherm stuurt dat bestand in kleine stukjes naar de Worker (POST /import).
+  const AH_PAGES_PER_LIST = 2;
+  const AH_DELAY_MS = 2500;
+  const AH_GIVE_UP_AFTER_FAILURES = 4; // vier mislukte pogingen achter elkaar = waarschijnlijk geblokkeerd
+
+  const ahSyncBtn = document.getElementById('devAhSyncBtn');
+  const ahStopBtn = document.getElementById('devAhSyncStopBtn');
+  const ahProgress = document.getElementById('devAhSyncProgress');
+  const ahStatus = document.getElementById('devAhSyncStatus');
+  const ahBrowserBox = document.getElementById('devAhBrowserBox');
+  const ahCopyBtn = document.getElementById('devAhCopyBtn');
+  const ahCopyMsg = document.getElementById('devAhCopyMsg');
+  const ahImportFile = document.getElementById('devAhImportFile');
+  const ahScriptText = document.getElementById('devAhScriptText');
+  const AH_IMPORT_DELAY_MS = 2300;            // de Worker staat 30 aanvragen per minuut toe
+  const AH_IMPORT_PROGRESS_KEY = 'ahImportDoneV1'; // welke stukjes van welk bestand al binnen zijn
+  const AH_DETAIL_BUCKETS = 48;
+  const AH_MAX_PACK_BYTES = 650 * 1024;
+  let ahStop = false;
+  let ahRunning = false;
+
+  function ahLists() {
+    const lists = [];
+    (siteConfig.ahRecipes?.categories || []).forEach((cat) => {
+      lists.push({ label: cat.label, type: cat.type, query: '' });
+      (cat.subcategories || []).forEach((sub) => lists.push({ label: `${cat.label} · ${sub.label}`, type: cat.type, query: sub.query }));
+    });
+    return lists;
+  }
+
+  async function ahFetchLive(workerUrl, list, page) {
+    const params = new URLSearchParams({ page: String(page), type: list.type });
+    if (list.query) params.set('query', list.query);
+    params.set('live', '1');
+    const response = await fetch(`${workerUrl}/recipes?${params.toString()}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (data.liveFailed) throw new Error(data.liveError || 'AH gaf geen nieuwe lijst');
+    return data;
+  }
+
+  // KEEP IDENTICAL to detailBucket() in cloudflare/ah-recepten/ah_recepten_worker.js:
+  // decides in which stored "pack" a recipe's details live.
+  function detailBucket(id) {
+    const digits = String(id).replace(/\D/g, '');
+    const n = digits ? parseInt(digits.slice(-9), 10) : Array.from(String(id)).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    return n % AH_DETAIL_BUCKETS;
+  }
+
+  const sleepMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // Tekst van het script voor in de console: de lijsten uit config.js + tools/ah-browser-export.js
+  async function buildAhScript() {
+    const source = await fetch(new URL('../../../tools/ah-browser-export.js', import.meta.url)).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.text();
+    });
+    const lists = ahLists().map(({ label, type, query }) => ({ label, type, query }));
+    return `window.__AH_LISTS = ${JSON.stringify(lists)};\n${source}`;
+  }
+
+  async function showAhBrowserBox(reason) {
+    ahBrowserBox.classList.remove('hidden');
+    if (reason) ahStatus.textContent = reason;
+    try {
+      ahScriptText.value = await buildAhScript();
+    } catch (error) {
+      ahScriptText.value = '';
+      ahCopyMsg.textContent = `⚠️ Kon het script niet laden (${error.message}).`;
+    }
+  }
+
+  ahCopyBtn?.addEventListener('click', async () => {
+    if (!ahScriptText.value) await showAhBrowserBox();
+    if (!ahScriptText.value) return;
+    try {
+      await navigator.clipboard.writeText(ahScriptText.value);
+      ahCopyMsg.textContent = '✅ Gekopieerd. Ga naar stap 2.';
+    } catch {
+      ahScriptText.closest('details').open = true;
+      ahScriptText.select();
+      ahCopyMsg.textContent = 'Selecteer het script hieronder en kopieer met Ctrl+C.';
+    }
+  });
+
+  function readImportProgress(exportedAt) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(AH_IMPORT_PROGRESS_KEY) || 'null');
+      if (saved && saved.exportedAt === exportedAt && Array.isArray(saved.done)) return new Set(saved.done);
+    } catch { /* ignore */ }
+    return new Set();
+  }
+
+  function writeImportProgress(exportedAt, done) {
+    try { localStorage.setItem(AH_IMPORT_PROGRESS_KEY, JSON.stringify({ exportedAt, done: Array.from(done) })); } catch { /* ignore */ }
+  }
+
+  // Stuurt het export-bestand in kleine stukjes naar de Worker: één bericht per
+  // lijst-pagina en één per "pakket" recepten (= precies één KV-schrijfactie elk).
+  async function importAhFile(file) {
+    const workerUrl = siteConfig.ahRecipes?.workerUrl || '';
+    if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
+      ahStatus.textContent = '⚠️ Nog geen AH-recepten-Worker ingesteld in config.js.';
+      return;
+    }
+    let data;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      ahStatus.textContent = '⚠️ Dat bestand is geen geldige JSON. Kies ah-recepten-export.json.';
+      return;
+    }
+    if (!data || data.app !== 'kalininiels-ah-export' || !Array.isArray(data.lists) || typeof data.details !== 'object') {
+      ahStatus.textContent = '⚠️ Dit is niet het export-bestand van het AH-script.';
+      return;
+    }
+
+    // Stukjes: eerst alle lijsten, dan de recept-pakketten.
+    const units = data.lists.map((l) => ({ key: `L|${l.type}|${l.query}|${l.page}`, body: { kind: 'list', type: l.type, query: l.query, page: l.page, payload: l.payload }, recipes: (l.payload?.recipes || []).length, isList: true }));
+    const buckets = new Map();
+    Object.entries(data.details || {}).forEach(([id, detail]) => {
+      const b = detailBucket(id);
+      if (!buckets.has(b)) buckets.set(b, {});
+      buckets.get(b)[id] = detail;
+    });
+    let trimmed = 0;
+    Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]).forEach(([bucket, items]) => {
+      let ids = Object.keys(items);
+      let size = JSON.stringify(items).length;
+      while (size > AH_MAX_PACK_BYTES && ids.length > 1) { // te groot voor één opslag-stap: laatste recepten laten vallen
+        delete items[ids.pop()];
+        trimmed += 1;
+        size = JSON.stringify(items).length;
+      }
+      units.push({ key: `D|${bucket}`, body: { kind: 'details', bucket, items }, recipes: Object.keys(items).length, isList: false });
+    });
+
+    const done = readImportProgress(data.exportedAt);
+    const todo = units.filter((u) => !done.has(u.key));
+    if (todo.length === 0) {
+      ahStatus.textContent = '✅ Dit bestand is al volledig geïmporteerd.';
+      return;
+    }
+    const minutes = Math.ceil((todo.length * AH_IMPORT_DELAY_MS) / 60000);
+    if (!confirm(`${todo.length} stukjes importeren (${units.filter((u) => u.isList).length} lijst-pagina's, ${buckets.size} recept-pakketten, ${Object.keys(data.details || {}).length} recepten)? Dit duurt ± ${minutes} minuten. Laat dit tabblad open staan.`)) return;
+
+    ahRunning = true;
+    ahStop = false;
+    ahSyncBtn.disabled = true;
+    ahStopBtn.disabled = false;
+    ahStopBtn.classList.remove('hidden');
+    ahProgress.classList.remove('hidden');
+    ahProgress.max = todo.length;
+    ahProgress.value = 0;
+
+    let okLists = 0;
+    let okRecipes = 0;
+    let failures = 0;
+    let consecutive = 0;
+    let stopReason = '';
+
+    for (let i = 0; i < todo.length && !ahStop && !stopReason; i += 1) {
+      const unit = todo[i];
+      ahStatus.textContent = `Importeren… ${i + 1} van ${todo.length}`;
+      let attempt = 0;
+      for (;;) {
+        attempt += 1;
+        let response;
+        let reply = {};
+        try {
+          response = await fetch(`${workerUrl}/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(unit.body) });
+          reply = await response.json().catch(() => ({}));
+        } catch (error) {
+          reply = { error: error.message };
+        }
+        if (response && response.ok) {
+          done.add(unit.key);
+          writeImportProgress(data.exportedAt, done);
+          if (unit.isList) okLists += 1; else okRecipes += unit.recipes;
+          consecutive = 0;
+          break;
+        }
+        if (response && response.status === 429 && /Daglimiet/i.test(reply.error || '')) {
+          stopReason = 'De daglimiet van de Worker is bereikt. Kies morgen hetzelfde bestand opnieuw: het gaat verder waar het bleef.';
+          break;
+        }
+        if (response && response.status === 429 && attempt <= 3) {
+          ahStatus.textContent = `Importeren… even wachten (te veel aanvragen per minuut), ${i + 1} van ${todo.length}`;
+          await sleepMs(65000);
+          continue;
+        }
+        failures += 1;
+        consecutive += 1;
+        if (consecutive >= 5) stopReason = `Vijf keer achter elkaar mislukt (${reply.error || 'onbekende fout'}).`;
+        break;
+      }
+      ahProgress.value = i + 1;
+      await sleepMs(AH_IMPORT_DELAY_MS);
+    }
+
+    const summary = `${okLists} lijst-pagina's en ${okRecipes} recepten opgeslagen${failures ? `, ${failures} stukje(s) mislukt` : ''}${trimmed ? `, ${trimmed} recepten te groot voor opslag en overgeslagen` : ''}.`;
+    if (stopReason) ahStatus.textContent = `⚠️ Gestopt: ${stopReason} ${summary}`;
+    else if (ahStop) ahStatus.textContent = `⏹️ Gestopt (wat al binnen is blijft staan; kies het bestand later opnieuw om verder te gaan). ${summary}`;
+    else ahStatus.textContent = `✅ Klaar. ${summary} Open nu de AH-Recepten pagina.`;
+
+    ahRunning = false;
+    ahSyncBtn.disabled = false;
+    ahStopBtn.classList.add('hidden');
+    ahProgress.classList.add('hidden');
+  }
+
+  ahImportFile?.addEventListener('change', async () => {
+    const file = ahImportFile.files?.[0];
+    if (!file || ahRunning) return;
+    await importAhFile(file);
+    ahImportFile.value = '';
+  });
+
+  ahStopBtn?.addEventListener('click', () => { ahStop = true; ahStopBtn.disabled = true; });
+
+  ahSyncBtn?.addEventListener('click', async () => {
+    if (ahRunning) return;
+    const workerUrl = siteConfig.ahRecipes?.workerUrl || '';
+    if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
+      ahStatus.textContent = '⚠️ Nog geen AH-recepten-Worker ingesteld in config.js.';
+      return;
+    }
+    const lists = ahLists();
+    if (!confirm(`Nu alle ${lists.length} lijsten bij AH.nl ophalen? Eerst probeer ik het rechtstreeks (± ${Math.ceil((lists.length * 1.6 * AH_DELAY_MS) / 60000)} minuten). Blokkeert AH dat, dan krijg je een stappenplan om het één keer in je eigen browser te doen.`)) return;
+
+    // Proefaanvraag: werkt de Worker bij AH? Zo niet, dan meteen het stappenplan.
+    ahStatus.textContent = 'Proefaanvraag bij AH…';
+    ahSyncBtn.disabled = true;
+    try {
+      await ahFetchLive(workerUrl, lists[0], 0);
+    } catch (error) {
+      ahSyncBtn.disabled = false;
+      await showAhBrowserBox(`AH laat de server niet binnen (${error.message}). Dat verwachtten we al; volg het stappenplan hieronder, het is eenmalig.`);
+      return;
+    }
+
+    ahRunning = true;
+    ahStop = false;
+    ahStopBtn.disabled = false;
+    ahSyncBtn.disabled = true;
+    ahStopBtn.classList.remove('hidden');
+    ahProgress.classList.remove('hidden');
+    ahProgress.max = lists.length;
+    ahProgress.value = 0;
+
+    let saved = 0;
+    let failedLists = 0;
+    let recipeCount = 0;
+    let consecutiveFailures = 0;
+    let gaveUpBecause = '';
+
+    for (let i = 0; i < lists.length && !ahStop && !gaveUpBecause; i += 1) {
+      const list = lists[i];
+      ahStatus.textContent = `Bezig… ${i + 1} van ${lists.length}: ${list.label}`;
+      let pages = AH_PAGES_PER_LIST;
+      let listOk = false;
+      for (let page = 0; page < pages && !ahStop; page += 1) {
+        try {
+          const data = await ahFetchLive(workerUrl, list, page);
+          const got = Array.isArray(data.recipes) ? data.recipes.length : 0;
+          if (got === 0) break; // geen verdere pagina's
+          saved += 1;
+          recipeCount += got;
+          listOk = true;
+          consecutiveFailures = 0;
+          // Zijn er volgens AH minder recepten dan 2 pagina's, dan is 1 pagina genoeg.
+          if (page === 0 && data.count && data.count <= got) pages = 1;
+        } catch (error) {
+          consecutiveFailures += 1;
+          if (/Daglimiet/i.test(error.message)) gaveUpBecause = 'De daglimiet van de Worker is bereikt. Probeer het morgen verder.';
+          else if (consecutiveFailures >= AH_GIVE_UP_AFTER_FAILURES) gaveUpBecause = `AH reageert niet meer (${error.message}). Wat al opgeslagen was blijft staan.`;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, AH_DELAY_MS));
+      }
+      if (!listOk && !gaveUpBecause) failedLists += 1;
+      ahProgress.value = i + 1;
+      await new Promise((resolve) => setTimeout(resolve, AH_DELAY_MS));
+    }
+
+    const summary = `${saved} pagina's opgeslagen (${recipeCount} recepten)${failedLists ? `, ${failedLists} lijst(en) overgeslagen/mislukt` : ''}.`;
+    if (gaveUpBecause) ahStatus.textContent = `⚠️ Gestopt: ${gaveUpBecause} ${summary}`;
+    else if (ahStop) ahStatus.textContent = `⏹️ Gestopt. ${summary}`;
+    else ahStatus.textContent = `✅ Klaar. ${summary} Open nu de AH-Recepten pagina.`;
+
+    ahRunning = false;
+    ahSyncBtn.disabled = false;
+    ahStopBtn.classList.add('hidden');
+    ahProgress.classList.add('hidden');
+  });
+
   // ---- Site-sessie ---------------------------------------------------------
 
   const sessionStatusEl = document.getElementById('devSessionStatus');

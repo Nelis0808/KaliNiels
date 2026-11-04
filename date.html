@@ -2,7 +2,8 @@
 <!--
   DATE IDEAS PAGE
   Picks a random idea from assets/data/date-ideas-indoor.json or
-  date-ideas-outdoor.json (see assets/js/modules/date-picker.js).
+  date-ideas-outdoor.json (see assets/js/modules/date-picker.js). The wide
+  "Plan date" button in the middle draws one of each at the same time.
   Add more ideas by editing those two JSON files — no code changes
   needed. Add a third category by following the pattern documented
   at the top of date-picker.js.
@@ -46,6 +47,8 @@
 
         <div class="hero-buttons">
           <button id="btnBinnen" class="btn btn-primary">Binnen activiteit</button>
+          <!-- Breder, in het midden: trekt de binnen- EN de buitenactiviteit tegelijk. -->
+          <button id="btnPlan" class="btn btn-primary btn-plan-date">Plan date</button>
           <button id="btnBuiten" class="btn btn-primary">Buiten activiteit</button>
         </div>
       </div>

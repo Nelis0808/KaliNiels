@@ -10,7 +10,7 @@
   position: relative;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1101px) {
   /* Let the menu position itself against the whole navbar instead of
      against the small "Meer" button (see .nav-dropdown-menu). */
   .nav-dropdown {
@@ -86,7 +86,7 @@
 .nav-dropdown-menu a, .nav-dropdown-menu .dropdown-item-disabled {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
@@ -95,7 +95,7 @@
      so long titles wrap onto a 2nd line instead of forcing wide
      columns (or clipping) — the grid's row-height just adapts. */
   white-space: normal;
-  text-align: left;
+  text-align: center;
 }
 
 /* Hover/focus/active states for nav dropdown menu items */
@@ -122,8 +122,8 @@
 }
 
 /*  Media query for responsive design, adjusting nav dropdown menu and trigger styles
-    for screens with a maximum width of 768px. */
-@media (max-width: 768px) {
+    for screens with a maximum width of 1100px. */
+@media (max-width: 1100px) {
   .nav-dropdown-menu {
     position: static;
     transform: none;

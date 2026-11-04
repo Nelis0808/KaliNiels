@@ -88,6 +88,20 @@
   transition: background var(--transition-fast);
 }
 
+/* Pink theme: the indicator is a small coloured flower (inline SVG) */
+.todo-flower {
+  display: block;
+  margin: auto;
+}
+
+.todo-priority-pill .todo-flower {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 4px 0 0;
+  width: 1.3em;
+  height: 1.3em;
+}
+
 /* Hover/focus feedback on the priority swatch */
 .todo-priority-swatch:hover,
 .todo-priority-swatch:focus-visible {

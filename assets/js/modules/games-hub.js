@@ -56,7 +56,7 @@ const games = [
     status: 'available',
   },
   {
-    title: 'Galgje Engels',
+    title: 'Galgje',
     description: 'Raad het woord voordat...',
     href: 'games/hangman.html',
     emoji: '✏️',

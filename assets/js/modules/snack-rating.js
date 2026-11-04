@@ -20,6 +20,8 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml } from './utils.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
+import { setupPhotoField } from './photo-field.js';
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_STARS = 5;
@@ -221,28 +223,21 @@ export function initSnackRating() {
     const urlInput = qs('.snack-add-url', form);
     const descInput = qs('.snack-add-desc', form);
     const starPicker = qs('.snack-star-picker', form);
-    const photoInput = qs('.snack-add-photo', form);
-    const photoFilenameEl = qs('.snack-add-photo-filename', form);
-    const errorEl = qs('.snack-add-error', form);
+    // The message line sits right after the form (not inside it).
+    const errorEl = form.nextElementSibling;
     const submitBtn = qs('button[type="submit"]', form);
     const cancelBtn = qs('.snack-edit-cancel', form);
 
     let editingId = null;
     let formRating = 0;
 
+    // Photo box: choose a file, drag one in, or paste (Ctrl+V) — same as the gifts page.
+    const photoCtl = setupPhotoField(form, { errorEl, urlInput, maxBytes: MAX_ORIGINAL_UPLOAD_BYTES });
+
     // This person's snacks, in their stored order
     function personSnacks() {
       return snacks.filter((s) => s.person === person);
     }
-
-    // Resets the "chosen file" label back to its placeholder text
-    function resetPhotoFilename() {
-      photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
-    }
-
-    photoInput.addEventListener('change', () => {
-      photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
-    });
 
     // Redraws this column's card list from personSnacks()
     function render() {
@@ -315,7 +310,7 @@ export function initSnackRating() {
       descInput.value = snack.description || '';
       formRating = snack.rating || 0;
       renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-      resetPhotoFilename();
+      photoCtl.showExisting(snack.photo);
       submitBtn.textContent = 'Opslaan';
       cancelBtn.classList.remove('hidden');
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -328,7 +323,7 @@ export function initSnackRating() {
       form.reset();
       formRating = 0;
       renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-      resetPhotoFilename();
+      photoCtl.clear();
       submitBtn.textContent = 'Toevoegen';
       cancelBtn.classList.add('hidden');
     }
@@ -337,7 +332,8 @@ export function initSnackRating() {
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (errorEl) errorEl.textContent = "Er is iets niet goed gegaan.";
+      if (errorEl) errorEl.textContent = '';
+      await photoCtl.whenReady(); // a picture dragged in from another website may still be downloading
 
       const name = nameInput.value.trim();
       if (!name) {
@@ -356,11 +352,7 @@ export function initSnackRating() {
         }
       }
 
-      const photoFile = photoInput.files?.[0] || null;
-      if (photoFile && photoFile.size > MAX_ORIGINAL_UPLOAD_BYTES) {
-        if (errorEl) errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_ORIGINAL_UPLOAD_BYTES / 1024 / 1024)}MB).`;
-        return;
-      }
+      const photoFile = photoCtl.getFile();
 
       submitBtn.disabled = true;
       const payload = { name, url: urlValue, description: descInput.value.trim(), rating: formRating, photoFile };
@@ -373,7 +365,7 @@ export function initSnackRating() {
         form.reset();
         formRating = 0;
         renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-        resetPhotoFilename();
+        photoCtl.clear();
         nameInput.focus();
       }
       submitBtn.disabled = false;
@@ -406,7 +398,7 @@ export function initSnackRating() {
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (!saveInFlight) loadSnacks({ silent: true });
+      if (isUserActive() && !saveInFlight) loadSnacks({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -424,6 +416,7 @@ export function initSnackRating() {
       startPolling();
     }
   });
+  onPollResume(() => { if (!saveInFlight) loadSnacks({ silent: true }); });
 
   // ---- Initial load --------------------------------------------------
 

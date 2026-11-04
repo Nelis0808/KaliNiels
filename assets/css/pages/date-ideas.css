@@ -16,8 +16,16 @@
   animation: btn-arrive 0.6s ease both;
 }
 
-/* Slight stagger so the second button arrives just after the first */
-#btnBuiten { animation-delay: 0.1s; }
+/* Slight stagger so the buttons arrive one after the other (left, middle, right) */
+#btnPlan { animation-delay: 0.1s; }
+#btnBuiten { animation-delay: 0.2s; }
+
+/* "Plan date": the wide button in the middle, rolls indoor AND outdoor at once */
+.hero-buttons .btn-plan-date {
+  min-width: 14rem;
+  padding-inline: var(--space-8);
+  font-size: 1.1em;
+}
 
 @keyframes btn-arrive {
   from { opacity: 0; transform: translateY(12px) scale(0.9); }
@@ -64,5 +72,9 @@
 
   .hero-buttons .btn {
     width: 100%;
+  }
+
+  .hero-buttons .btn-plan-date {
+    min-width: 0;
   }
 }

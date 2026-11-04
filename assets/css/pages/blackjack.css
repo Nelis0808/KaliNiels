@@ -175,6 +175,50 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* After a split: the player's two rows are stacked, each with its own
+   label ("Rij 1 (18)") and result badge; the row being played is outlined. */
+.bj-cards--split {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.bj-split-hand {
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.bj-split-hand.is-active {
+  border-color: var(--color-primary);
+}
+
+.bj-split-label {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-2);
+}
+
+.bj-split-result {
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.bj-split-hand.is-win .bj-split-result,
+.bj-split-hand.is-blackjack .bj-split-result {
+  color: var(--color-success);
+}
+
+.bj-split-hand.is-lose .bj-split-result {
+  color: var(--color-danger);
+}
+
+.bj-split-hand .bj-cards {
+  min-height: 0;
+}
+
 /* Responsive adjustments for small screens: reduce the size of chips and cards, and adjust spacing */
 @media (max-width: 480px) {
   .bj-chips-bar {

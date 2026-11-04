@@ -74,11 +74,69 @@
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml } from './utils.js';
 import { getAuth, onAuthChange } from './auth.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
 import { getCollections, getCollection, getCollectionState, getRewardState, setRewardGift, getAllRewardConfigs, getRewardGiftPerson, previewAssignment } from './collectibles.js';
 
 const POLL_INTERVAL_MS = 8000;
 const PERSONS = ['b', 'a']; // b (Kalina) left, a (Niels) right — matches the markup order
-const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // same limit as the Worker (big photos are shrunk first, see prepareImage)
+const MAX_IMAGE_DIMENSION = 1600;         // longest side after shrinking
+const KEEP_AS_IS_BYTES = 400 * 1024;      // small photos are uploaded untouched
+const UPLOAD_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const IMAGE_URL_PATTERN = /\.(jpe?g|png|webp|gif|avif)(\?|#|$)/i;
+const MISSING_IMAGE_RETRY_MS = 10 * 60 * 1000;
+
+// ---- Photo helpers (drag & drop, paste, shrinking) -------------------
+
+// Shrinks a big photo (or converts e.g. an AVIF) to a JPEG of at most
+// MAX_IMAGE_DIMENSION px, so phone photos of 5-10MB become ~300KB. Small
+// files and GIFs go through untouched. Any failure just returns the original.
+async function prepareImage(file) {
+  const isGif = file.type === 'image/gif';
+  const supported = UPLOAD_TYPES.has(file.type);
+  if (isGif) return file;
+  if (supported && file.size <= KEEP_AS_IS_BYTES) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    if (supported && scale === 1 && file.size <= 1.5 * 1024 * 1024) { bitmap.close?.(); return file; }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; // JPEG has no transparency
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    if (!blob) return file;
+    if (supported && blob.size >= file.size) return file;
+    return new File([blob], (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
+// What did the person drop on the form? A real file, a picture dragged
+// out of another web page (its address), or just a link.
+function extractDropped(dataTransfer) {
+  const files = Array.from(dataTransfer.files || []).filter((f) => f.type.startsWith('image/'));
+  if (files.length) return { file: files[0] };
+
+  const html = dataTransfer.getData('text/html');
+  if (html) {
+    try {
+      const img = new DOMParser().parseFromString(html, 'text/html').querySelector('img');
+      const src = img && img.getAttribute('src');
+      if (src && /^(https?:|data:image\/)/i.test(src)) return { src };
+    } catch { /* fall through to the plain link below */ }
+  }
+
+  const raw = dataTransfer.getData('text/uri-list') || dataTransfer.getData('text/plain') || '';
+  const link = raw.split(/\r?\n/).map((line) => line.trim()).find((line) => line && !line.startsWith('#'));
+  if (link && /^https?:\/\//i.test(link)) return IMAGE_URL_PATTERN.test(link) ? { src: link } : { link };
+  return null;
+}
 
 // Parses a raw form value into a valid integer-euro price, or null if
 // the field was left empty / isn't a usable number. Negative values
@@ -138,10 +196,31 @@ export function initGifts() {
   // revoked on the next render instead of leaking memory forever.
   let activeObjectUrls = [];
 
+  // Thumbnails already downloaded, so a re-render (every save, every
+  // change from the other person) never downloads them again. Key =
+  // id|url|version; value = { blob|null, at }. A null blob means "no
+  // picture found" and is only remembered for MISSING_IMAGE_RETRY_MS.
+  const imageCache = new Map();
+  // gift id -> timestamp of its last upload (cache-buster). Kept in localStorage too, so
+  // after a page reload the browser doesn't fall back to an older cached answer for the
+  // same address (e.g. the "no picture" reply from before the photo was uploaded).
+  const VERSION_STORAGE_KEY = 'giftPhotoVersionsV1';
+  let imageVersion = {};
+  try { imageVersion = JSON.parse(localStorage.getItem(VERSION_STORAGE_KEY) || '{}') || {}; } catch { imageVersion = {}; }
+  function rememberImageVersion(id) {
+    imageVersion[id] = Date.now();
+    try { localStorage.setItem(VERSION_STORAGE_KEY, JSON.stringify(imageVersion)); } catch { /* storage unavailable: in-memory only */ }
+  }
+  let lastSnapshot = ''; // JSON of the list as last rendered; poll skips a redraw when unchanged
+
+  // One controller per column form for the photo that is waiting to be uploaded.
+  const photoCtl = {};
+
   // ---- Rendering -----------------------------------------------------
 
   // Redraws both columns from `gifts`
   function render() {
+    lastSnapshot = JSON.stringify(gifts);
     activeObjectUrls.forEach((url) => URL.revokeObjectURL(url));
     activeObjectUrls = [];
 
@@ -333,23 +412,39 @@ export function initGifts() {
     hintEl.classList.remove('hidden');
   }
 
-  // Fetches a gift's thumbnail (custom photo or scraped og:image) via the Worker
+  // Fetches a gift's thumbnail (custom photo or the link's preview image) via the Worker
   async function loadGiftImage(gift, imageEl) {
-    try {
-      const response = await fetch(
-        `${workerUrl}/gifts/image?id=${encodeURIComponent(gift.id)}&url=${encodeURIComponent(gift.url)}`
-      );
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const blob = await response.blob();
+    const version = imageVersion[gift.id] || 0;
+    const key = `${gift.id}|${gift.url}|${version}`;
+    const showBlob = (blob) => {
       const objectUrl = URL.createObjectURL(blob);
       activeObjectUrls.push(objectUrl);
       imageEl.style.backgroundImage = `url('${objectUrl}')`;
       imageEl.classList.remove('gf-card-loading');
       imageEl.classList.add('gf-card-has-image');
+    };
+
+    const cached = imageCache.get(key);
+    if (cached && (cached.blob || Date.now() - cached.at < MISSING_IMAGE_RETRY_MS)) {
+      if (cached.blob) showBlob(cached.blob);
+      else imageEl.classList.remove('gf-card-loading');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${workerUrl}/gifts/image?id=${encodeURIComponent(gift.id)}&url=${encodeURIComponent(gift.url)}${version ? `&v=${version}` : ''}`
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const blob = await response.blob();
+      imageCache.set(key, { blob, at: Date.now() });
+      // The card may have been redrawn while we were downloading.
+      if (imageEl.isConnected) showBlob(blob);
     } catch {
-      // No custom photo, no scrapable og:image, or the link is down —
+      // No custom photo, no usable preview image, or the link is down —
       // fine, the 🎁 fallback already in the markup just stays visible.
+      imageCache.set(key, { blob: null, at: Date.now() });
       imageEl.classList.remove('gf-card-loading');
     }
   }
@@ -362,7 +457,9 @@ export function initGifts() {
       const response = await fetch(`${workerUrl}/gifts`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      gifts = Array.isArray(data.gifts) ? data.gifts : [];
+      const next = Array.isArray(data.gifts) ? data.gifts : [];
+      if (JSON.stringify(next) === lastSnapshot) return; // nothing changed: no redraw, no thumbnail reloads
+      gifts = next;
       render();
     } catch (error) {
       console.error('Kon cadeaulijst niet laden:', error);
@@ -390,22 +487,24 @@ export function initGifts() {
     }
   }
 
-  // Uploads a custom photo for a gift, taking priority over any scraped image
-  async function uploadGiftPhoto(id, file) {
+  // Uploads a custom photo for a gift, taking priority over any scraped image.
+  // `photo` is { file } (raw bytes) or { src } (the Worker downloads that
+  // image address itself). Returns '' on success, otherwise an error message.
+  async function uploadGiftPhoto(id, photo) {
     try {
-      const response = await fetch(`${workerUrl}/gifts/upload?id=${encodeURIComponent(id)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
+      const base = `${workerUrl}/gifts/upload?id=${encodeURIComponent(id)}`;
+      const response = photo.file
+        ? await fetch(base, { method: 'POST', headers: { 'Content-Type': photo.file.type }, body: photo.file })
+        : await fetch(`${base}&src=${encodeURIComponent(photo.src)}`, { method: 'POST' });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || `HTTP ${response.status}`);
       }
-      return true;
+      rememberImageVersion(id); // new picture: skip the cached thumbnail and any browser-cached copy
+      return '';
     } catch (error) {
       console.error('Kon foto niet uploaden:', error);
-      return false;
+      return `Foto uploaden mislukt: ${error.message || 'onbekende fout'}`;
     }
   }
 
@@ -414,33 +513,42 @@ export function initGifts() {
   // type it themselves. Never blocks adding the gift — on any
   // failure we just fall back to the raw URL as the title.
   // Asks the Worker to scrape a page title for a pasted link, for auto-filling the title field
-  async function fetchTitleFor(url) {
+  // Asks the Worker what it can learn about a pasted link: { title, price, imageUrl } (all optional)
+  async function fetchMetaFor(url) {
     try {
       const response = await fetch(`${workerUrl}/gifts/meta?url=${encodeURIComponent(url)}`);
-      if (!response.ok) return '';
-      const data = await response.json();
-      return data.title || '';
+      if (!response.ok) return {};
+      return (await response.json()) || {};
     } catch {
-      return '';
+      return {};
     }
   }
 
   // ---- Mutations ---------------------------------------------------
 
   // Adds a new gift (optimistically), then uploads its photo if one was chosen
-  async function addGift(person, { url, title, note, price, photoFile }, formEls) {
+  async function addGift(person, { url, title, note, price, photo }, formEls) {
     const trimmedUrl = url.trim();
     let trimmedTitle = title.trim();
 
     setFormBusy(formEls, true, 'Bezig…');
 
-    if (!trimmedTitle) {
-      // Only worth asking the Worker to peek at the link's title when
-      // there IS a link — the form guarantees at least a title OR a
-      // link was provided (see the submit handler), so if we get here
-      // with no title, trimmedUrl is guaranteed non-empty.
-      trimmedTitle = (await fetchTitleFor(trimmedUrl)) || trimmedUrl;
+    // With a link, ask the Worker (once) for whatever the shop page tells: a title when none
+    // was typed, a price when none was entered, and the product picture when no photo was
+    // chosen (it is then stored as the gift's own photo, so it never has to be looked up again).
+    let autoPhoto = false;
+    if (trimmedUrl && (!trimmedTitle || !Number.isFinite(price) || !photo)) {
+      const meta = await fetchMetaFor(trimmedUrl);
+      if (!trimmedTitle && meta.title) trimmedTitle = meta.title;
+      if (!Number.isFinite(price) && Number.isFinite(Number(meta.price)) && Number(meta.price) > 0) {
+        price = Math.min(100000, Math.round(Number(meta.price)));
+      }
+      if (!photo && typeof meta.imageUrl === 'string' && /^https:\/\//.test(meta.imageUrl)) {
+        photo = { src: meta.imageUrl };
+        autoPhoto = true;
+      }
     }
+    if (!trimmedTitle) trimmedTitle = trimmedUrl;
 
     const id = crypto.randomUUID();
     gifts = [
@@ -450,8 +558,10 @@ export function initGifts() {
     render();
     await saveGifts();
 
-    if (photoFile) {
-      await uploadGiftPhoto(id, photoFile);
+    if (photo) {
+      const uploadError = await uploadGiftPhoto(id, photo);
+      // A picture we found ourselves failing to store is no reason to bother anyone: the card just falls back to the normal lookup.
+      if (uploadError && !autoPhoto && formEls.errorEl) formEls.errorEl.textContent = uploadError;
       render(); // re-fetch the thumbnail now that a custom photo exists
     }
 
@@ -464,7 +574,7 @@ export function initGifts() {
   // this file's header for why: it's what makes the newer `price`
   // field reliably persist regardless of the deployed Worker's exact
   // PATCH schema, with no Cloudflare code changes required.
-  async function saveEdit(id, { url, title, note, price, person, photoFile }, formEls) {
+  async function saveEdit(id, { url, title, note, price, person, photo }, formEls) {
     setFormBusy(formEls, true, 'Opslaan…');
 
     const index = gifts.findIndex((gift) => gift.id === id);
@@ -473,8 +583,9 @@ export function initGifts() {
     render();
     await saveGifts();
 
-    if (photoFile) {
-      await uploadGiftPhoto(id, photoFile);
+    if (photo) {
+      const uploadError = await uploadGiftPhoto(id, photo);
+      if (uploadError && formEls.errorEl) formEls.errorEl.textContent = uploadError;
       render();
     }
 
@@ -518,9 +629,7 @@ export function initGifts() {
     qs('.gf-add-note', form).value = gift.note || '';
     const priceEl = qs('.gf-add-price', form);
     if (priceEl) priceEl.value = Number.isFinite(gift.price) ? String(gift.price) : '';
-    qs('.gf-add-photo', form).value = '';
-    const editFilenameEl = qs('.gf-add-photo-filename', form);
-    if (editFilenameEl) editFilenameEl.textContent = editFilenameEl.dataset.defaultText || 'Kies bestand';
+    photoCtl[gift.person]?.clear();
     qs('button[type="submit"]', form).textContent = 'Wijzigingen opslaan';
     form.classList.add('gf-add-form-editing');
 
@@ -537,8 +646,7 @@ export function initGifts() {
     editingId = null;
     const { form } = columnConfig;
     form.reset();
-    const exitFilenameEl = qs('.gf-add-photo-filename', form);
-    if (exitFilenameEl) exitFilenameEl.textContent = exitFilenameEl.dataset.defaultText || 'Kies bestand';
+    photoCtl[Object.keys(columnEls).find((p) => columnEls[p] === columnConfig)]?.clear();
     qs('button[type="submit"]', form).textContent = 'Toevoegen';
     form.classList.remove('gf-add-form-editing');
     const cancelBtn = qs('.gf-edit-cancel', form);
@@ -559,17 +667,132 @@ export function initGifts() {
     const submitBtn = qs('button[type="submit"]', form);
     const cancelBtn = qs('.gf-edit-cancel', form);
 
-    // Shows the chosen file's name next to the custom "Kies bestand"
-    // button (replaces the browser's native, hidden filename text —
-    // see .gf-add-photo-filename in gifts.css).
-    // Resets the "chosen file" label back to its placeholder text
-    function resetPhotoFilename() {
-      if (photoFilenameEl) photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
+    // ---- Photo waiting to be uploaded: picked, dragged in, or pasted ----
+    // `pending` is { file } (an image file, already shrunk by prepareImage)
+    // or { src } (an address on another website, downloaded by the Worker).
+    let pending = null;
+    let previewObjectUrl = null;
+    const previewEl = qs('.gf-photo-preview', form);
+    const previewImg = qs('.gf-photo-preview-img', form);
+    const clearPhotoBtn = qs('.gf-photo-clear', form);
+
+    function releasePreview() {
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = null;
     }
 
+    function showFilename(text) {
+      if (photoFilenameEl) photoFilenameEl.textContent = text || photoFilenameEl.dataset.defaultText || 'Kies bestand';
+    }
+
+    function clearPhoto() {
+      pending = null;
+      releasePreview();
+      if (photoInput) photoInput.value = '';
+      if (previewImg) previewImg.removeAttribute('src');
+      previewEl?.classList.add('hidden');
+      showFilename('');
+    }
+
+    function showPreview(src) {
+      if (!previewImg || !previewEl) return;
+      previewImg.src = src;
+      previewEl.classList.remove('hidden');
+    }
+
+    async function setPhotoFile(file) {
+      errorEl.textContent = '';
+      if (!file) { clearPhoto(); return; }
+      const prepared = await prepareImage(file);
+      if (!UPLOAD_TYPES.has(prepared.type)) {
+        clearPhoto();
+        errorEl.textContent = 'Alleen jpg, png, webp of gif (of een afbeelding die de browser kan omzetten).';
+        return;
+      }
+      if (prepared.size > MAX_UPLOAD_BYTES) {
+        clearPhoto();
+        errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB).`;
+        return;
+      }
+      releasePreview();
+      previewObjectUrl = URL.createObjectURL(prepared);
+      pending = { file: prepared };
+      showPreview(previewObjectUrl);
+      showFilename(file.name || 'Geplakte afbeelding');
+    }
+
+    function setPhotoSrc(src) {
+      errorEl.textContent = '';
+      if (src.startsWith('data:')) {
+        // Some pages hand over the picture itself instead of an address.
+        fetch(src).then((r) => r.blob()).then((blob) => setPhotoFile(new File([blob], 'sleepfoto', { type: blob.type }))).catch(() => {
+          errorEl.textContent = 'Kon die afbeelding niet lezen.';
+        });
+        return;
+      }
+      releasePreview();
+      pending = { src };
+      showPreview(src);
+      showFilename('Afbeelding van website');
+    }
+
+    photoCtl[person] = { clear: clearPhoto, setSrc: setPhotoSrc };
+
     photoInput?.addEventListener('change', () => {
-      if (photoFilenameEl) {
-        photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
+      setPhotoFile(photoInput.files?.[0] || null);
+    });
+
+    clearPhotoBtn?.addEventListener('click', clearPhoto);
+
+    // Paste (Ctrl+V) an image while the form has focus
+    form.addEventListener('paste', (event) => {
+      const file = Array.from(event.clipboardData?.files || []).find((f) => f.type.startsWith('image/'));
+      if (!file) return; // normal text paste into the inputs
+      event.preventDefault();
+      setPhotoFile(file);
+    });
+
+    // Drag & drop onto the form
+    let dragDepth = 0;
+    const carriesDroppable = (event) => {
+      const types = Array.from(event.dataTransfer?.types || []);
+      return types.includes('Files') || types.includes('text/uri-list') || types.includes('text/html');
+    };
+    form.addEventListener('dragenter', (event) => {
+      if (!carriesDroppable(event)) return;
+      event.preventDefault();
+      dragDepth += 1;
+      form.classList.add('gf-dropzone-active');
+    });
+    form.addEventListener('dragover', (event) => {
+      if (!carriesDroppable(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'copy';
+    });
+    form.addEventListener('dragleave', () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) form.classList.remove('gf-dropzone-active');
+    });
+    form.addEventListener('drop', (event) => {
+      if (!carriesDroppable(event)) return;
+      event.preventDefault();
+      dragDepth = 0;
+      form.classList.remove('gf-dropzone-active');
+      const dropped = extractDropped(event.dataTransfer);
+      if (!dropped) {
+        errorEl.textContent = 'Daar kon ik geen afbeelding in vinden.';
+        return;
+      }
+      if (dropped.file) setPhotoFile(dropped.file);
+      else if (dropped.src) setPhotoSrc(dropped.src);
+      else if (dropped.link) {
+        // A page link rather than a picture: use it as the gift's link if that's still empty.
+        if (!urlInput.value.trim()) {
+          urlInput.value = dropped.link;
+          errorEl.textContent = 'Link ingevuld. Sleep het plaatje zelf hierheen als je een eigen foto wilt.';
+        } else {
+          errorEl.textContent = 'Dat is een link, geen afbeelding. Sleep de afbeelding zelf (of sla hem eerst op).';
+        }
       }
     });
 
@@ -599,22 +822,16 @@ export function initGifts() {
         return;
       }
 
-      const photoFile = photoInput?.files?.[0] || null;
-      if (photoFile && photoFile.size > MAX_UPLOAD_BYTES) {
-        errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_UPLOAD_BYTES / 1024 / 1024)}MB).`;
-        return;
-      }
-
       const price = priceInput ? parsePriceInput(priceInput.value) : null;
-      const payload = { url: urlValue, title: titleInput.value, note: noteInput.value, price, photoFile, person };
+      const payload = { url: urlValue, title: titleInput.value, note: noteInput.value, price, photo: pending, person };
 
       if (editingId) {
-        const ok = await saveEdit(editingId, payload, { submitBtn });
+        const ok = await saveEdit(editingId, payload, { submitBtn, errorEl });
         if (ok) exitEditMode(columnEls[person]);
       } else {
-        await addGift(person, payload, { submitBtn });
+        await addGift(person, payload, { submitBtn, errorEl });
         form.reset();
-        resetPhotoFilename();
+        clearPhoto();
         urlInput.focus();
       }
     });
@@ -623,6 +840,89 @@ export function initGifts() {
       cancelBtn.addEventListener('click', () => exitEditMode(columnEls[person]));
     }
   });
+
+  // ---- Bladwijzer: een cadeau uit een winkel overnemen -------------------------
+  // Sommige winkels (bol.com, HEMA, ...) blokkeren onze server, dus daar komt soms geen
+  // plaatje of prijs uit. De bladwijzer draait in JOUW browser op de winkelpagina zelf, leest
+  // daar link, titel, plaatje en prijs, en opent deze pagina met `#add=<gegevens>`. Hieronder
+  // vang je dat op en vul je het formulier van Kalina of Niels in.
+  const bookmarkletEl = qs('#giftsBookmarklet', root);
+  const incomingEl = qs('#giftsIncoming', root);
+  const incomingTitleEl = qs('#giftsIncomingTitle', root);
+  let incoming = null;
+
+  function bookmarkletSource(pageUrl) {
+    // Leesbare broncode; wordt hieronder als javascript:-adres in de knop gezet.
+    return `(function(){
+var q=function(s){var e=document.querySelector(s);return (e&&e.content)||''};
+var img=q('meta[property="og:image"]')||q('meta[name="twitter:image"]')||'';
+var title=q('meta[property="og:title"]')||document.title||'';
+var price=q('meta[property="product:price:amount"]')||q('meta[property="og:price:amount"]')||'';
+function walk(n,d){if(!n||d>6)return;if(Array.isArray(n)){n.forEach(function(x){walk(x,d+1)});return}if(typeof n!=='object')return;
+if(!price&&n.price!=null)price=String(n.price);if(!price&&n.lowPrice!=null)price=String(n.lowPrice);
+if(!img&&n.image){var i=[].concat(n.image)[0];img=typeof i==='string'?i:((i&&i.url)||'')}
+walk(n.offers,d+1);walk(n['@graph'],d+1)}
+[].forEach.call(document.querySelectorAll('script[type="application/ld+json"]'),function(s){try{walk(JSON.parse(s.textContent),0)}catch(e){}});
+if(!price){var t=(document.body.innerText||'').match(/prijs van dit product is (\\d+) euro(?: en (\\d+) cent)?/i);if(t)price=t[1]+'.'+(t[2]||'00')}
+if(!price){var p=document.querySelector('[itemprop=price]');if(p)price=p.content||p.textContent||''}
+if(!img){var g=document.querySelector('main img,[class*=product] img');if(g)img=g.currentSrc||g.src||''}
+try{img=img?new URL(img,location.href).href:''}catch(e){img=''}
+var d={u:location.href.split('#')[0],t:title.trim(),i:img,p:String(price).trim()};
+window.open(${JSON.stringify(pageUrl)}+'#add='+encodeURIComponent(JSON.stringify(d)),'_blank');
+})()`;
+  }
+
+  if (bookmarkletEl) {
+    const pageUrl = `${location.origin}${location.pathname}`;
+    bookmarkletEl.href = 'javascript:' + encodeURIComponent(bookmarkletSource(pageUrl));
+    bookmarkletEl.addEventListener('click', (event) => {
+      event.preventDefault();
+      alert('Sleep deze knop naar je bladwijzerbalk (niet hier klikken). Klik hem daarna op de pagina van het product in de winkel.');
+    });
+  }
+
+  function readIncoming() {
+    const match = location.hash.match(/^#add=(.+)$/);
+    if (!match) return;
+    try {
+      const data = JSON.parse(decodeURIComponent(match[1]));
+      if (!data || typeof data.u !== 'string' || !/^https?:\/\//i.test(data.u)) return;
+      incoming = {
+        url: data.u.slice(0, 2000),
+        title: String(data.t || '').slice(0, 200),
+        image: /^https?:\/\//i.test(data.i || '') ? String(data.i) : '',
+        price: parsePriceInput(String(data.p || '').replace(/[^\d.,]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')),
+      };
+    } catch {
+      return;
+    }
+    history.replaceState(null, '', location.pathname + location.search);
+    incomingTitleEl.textContent = incoming.title || incoming.url;
+    incomingEl.classList.remove('hidden');
+    incomingEl.scrollIntoView({ block: 'center' });
+  }
+
+  incomingEl?.addEventListener('click', (event) => {
+    const personBtn = event.target.closest('[data-incoming-person]');
+    if (personBtn && incoming) {
+      const person = personBtn.dataset.incomingPerson;
+      const { form } = columnEls[person];
+      qs('.gf-add-url', form).value = incoming.url;
+      qs('.gf-add-title', form).value = incoming.title;
+      const priceInput = qs('.gf-add-price', form);
+      if (priceInput && incoming.price !== null) priceInput.value = String(incoming.price);
+      photoCtl[person]?.clear();
+      if (incoming.image) photoCtl[person]?.setSrc(incoming.image);
+      incomingEl.classList.add('hidden');
+      incoming = null;
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (event.target.closest('#giftsIncomingCancel')) {
+      incomingEl.classList.add('hidden');
+      incoming = null;
+    }
+  });
+
+  readIncoming();
 
   columnsEl.addEventListener('change', (event) => {
     if (!event.target.matches('.gf-reward-select')) return;
@@ -692,6 +992,16 @@ export function initGifts() {
     }
   });
 
+  // A picture dropped next to the form would make the browser open it and
+  // leave the page — swallow those drops (drops ON a form are handled above).
+  ['dragover', 'drop'].forEach((name) => {
+    window.addEventListener(name, (event) => {
+      if (Array.from(event.dataTransfer?.types || []).includes('Files') && !event.target.closest?.('.gf-add-form')) {
+        event.preventDefault();
+      }
+    });
+  });
+
   // Reward panels are per-page UI state, not tied to any one form —
   // close them on outside clicks, same UX as the nav dropdowns.
   document.addEventListener('click', (event) => {
@@ -706,7 +1016,7 @@ export function initGifts() {
     pollTimer = setInterval(() => {
       // Also skip while an edit form is open, so we never blow away
       // in-progress form input with a fresh render from the poll.
-      if (!saveInFlight && !editingId) loadGifts({ silent: true });
+      if (isUserActive() && !saveInFlight && !editingId) loadGifts({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -724,6 +1034,7 @@ export function initGifts() {
       startPolling();
     }
   });
+  onPollResume(() => { if (!saveInFlight && !editingId) loadGifts({ silent: true }); });
 
   // Login/logout (via the shared "👤 Profiel" dropdown) changes which
   // reward rows are assignable and to whom, so re-evaluate every card's

@@ -1,7 +1,7 @@
 /*  =============================================================
     NAVBAR
     Sticky header shared by every page. On desktop the links show
-    inline; below 768px they collapse behind a hamburger button
+    inline; below 1100px they collapse behind a hamburger button
     (wired up in assets/js/modules/navbar.js).
     ============================================================= */
 /*  Navbar styles, including sticky positioning, backdrop filter,
@@ -36,7 +36,20 @@
   gap: var(--space-4);
 }
 
-/* Row of nav links, desktop-only (hidden/collapsed below 768px, see media query) */
+/* Desktop: logo left, links truly centred in the header, icons right.
+   The two side columns are exactly equal (minmax(0,1fr)) whatever they
+   contain, so the links stay in the exact middle of the header — with or
+   without the live timer clock next to the profile button. */
+@media (min-width: 1101px) {
+  .nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .nav .logo { justify-self: start; }
+  .nav .nav-actions { justify-self: end; }
+}
+
+/* Row of nav links, desktop-only (hidden/collapsed below 1100px, see media query) */
 .nav-links {
   display: flex;
   align-items: center;
@@ -60,15 +73,16 @@
   color: var(--color-primary);
 }
 
-/* Animated underline, starts at width 0 and grows in on hover/focus */
+/* Animated underline, starts at width 0 in the MIDDLE of the link and grows outward on hover/focus */
 .nav-links a::after {
   content: "";
   position: absolute;
   bottom: -4px;
-  left: 0;
+  left: 50%;
   width: 0;
   height: 2px;
   background: var(--color-primary);
+  transform: translateX(-50%);
   transition: width var(--transition-fast);
 }
 
@@ -101,14 +115,17 @@
   background: var(--color-border);
 }
 
-/* Live study-timer clock shown in the navbar on every page (see
-   assets/js/modules/study-timer-badge.js) whenever a timer session is
-   running (or just finished and awaiting attention). Hidden entirely
-   the rest of the time. */
+/* Live study-timer clock in the header on every page (see
+   assets/js/modules/study-timer-badge.js). ONE element, always directly left
+   of the profile button inside .nav-actions. It only exists in the layout while
+   a timer is running and not hidden (.is-idle = display:none), and it lives in
+   the right-hand grid column, so it can never push the centred links around. */
 .study-timer-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  flex: 0 0 auto;
   height: 40px;
   padding: 0 14px;
   border-radius: var(--radius-full);
@@ -119,14 +136,11 @@
   font-weight: 700;
   font-size: var(--fs-sm);
   color: var(--color-text);
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+  cursor: default;
 }
 
-.study-timer-badge:hover, .study-timer-badge:focus-visible {
-  background: var(--color-border);
-}
-
-.study-timer-badge.hidden {
+.study-timer-badge.is-idle {
   display: none;
 }
 
@@ -155,14 +169,17 @@
   display: none;
 }
 
-/* Mobile nav collapse: hamburger appears, inline links become a dropdown panel */
-@media (max-width: 768px) {
+.nav-links a { white-space: nowrap; }
+
+/* Mobile nav collapse: hamburger appears, inline links become a dropdown panel.
+   1100px (not lower): with the timer clock showing, the logo + five links + clock
+   + two icon buttons need about that much room to stay on one line, centred. */
+@media (max-width: 1100px) {
   #menuBtn {
     display: inline-flex;
   }
 
-  /* Keep just the live time on small screens — the badge's padding
-     and label would otherwise crowd out the hamburger button. */
+  /* Compact clock next to the profile button on narrow screens. */
   .study-timer-badge {
     padding: 0 10px;
     font-size: 12px;

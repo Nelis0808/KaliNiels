@@ -7,6 +7,17 @@
 // pays 3:2, a normal win pays 1:1, push returns the bet, bust/loss
 // forfeits it.
 //
+// SPLITSEN: on the very first decision, when the two starting cards
+// have the SAME RANK (two 8s, two kings, ...), a "Splitsen" button
+// appears. Splitting puts a second, equal bet on the table and turns
+// the pair into two separate rows ("Rij 1" / "Rij 2"). Row 1 is played
+// all the way through first (hit / stand / double), then row 2 gets its
+// second card and is played the same way. Every row is then settled on
+// its own against the dealer, and the status line shows each row's
+// result plus the net total. One split per hand (no re-splitting); a
+// 21 on a split row is a normal 21 (pays 1:1, not 3:2). Splitting needs
+// the balance to cover the extra bet, same safety rule as doubling.
+//
 // CARDS: images live in assets/icons/playing-cards, named
 // "{rank}_of_{suit}.png" (e.g. "10_of_hearts.png"), with two
 // quirks in the source filenames that this module works around:
@@ -171,6 +182,7 @@ export function initBlackjack() {
   const hitBtn = document.getElementById('bjHit');
   const standBtn = document.getElementById('bjStand');
   const doubleBtn = document.getElementById('bjDouble');
+  const splitBtn = document.getElementById('bjSplit');
   const nextHandGroup = document.getElementById('bjNextHandGroup');
   const sameBetBtn = document.getElementById('bjSameBet');
   const newBetBtn = document.getElementById('bjNewBet');
@@ -179,9 +191,14 @@ export function initBlackjack() {
   let auth = null; // { token, who, exp } | null
   let balance = GUEST_CHIPS_STARTING;
   let chipLoadFailed = false; // true if the last loadChips() attempt couldn't reach/read the Worker — see loadChips()
-  let bet = 0;
+  let bet = 0; // the base bet for this hand (a split row / a double adds to what's at stake, see wagered())
   let deck = [];
-  let playerHand = [];
+  // The player's row(s): one normally, two after a split. Each:
+  //   { cards: [], bet, fromSplit, result: null | { outcome, text, short } }
+  // `result` is filled in as soon as a row is decided (bust) or when the
+  // dealer has played out; a row with no result yet is still "alive".
+  let hands = [];
+  let activeIndex = 0; // which row the player is currently playing
   let dealerHand = [];
   let handInProgress = false;
   let dealerHoleHidden = false;
@@ -304,7 +321,7 @@ export function initBlackjack() {
       balanceEl.textContent = String(balance);
       balanceEl.title = '';
     }
-    betEl.textContent = String(bet);
+    betEl.textContent = String(handInProgress ? wagered() : bet);
     updateChipTrayState();
     dealBtn.disabled = bet <= 0 || bet > balance || handInProgress || chipLoadFailed;
   }
@@ -357,9 +374,34 @@ export function initBlackjack() {
     updateBalanceUI();
   }
 
-  /** True only when doubling is both a legal blackjack move (first decision, exactly 2 cards) AND actually affordable (balance covers a second matching bet on top of the first). */
+  // -----------------------------------------------------------------
+  // ROWS (hands) — one normally, two after a split
+  // -----------------------------------------------------------------
+  function activeHand() {
+    return hands[activeIndex];
+  }
+
+  /** Total chips currently at stake across every row (base bets plus doubles/split). */
+  function wagered() {
+    return hands.reduce((sum, hand) => sum + hand.bet, 0);
+  }
+
+  /** True only when doubling is both a legal blackjack move (first decision of a row, exactly 2 cards) AND actually affordable (balance covers a second matching bet on top of everything already at stake). */
   function canAffordDouble() {
-    return playerHand.length === 2 && balance >= bet * 2 && bet > 0;
+    const hand = activeHand();
+    return Boolean(hand) && hand.cards.length === 2 && hand.bet > 0 && balance >= wagered() + hand.bet;
+  }
+
+  /** The "Splitsen" button is only offered on the very first decision, with a pair of the same rank, and only once per hand. */
+  function isSplitPair() {
+    const hand = activeHand();
+    return handInProgress && hands.length === 1 && Boolean(hand) && hand.cards.length === 2 && hand.cards[0].rank === hand.cards[1].rank;
+  }
+
+  /** Splitting needs a second bet equal to the first one on top of what's already at stake — never more than the balance. */
+  function canAffordSplit() {
+    const hand = activeHand();
+    return isSplitPair() && balance >= wagered() + hand.bet;
   }
 
   // -----------------------------------------------------------------
@@ -383,9 +425,44 @@ export function initBlackjack() {
     return img;
   }
 
+  /** One split row: a small label ("Rij 1 (18)" + its result once settled) above its own row of cards. */
+  function buildSplitRow(hand, index) {
+    const row = document.createElement('div');
+    row.className = 'bj-split-hand';
+    if (handInProgress && index === activeIndex) row.classList.add('is-active');
+    if (hand.result) row.classList.add(`is-${hand.result.outcome}`);
+
+    const label = document.createElement('div');
+    label.className = 'bj-split-label';
+    const score = hand.cards.length ? ` (${handValue(hand.cards)})` : '';
+    label.textContent = `Rij ${index + 1}${score}`;
+    if (hand.result) {
+      const badge = document.createElement('span');
+      badge.className = 'bj-split-result';
+      badge.textContent = hand.result.short;
+      label.append(' ', badge);
+    }
+
+    const cards = document.createElement('div');
+    cards.className = 'bj-cards';
+    cards.replaceChildren(...hand.cards.map(buildCardImg));
+
+    row.append(label, cards);
+    return row;
+  }
+
   // Redraws both hands' cards and running score totals
   function renderHands() {
-    playerCardsEl.replaceChildren(...playerHand.map(buildCardImg));
+    if (hands.length > 1) {
+      playerCardsEl.classList.add('bj-cards--split');
+      playerCardsEl.replaceChildren(...hands.map(buildSplitRow));
+      playerScoreEl.textContent = ''; // every row shows its own total instead
+    } else {
+      playerCardsEl.classList.remove('bj-cards--split');
+      const cards = hands[0]?.cards || [];
+      playerCardsEl.replaceChildren(...cards.map(buildCardImg));
+      playerScoreEl.textContent = cards.length ? `(${handValue(cards)})` : '';
+    }
 
     const dealerNodes = dealerHand.map((card, index) => {
       if (index === 1 && dealerHoleHidden) return buildHiddenCardImg();
@@ -393,7 +470,6 @@ export function initBlackjack() {
     });
     dealerCardsEl.replaceChildren(...dealerNodes);
 
-    playerScoreEl.textContent = playerHand.length ? `(${handValue(playerHand)})` : '';
     dealerScoreEl.textContent = dealerHoleHidden
       ? (dealerHand.length ? `(${rankValue(dealerHand[0].rank)}+?)` : '')
       : (dealerHand.length ? `(${handValue(dealerHand)})` : '');
@@ -401,7 +477,7 @@ export function initBlackjack() {
 
   /** Re-renders whatever's currently on the table with the correct card-art variant after a login/logout. */
   function renderCardsForAuthChange() {
-    if (playerHand.length || dealerHand.length) renderHands();
+    if (hands.length || dealerHand.length) renderHands();
   }
 
   // -----------------------------------------------------------------
@@ -412,11 +488,23 @@ export function initBlackjack() {
     statusEl.textContent = text;
   }
 
-  // Enables/disables Hit/Stand/Double for the current decision point
+  // Enables/disables Hit/Stand/Double/Split for the current decision point
   function setActionButtonsEnabled(enabled) {
     hitBtn.disabled = !enabled;
     standBtn.disabled = !enabled;
     doubleBtn.disabled = !enabled || !canAffordDouble();
+    // "Splitsen" only exists on the first decision of a pair; once
+    // anything else happens (or there's no pair) it's gone entirely.
+    splitBtn.classList.toggle('hidden', !(enabled && isSplitPair()));
+    splitBtn.disabled = !enabled || !canAffordSplit();
+    splitBtn.title = isSplitPair() && !canAffordSplit() ? 'Je hebt niet genoeg chips voor een tweede inzet.' : '';
+  }
+
+  /** Prompt for whichever row is up next ("Rij 2: Hit, Stand, of Verdubbel?"). */
+  function decisionPrompt() {
+    const hand = activeHand();
+    const prefix = hands.length > 1 ? `Rij ${activeIndex + 1}: ` : '';
+    return `${prefix}${isSplitPair() ? 'Hit, Stand, Verdubbel of Splitsen?' : 'Hit, Stand, of Verdubbel?'}`;
   }
 
   /** Smoothly scrolls the table into view once it's been unhidden and
@@ -434,7 +522,8 @@ export function initBlackjack() {
     if (bet <= 0 || bet > balance) return;
 
     deck = buildShuffledDeck();
-    playerHand = [deck.pop(), deck.pop()];
+    hands = [{ cards: [deck.pop(), deck.pop()], bet, fromSplit: false, result: null }];
+    activeIndex = 0;
     dealerHand = [deck.pop(), deck.pop()];
     dealerHoleHidden = true;
     handInProgress = true;
@@ -446,106 +535,168 @@ export function initBlackjack() {
     renderHands();
     scrollToTable();
 
-    const playerBJ = isBlackjack(playerHand);
+    const playerBJ = isBlackjack(hands[0].cards);
     const dealerBJ = isBlackjack(dealerHand);
 
     if (playerBJ || dealerBJ) {
       dealerHoleHidden = false;
-      renderHands();
       if (playerBJ && dealerBJ) {
-        finishHand('push', 'Allebei BlackJack! Gelijkspel, inzet terug.');
+        hands[0].result = { outcome: 'push', text: 'Allebei BlackJack! Gelijkspel, inzet terug.', short: 'gelijkspel' };
       } else if (playerBJ) {
-        finishHand('blackjack', 'BlackJack! Je wint 3:2. 🎉');
+        hands[0].result = { outcome: 'blackjack', text: 'BlackJack! Je wint 3:2. 🎉', short: 'BlackJack' };
       } else {
-        finishHand('lose', 'Dealer heeft BlackJack. Helaas.');
+        hands[0].result = { outcome: 'lose', text: 'Dealer heeft BlackJack. Helaas.', short: 'verloren' };
       }
+      renderHands();
+      finishHand();
       return;
     }
 
     setActionButtonsEnabled(true);
-    setStatus('Hit, Stand, of Verdubbel?');
+    setStatus(decisionPrompt());
   }
 
-  // Deals the player one more card, busting the hand if it goes over 21
+  /** Marks the active row as busted and moves on (next row, or settle). */
+  function bustActiveRow(singleHandText) {
+    const hand = activeHand();
+    hand.result = { outcome: 'lose', text: singleHandText, short: 'bust' };
+    renderHands();
+    moveOnAfterRow();
+  }
+
+  // Deals the player one more card, busting the row if it goes over 21
   function hit() {
     if (!handInProgress) return;
-    playerHand.push(deck.pop());
+    const hand = activeHand();
+    hand.cards.push(deck.pop());
     renderHands();
 
-    if (handValue(playerHand) > 21) {
-      finishHand('lose', 'Bust! Je zit boven de 21.');
+    if (handValue(hand.cards) > 21) {
+      bustActiveRow('Bust! Je zit boven de 21.');
     } else {
-      setActionButtonsEnabled(true);
-      doubleBtn.disabled = true; // can only double on the first decision
+      setActionButtonsEnabled(true); // 3+ cards now: double/split drop away by themselves
+      setStatus(decisionPrompt());
     }
   }
 
-  // Doubles the bet, deals exactly one more card, then plays out the dealer
+  // Doubles this row's bet, deals exactly one more card, then moves on
   function double() {
     if (!handInProgress || !canAffordDouble()) return;
-    bet *= 2;
+    const hand = activeHand();
+    hand.bet *= 2;
     updateBalanceUI();
-    playerHand.push(deck.pop());
+    hand.cards.push(deck.pop());
     renderHands();
 
-    if (handValue(playerHand) > 21) {
-      finishHand('lose', 'Bust na verdubbelen! Helaas.');
+    if (handValue(hand.cards) > 21) {
+      bustActiveRow('Bust na verdubbelen! Helaas.');
     } else {
-      dealerPlaysOutAndFinish();
+      moveOnAfterRow();
     }
   }
 
-  // Locks in the player's hand and plays out the dealer
+  // Locks in the current row and moves on (next row, or the dealer)
   function stand() {
     if (!handInProgress) return;
+    moveOnAfterRow();
+  }
+
+  // Splits a pair into two rows with an equal bet each; row 1 is played first
+  function split() {
+    if (!handInProgress || !canAffordSplit()) return;
+    const [first, second] = hands[0].cards;
+    const rowBet = hands[0].bet;
+
+    hands = [
+      { cards: [first], bet: rowBet, fromSplit: true, result: null },
+      { cards: [second], bet: rowBet, fromSplit: true, result: null },
+    ];
+    activeIndex = 0;
+    hands[0].cards.push(deck.pop()); // row 1 gets its second card now; row 2 gets its own when it's its turn
+
+    updateBalanceUI();
+    renderHands();
+    setActionButtonsEnabled(true);
+    setStatus(decisionPrompt());
+  }
+
+  /** After a row is done (stand / double / bust): play the next row, or — when it was the last one — the dealer. */
+  function moveOnAfterRow() {
+    if (activeIndex < hands.length - 1) {
+      activeIndex += 1;
+      const next = activeHand();
+      if (next.cards.length === 1) next.cards.push(deck.pop());
+      renderHands();
+      setActionButtonsEnabled(true);
+      setStatus(decisionPrompt());
+      return;
+    }
     dealerPlaysOutAndFinish();
   }
 
-  // Reveals the hole card, draws for the dealer until 17+, then settles the hand
+  // Reveals the hole card, draws for the dealer until 17+ (only if some row is still alive), then settles every row
   function dealerPlaysOutAndFinish() {
     dealerHoleHidden = false;
     setActionButtonsEnabled(false);
 
-    while (handValue(dealerHand) < 17) {
-      dealerHand.push(deck.pop());
+    const aliveRows = hands.filter((hand) => !hand.result);
+    if (aliveRows.length > 0) {
+      while (handValue(dealerHand) < 17) {
+        dealerHand.push(deck.pop());
+      }
     }
-    renderHands();
 
-    const playerTotal = handValue(playerHand);
     const dealerTotal = handValue(dealerHand);
+    aliveRows.forEach((hand) => {
+      const playerTotal = handValue(hand.cards);
+      if (dealerTotal > 21) {
+        hand.result = { outcome: 'win', text: 'Dealer bust! Jij wint. 🎉', short: 'gewonnen' };
+      } else if (dealerTotal > playerTotal) {
+        hand.result = { outcome: 'lose', text: `Dealer wint met ${dealerTotal} tegen ${playerTotal}.`, short: `verloren (${playerTotal}-${dealerTotal})` };
+      } else if (dealerTotal < playerTotal) {
+        hand.result = { outcome: 'win', text: `Jij wint met ${playerTotal} tegen ${dealerTotal}! 🎉`, short: `gewonnen (${playerTotal}-${dealerTotal})` };
+      } else {
+        hand.result = { outcome: 'push', text: `Gelijkspel op ${playerTotal}. Inzet terug.`, short: `gelijkspel (${playerTotal})` };
+      }
+    });
 
-    if (dealerTotal > 21) {
-      finishHand('win', 'Dealer bust! Jij wint. 🎉');
-    } else if (dealerTotal > playerTotal) {
-      finishHand('lose', `Dealer wint met ${dealerTotal} tegen ${playerTotal}.`);
-    } else if (dealerTotal < playerTotal) {
-      finishHand('win', `Jij wint met ${playerTotal} tegen ${dealerTotal}! 🎉`);
-    } else {
-      finishHand('push', `Gelijkspel op ${playerTotal}. Inzet terug.`);
+    renderHands();
+    finishHand();
+  }
+
+  /** Chip change for one settled row. */
+  function rowDelta(hand) {
+    switch (hand.result.outcome) {
+      case 'blackjack': return hand.bet * 1.5;
+      case 'win': return hand.bet;
+      case 'lose': return -hand.bet;
+      default: return 0; // push: bet returned
     }
   }
 
-  // Settles the balance for a win/loss/blackjack/push and shows the result
-  function finishHand(outcome, message) {
+  // Settles the balance for every row (each on its own) and shows the result
+  function finishHand() {
     handInProgress = false;
     setActionButtonsEnabled(false);
 
-    // Every branch below goes through clampChips() — belt-and-braces
-    // on top of the affordability checks earlier (placeBet/double
-    // already prevent betting more than the balance), so a balance
-    // can never end up negative even if those checks are ever loosened.
-    if (outcome === 'blackjack') {
-      balance = clampChips(balance + bet * 1.5);
-    } else if (outcome === 'win') {
-      balance = clampChips(balance + bet);
-    } else if (outcome === 'lose') {
-      balance = clampChips(balance - bet);
-    }
-    // 'push': balance unchanged, bet effectively returned.
+    // clampChips() — belt-and-braces on top of the affordability checks
+    // (placeBet/double/split already prevent staking more than the
+    // balance), so a balance can never end up negative even if those
+    // checks are ever loosened.
+    const net = hands.reduce((sum, hand) => sum + rowDelta(hand), 0);
+    balance = clampChips(balance + net);
 
-    setStatus(message);
-    previousBet = bet;
+    if (hands.length === 1) {
+      setStatus(hands[0].result.text);
+    } else {
+      const parts = hands.map((hand, index) => `Rij ${index + 1}: ${hand.result.short}`);
+      const netText = net > 0 ? `+${net}` : String(net);
+      setStatus(`${parts.join(' · ')} — netto ${netText} chips.`);
+    }
+
+    previousBet = bet; // the original stake, not what doubles/splits added on top
     bet = 0;
+    renderHands(); // re-render: the active-row highlight is gone now
     updateBalanceUI();
     clearBetBtn.disabled = false;
     nextHandGroup.classList.remove('hidden');
@@ -559,9 +710,11 @@ export function initBlackjack() {
   /** Shared reset between the "same bet" and "new bet" choices — clears
    *  the table back to the betting screen. */
   function resetTable() {
-    playerHand = [];
+    hands = [];
+    activeIndex = 0;
     dealerHand = [];
     dealerHoleHidden = false;
+    playerCardsEl.classList.remove('bj-cards--split');
     table.classList.add('hidden');
     nextHandGroup.classList.add('hidden');
     setStatus('');
@@ -594,6 +747,7 @@ export function initBlackjack() {
   hitBtn.addEventListener('click', hit);
   standBtn.addEventListener('click', stand);
   doubleBtn.addEventListener('click', double);
+  splitBtn.addEventListener('click', split);
   sameBetBtn.addEventListener('click', startNextHandSameBet);
   newBetBtn.addEventListener('click', startNextHandNewBet);
 

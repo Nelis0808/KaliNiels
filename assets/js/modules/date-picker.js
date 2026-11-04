@@ -14,6 +14,7 @@
 // 1. Add a new entry to CATEGORIES
 // 2. A matching JSON file in assets/data/
 // 3. A button + result container in the HTML with matching ids.
+// (The "Plan date" button draws every category in CATEGORIES at once.)
 // =================================================================
 
 import { escapeHtml } from './utils.js';
@@ -93,8 +94,15 @@ async function revealRandomIdea(category) {
   }
 }
 
-// Wires up the Binnen/Buiten buttons on date.html
+// "Plan date": rolls every category (indoor AND outdoor) in one go
+function revealAll() {
+  return Promise.all(Object.keys(CATEGORIES).map((category) => revealRandomIdea(category)));
+}
+
+// Wires up the Binnen/Buiten buttons (and the wide "Plan date" button) on date.html
 export function initDatePicker() {
+  document.getElementById('btnPlan')?.addEventListener('click', revealAll);
+
   const buttons = Object.entries(CATEGORIES).filter(
     ([, config]) => document.getElementById(config.buttonId)
   );

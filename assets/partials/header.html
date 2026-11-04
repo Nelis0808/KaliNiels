@@ -21,6 +21,8 @@
       <a href="lijstje.html">Lijstje</a>
       <a href="ticketmaster.html">Ticketmaster</a>
 
+      <a href="timer.html">Studie Timer</a>
+
       <div id="navMoreDropdown" class="nav-dropdown">
         <button id="navMoreBtn" class="nav-dropdown-trigger" type="button"
                 aria-haspopup="true" aria-expanded="false" aria-controls="navMoreMenu">
@@ -31,9 +33,16 @@
     </nav>
 
     <div class="nav-actions">
-      <a id="studyTimerBadge" class="study-timer-badge hidden" href="timer.html" title="Studie timer">
-        <span id="studyTimerBadgeDot" class="study-timer-badge-dot" aria-hidden="true"></span>
-        <span id="studyTimerBadgeTime">00:00:00</span>
+      <!-- Live klok van de studietimer. Staat ALTIJD direct links van de
+           profielknop (nooit tussen de navLinks), heeft bewust geen href
+           (de enige verwijzing naar de timerpagina is de link "Studie Timer" hierboven)
+           en bestaat alleen zolang er een timer loopt en hij niet verborgen
+           is (study-timer-badge.js). Hij zit in de rechter kolom van de
+           balk, dus hij kan de gecentreerde links nooit verschuiven. -->
+      <a class="study-timer-badge is-idle" data-study-timer-badge
+         role="timer" aria-hidden="true" title="Studie timer">
+        <span class="study-timer-badge-dot" data-study-timer-dot aria-hidden="true"></span>
+        <span data-study-timer-time>00:00:00</span>
       </a>
 
       <div id="navProfileDropdown" class="settings-dropdown profile-dropdown">

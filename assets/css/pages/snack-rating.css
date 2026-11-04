@@ -227,10 +227,11 @@ a.snack-card-name:hover {
   resize: vertical;
 }
 
-/* Row holding the label + clickable star picker */
+/* Row holding the label + clickable star picker (centred) */
 .snack-add-star-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
 }
 
@@ -241,9 +242,28 @@ a.snack-card-name:hover {
   font-weight: 600;
 }
 
-/* Aligns the photo-upload control to the left within the form */
-.snack-add-photo-label {
-  align-self: flex-start;
+/* The photo box (label, "Kies bestand" pill, drag/paste hint, preview and the
+   buttons) is centred like on gifts.html — see .gf-add-photo-label,
+   .gf-dropzone-hint, .gf-photo-preview and .gf-add-form-buttons in gifts.css.
+   Shared drop highlight for these two forms: */
+.snack-add-form.gf-dropzone-active {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: 3px;
+  background: var(--color-bg);
+}
+
+.snack-add-form .gf-dropzone-hint {
+  margin-top: 0;
+}
+
+.snack-add-form {
+  text-align: center;
+}
+
+.snack-add-form textarea,
+.snack-add-form input[type='text'],
+.snack-add-form input[type='url'] {
+  text-align: left;
 }
 
 /* Inline validation/error message under the form */

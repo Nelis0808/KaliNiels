@@ -26,15 +26,31 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml } from './utils.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
 
 const POLL_INTERVAL_MS = 5000;
 const LONG_PRESS_MS = 350;
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
-// Priority-dot emoji set, matching whichever color theme is active
+// A small coloured flower (inline SVG, so it is always in colour — the
+// flower emoji used before came out flat/white on many devices).
+function flowerSvg(petal, center, outline) {
+  const petals = [0, 72, 144, 216, 288]
+    .map((angle) => `<ellipse cx="12" cy="6.3" rx="3.7" ry="5.1" fill="${petal}" stroke="${outline}" stroke-width="0.6" transform="rotate(${angle} 12 12)"/>`)
+    .join('');
+  return `<svg class="todo-flower" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">${petals}<circle cx="12" cy="12" r="3.2" fill="${center}" stroke="${outline}" stroke-width="0.6"/></svg>`;
+}
+
+// Priority indicator set (HTML), matching whichever color theme is active:
+// blue = coloured dots, pink = coloured flowers.
 function getDots() {
   return document.documentElement.getAttribute('data-color-theme') === 'pink'
-    ? ['🌹', '🏵️', '🌻', '💮']
+    ? [
+        flowerSvg('#E8365D', '#FFE27A', '#B81E40'), // hoog: rode bloem
+        flowerSvg('#FF9440', '#FFF2A8', '#D96A12'), // gemiddeld: oranje bloem
+        flowerSvg('#FFD83D', '#E8702A', '#D1A400'), // laag: gele bloem
+        flowerSvg('#FFFFFF', '#F7A8C4', '#E58CB0'), // geen: witte bloem
+      ]
     : ['🔴', '🟠', '🟡', '⚪']; // blue is the default, same as theme.js
 }
 
@@ -72,6 +88,10 @@ function updateThemeDots() {
 export function initTodo() {
   const root = document.getElementById('todoApp');
   if (!root) return; // not on this page
+
+  // The colour theme is applied after this file is first loaded, so pick the
+  // right indicator set (dots or flowers) now instead of at import time.
+  updateThemeDots();
 
   const workerUrl = siteConfig.todo?.workerUrl || '';
   const personLabels = siteConfig.todo?.personLabels || { a: 'Niels', b: 'Kalina' };
@@ -283,7 +303,7 @@ export function initTodo() {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `todo-priority-pill todo-priority-pill-${level}` + (level === newItemPriority[person] ? ' todo-priority-pill-active' : '');
-        btn.textContent = `${dot} ${label}`;
+        btn.innerHTML = `${dot} <span>${label}</span>`;
         btn.setAttribute('aria-pressed', String(level === newItemPriority[person]));
         btn.addEventListener('click', () => {
           btn.blur();
@@ -536,7 +556,7 @@ export function initTodo() {
       // while a drag is active — renderAll() replaces the list's
       // innerHTML mid-drag, orphaning the dragged row and letting
       // endDrag() re-insert a duplicate of it once released.
-      if (!saveInFlight && !draggingLi) loadItems({ silent: true });
+      if (isUserActive() && !saveInFlight && !draggingLi) loadItems({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -554,6 +574,7 @@ export function initTodo() {
       startPolling();
     }
   });
+  onPollResume(() => { if (!saveInFlight && !draggingLi) loadItems({ silent: true }); });
 
   // ---- Theme change listener ------------------------------------------
   // Dark/light (themechange) doesn't affect the dots, but is included

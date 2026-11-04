@@ -39,6 +39,7 @@ DateSite/
 ├── ticketmaster.html            Concert search/upcoming/sales + a saved-artist "Favorieten" tab
 ├── photos.html                  Private photo gallery (login required)
 ├── reizen.html + reizen/land.html   Travel map: world map -> per-country page -> city photos (login required)
+├── tools/ah-browser-export.js    Script voor de browser-console op ah.nl: haalt alle AH-recepten op (zie dev.html)
 ├── timer.html                    Studie Timer — task/pomodoro timer that grows a reward tree
 ├── collections.html              Collectibles/rewards page fed by the Studie Timer (login required) (§5)
 ├── valentine.html                "Will you be my Valentine" surprise page
@@ -285,6 +286,12 @@ specifics on each, plus general guidance on the shape every Worker
 here follows so a new one is easy to write consistently.
 
 ---
+
+### 6.4 Costs and daily limits
+
+Every Worker has a daily request/write budget and the pages stop polling when idle;
+see `NOOIT-BETALEN.md` (Dutch) for the limits, the Cloudflare Observability pricing
+notice and a dashboard checklist.
 
 ## 7. Browser support
 

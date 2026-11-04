@@ -162,6 +162,40 @@
           <p id="devTimerStatus" class="dev-status" role="status"></p>
         </div>
 
+        <!-- AH-RECEPTEN — één knop die ALLE recepten van de AH-recepten-pagina
+             ophaalt. Eerst probeert hij het rechtstreeks via de Worker; AH
+             blokkeert Cloudflare meestal, en dan verschijnt hieronder het
+             stappenplan om het EENMALIG in je eigen browser te doen (script op
+             ah.nl) en het bestand hier in te laden. Daarna toont ah-recepten.html
+             alleen nog die opgeslagen recepten. -->
+        <div class="dev-panel">
+          <h2>🍳 AH-recepten ophalen</h2>
+          <p class="dev-panel-hint">Haalt alle categorieën en subcategorieën van AH.nl op en slaat ze op, zodat de AH-Recepten-pagina ze kan tonen. Blokkeert AH de server (dat gebeurt vaak), dan krijg je hieronder een stappenplan om het één keer in je eigen browser te doen. Wat al opgeslagen was blijft staan als iets mislukt.</p>
+          <div class="dev-button-row">
+            <button type="button" id="devAhSyncBtn" class="btn btn-primary btn-sm">Alles ophalen van AH.nl</button>
+            <button type="button" id="devAhSyncStopBtn" class="btn btn-outline btn-sm hidden">Stop</button>
+          </div>
+          <progress id="devAhSyncProgress" class="dev-progress hidden" value="0" max="1"></progress>
+          <p id="devAhSyncStatus" class="dev-status" role="status"></p>
+
+          <div id="devAhBrowserBox" class="dev-ah-browser hidden">
+            <h3>Stappenplan: ophalen met je eigen browser (eenmalig)</h3>
+            <ol>
+              <li>Klik op <button type="button" id="devAhCopyBtn" class="btn btn-outline btn-sm">Kopieer script</button> <span id="devAhCopyMsg" class="dev-ah-copy-msg"></span></li>
+              <li>Open <a href="https://www.ah.nl/allerhande" target="_blank" rel="noopener noreferrer">ah.nl/allerhande</a> in een nieuw tabblad (gewoon in Chrome of Edge, ingelogd hoeft niet).</li>
+              <li>Druk op <kbd>F12</kbd> en klik op het tabblad <strong>Console</strong>.</li>
+              <li>Plak het script (<kbd>Ctrl</kbd>+<kbd>V</kbd>) en druk op <kbd>Enter</kbd>. Chrome vraagt soms eerst om <code>allow pasting</code> te typen: doe dat, Enter, en plak daarna opnieuw.</li>
+              <li>Bovenaan ah.nl verschijnt een blauwe balk met de voortgang. Laat dat tabblad <strong>open staan</strong>; het duurt rustig ± 1 uur (met pauzes, zodat AH je niet blokkeert). Je kunt altijd op <em>Stop en bewaar</em> klikken.</li>
+              <li>Aan het eind downloadt de browser <code>ah-recepten-export.json</code>. Kies dat bestand hier:
+                <input type="file" id="devAhImportFile" accept="application/json,.json"></li>
+            </ol>
+            <details>
+              <summary>Kopiëren werkt niet? Selecteer het script hier handmatig</summary>
+              <textarea id="devAhScriptText" class="dev-ah-script" readonly rows="6" aria-label="Script voor de console"></textarea>
+            </details>
+          </div>
+        </div>
+
         <!-- DANGER ZONE — nuclear option, wipes every localStorage key
              this site uses (both people, every feature) in this
              browser only. -->

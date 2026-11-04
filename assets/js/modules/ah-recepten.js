@@ -50,15 +50,17 @@
 // the modal still offers a direct "Bekijk op AH.nl" link rather than
 // a dead end.
 //
-// CACHING: "fresh" above still means at most once a day. Every call
-// to AH-scraped data (listing + detail, NOT /favorites) goes through
-// fetchRecipeList()/fetchRecipeDetailData() further down, which check
-// localStorage first (CLIENT_CACHE_TTL_MS, 24h) before ever touching
-// the Worker — and the Worker has an identical 24h cache of its own,
-// shared across both people/devices. See the big comment above
-// CACHE_TTL_MS in ah_recepten_worker.js for the full picture. Keeping
-// requests this rare is also the main defense against getting blocked
-// again — see that Worker's header for the rest of that story.
+// BACKUP, NOT AUTO-REFRESH: this page never goes to ah.nl by itself and
+// has no retrieve button. What you see is the BACKUP — the last
+// successful retrieval of exactly that list (kept in the Worker's KV, so
+// both people see the same one, and in localStorage on this device as a
+// fallback). The backups are filled by ONE button on dev.html ("Alles
+// ophalen van AH.nl"), which walks over every category and subcategory.
+// If AH blocks the Worker, nothing here changes: the backup stays.
+// "Meer laden" only appears when a next page is actually stored. Opening a
+// recipe uses its own backup too: only the very first time a recipe is
+// opened does the Worker fetch its details from AH (and keeps them).
+// See ah_recepten_worker.js for the other half.
 // =================================================================
 
 import { siteConfig } from '../config.js';
@@ -112,98 +114,95 @@ function formatQuantity(n) {
   return rounded.toFixed(2).replace(/0$/, '').replace(/\.$/, '').replace('.', ',');
 }
 
-// ---- Client-side ("local") cache -----------------------------------
-// AH is only meant to be scraped once a day (see CACHE_TTL_MS in
-// recepten_worker.js) — this is the other half of that: before asking
-// the Worker for a recipe list or a recipe's detail, check localStorage
-// first. A hit here means the Worker (and ah.nl) isn't even contacted.
-// A miss falls through to the Worker, which has an identical 24h cache
-// of its own shared across every device/person, so the *actual* AH
-// fetch only happens for whoever is first to ask about a given
-// query/recipe on a given day. Only used for AH-scraped data (recipe
-// lists + recipe detail) — favorites are live shared user data and
-// are always fetched fresh so both people see each other's changes.
-// "v2": bumped when a bad/empty Worker answer got cached for a full day
-// and made the page look permanently broken. Entries from the old
-// "recepten-cache:" prefix are ignored and removed by pruneClientCache().
-const CLIENT_CACHE_PREFIX = 'ah-recepten-cache-v1:';
-const LEGACY_CACHE_PREFIXES = ['recepten-cache:'];
-const CLIENT_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // keep in sync with the Worker's CACHE_TTL_MS
+// ---- Client-side backup (localStorage) ------------------------------
+// The device's own copy of the last successful retrieval. NO expiry: it is
+// only replaced by a newer successful retrieval (so it also keeps working
+// when AH blocks the Worker, or the Worker itself is unreachable).
+// Only used for AH-scraped data (recipe lists + recipe detail) — favorites
+// are live shared user data and always fetched fresh.
+const BACKUP_PREFIX = 'ah-recepten-backup-v1:';
+// Older automatic-cache formats: ignored and removed by pruneOldCaches().
+const LEGACY_CACHE_PREFIXES = ['recepten-cache:', 'ah-recepten-cache-v1:'];
 
-function readClientCache(key) {
+function readBackup(key) {
   try {
-    const raw = localStorage.getItem(CLIENT_CACHE_PREFIX + key);
+    const raw = localStorage.getItem(BACKUP_PREFIX + key);
     if (!raw) return null;
     const entry = JSON.parse(raw);
-    if (Date.now() - entry.savedAt > CLIENT_CACHE_TTL_MS) return null;
-    return entry.payload;
+    return entry && entry.payload ? entry : null;
   } catch {
-    return null; // private browsing / storage disabled / corrupted entry — just skip the cache
+    return null; // private browsing / storage disabled / corrupted entry — just skip it
   }
 }
 
-function writeClientCache(key, payload) {
+function writeBackup(key, payload, savedAt) {
   try {
-    localStorage.setItem(CLIENT_CACHE_PREFIX + key, JSON.stringify({ savedAt: Date.now(), payload }));
+    localStorage.setItem(BACKUP_PREFIX + key, JSON.stringify({ savedAt: savedAt || Date.now(), payload }));
   } catch {
-    // storage full or unavailable — degrade silently, the Worker's own 24h cache still applies
+    // storage full or unavailable — the Worker's own backup still exists
   }
 }
 
-// Removes only our own expired entries so localStorage doesn't grow
-// forever. Cheap enough to just run once per page load.
-function pruneClientCache() {
+// Removes the old auto-expiring cache entries (once per page load).
+function pruneOldCaches() {
   try {
     for (let i = localStorage.length - 1; i >= 0; i -= 1) {
       const key = localStorage.key(i);
-      if (!key) continue;
-      if (LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix))) {
-        localStorage.removeItem(key); // old format — drop it
-        continue;
-      }
-      if (!key.startsWith(CLIENT_CACHE_PREFIX)) continue;
-      try {
-        const entry = JSON.parse(localStorage.getItem(key));
-        if (Date.now() - entry.savedAt > CLIENT_CACHE_TTL_MS) localStorage.removeItem(key);
-      } catch {
-        localStorage.removeItem(key); // corrupted entry — drop it
-      }
+      if (key && LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix))) localStorage.removeItem(key);
     }
   } catch {
-    // ignore — purely a housekeeping nicety, never worth failing the page over
+    // purely housekeeping, never worth failing the page over
   }
 }
 
-// Cache-aware fetch for GET /recipes (a listing/search result page).
-async function fetchRecipeList(workerUrl, params) {
-  const cacheKey = `list:${params.toString()}`;
-  const cached = readClientCache(cacheKey);
-  if (cached && Array.isArray(cached.recipes) && cached.recipes.length > 0) return cached;
-
-  const response = await fetch(`${workerUrl}/recipes?${params.toString()}`);
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-  // Only remember lists that actually contain recipes: caching an empty
-  // answer (AH hiccup, changed markup, ...) would keep the page empty for
-  // the full 24h even after the problem is fixed.
-  if (Array.isArray(data.recipes) && data.recipes.length > 0) writeClientCache(cacheKey, data);
-  return data;
-}
-
-// Cache-aware fetch for GET /recipe (one recipe's full detail).
-async function fetchRecipeDetailData(workerUrl, path) {
-  const cacheKey = `detail:${path}`;
-  const cached = readClientCache(cacheKey);
-  if (cached) return cached;
-
-  const response = await fetch(`${workerUrl}/recipe?url=${encodeURIComponent(path)}`);
+async function requestJson(url) {
+  const response = await fetch(url);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const err = new Error(data.error || `HTTP ${response.status}`);
     err.sourceUrl = data.sourceUrl;
     throw err;
   }
-  writeClientCache(cacheKey, data);
+  return data;
+}
+
+// GET /recipes: the stored backup of one list — never AH itself. The Worker's
+// copy (shared by both people) first, else this device's own, else an empty
+// `noBackup` answer. `hasMore` = the next page is stored too.
+async function fetchRecipeList(workerUrl, params) {
+  const key = `list:${params.toString()}`;
+  const local = readBackup(key);
+
+  const nextParams = new URLSearchParams(params);
+  nextParams.set('page', String((Number(params.get('page')) || 0) + 1));
+  const localHasMore = () => {
+    const next = readBackup(`list:${nextParams.toString()}`);
+    return Boolean(next && Array.isArray(next.payload.recipes) && next.payload.recipes.length);
+  };
+  const fromLocal = () => ({ ...local.payload, fromBackup: true, backupSavedAt: local.savedAt, source: 'local', hasMore: localHasMore() });
+
+  try {
+    const data = await requestJson(`${workerUrl}/recipes?${params.toString()}`);
+    if (Array.isArray(data.recipes) && data.recipes.length > 0) {
+      writeBackup(key, data, data.backupSavedAt);
+      return data;
+    }
+    return local ? fromLocal() : data; // Worker has nothing stored (yet) -> this device's copy, if any
+  } catch (error) {
+    if (local) return fromLocal();
+    throw error;
+  }
+}
+
+// GET /recipe (one recipe's full detail). This device's backup first (no
+// request at all), then the Worker (its backup, or — first time ever — AH).
+async function fetchRecipeDetailData(workerUrl, path) {
+  const key = `detail:${path}`;
+  const local = readBackup(key);
+  if (local) return local.payload;
+
+  const data = await requestJson(`${workerUrl}/recipe?url=${encodeURIComponent(path)}`);
+  writeBackup(key, data);
   return data;
 }
 
@@ -238,6 +237,7 @@ export function initAhRecepten() {
   const statusEl = qs('#reptStatus', root);
   const resultsEl = qs('#reptResults', root);
   const loadMoreBtn = qs('#reptLoadMore', root);
+  const backupInfoEl = qs('#reptBackupInfo', root);
 
   const modalOverlay = document.getElementById('reptModalOverlay');
   const modalClose = document.getElementById('reptModalClose');
@@ -326,6 +326,7 @@ export function initAhRecepten() {
     renderTabs();
     renderSubcategoryChips();
     searchRowEl.classList.toggle('hidden', mode === 'favorites');
+    setBackupInfo(null);
 
     if (mode === 'favorites') {
       renderFavoritesView();
@@ -360,6 +361,20 @@ export function initAhRecepten() {
     return params;
   }
 
+  // Short, human description of what is currently selected ("Pasta · Kip", "kip pittig", ...)
+  function describeSelection() {
+    const cat = state.mode === 'category' ? activeCategory() : null;
+    const subcat = cat?.subcategories?.find((sub) => sub.id === state.subcategoryId);
+    return [cat?.label, subcat?.label, state.query].filter(Boolean).join(' · ') || 'je selectie';
+  }
+
+  // The line under the results: when the shown list was last retrieved from AH.
+  function setBackupInfo(data) {
+    const savedAt = data && data.backupSavedAt ? new Date(data.backupSavedAt).toLocaleString('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+    backupInfoEl.textContent = savedAt ? `Laatst opgehaald van AH.nl: ${savedAt}.` : '';
+  }
+
+  // Shows the stored backup of the current selection (AH itself is never contacted from here).
   async function runQuery({ replace }) {
     if (state.mode === 'favorites') {
       renderFavoritesView();
@@ -369,8 +384,8 @@ export function initAhRecepten() {
     state.loading = true;
 
     if (replace) {
-      resultsEl.innerHTML = '';
       state.page = 0;
+      resultsEl.innerHTML = '';
     }
 
     statusEl.textContent = 'Bezig met laden…';
@@ -384,7 +399,10 @@ export function initAhRecepten() {
       if (recipes.length === 0) {
         if (replace) {
           resultsEl.innerHTML = '';
-          statusEl.textContent = 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.';
+          statusEl.textContent = data.noBackup
+            ? `Nog niets opgeslagen voor ${describeSelection()}. Haal de recepten op via de dev-pagina (“Alles ophalen van AH.nl”).`
+            : 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.';
+          setBackupInfo(null);
         } else {
           statusEl.textContent = 'Geen recepten meer.';
         }
@@ -400,10 +418,13 @@ export function initAhRecepten() {
       let statusText = `${shownCount} recept${shownCount === 1 ? '' : 'en'} getoond${data.count ? ` (van ${data.count.toLocaleString('nl-NL')} totaal bij AH)` : ''}.`;
       if (data.fallbackUsed) statusText += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
       statusEl.textContent = statusText;
-      loadMoreBtn.classList.remove('hidden');
+      setBackupInfo(data);
+      // "Meer laden" only exists while a further page is actually stored.
+      loadMoreBtn.classList.toggle('hidden', !data.hasMore);
     } catch (error) {
       console.error('Recepten worker error:', error);
-      statusEl.textContent = `❌ Kon geen recepten ophalen (${error.message}). Probeer het later opnieuw.`;
+      if (!replace) state.page = Math.max(0, state.page - 1);
+      statusEl.textContent = `❌ Kon geen recepten laden (${error.message}). Probeer het later opnieuw.`;
       loadMoreBtn.classList.add('hidden');
     } finally {
       state.loading = false;
@@ -646,7 +667,7 @@ export function initAhRecepten() {
       statusEl.textContent = 'Typ een zoekterm en druk op zoeken.';
       resultsEl.innerHTML = '';
       loadMoreBtn.classList.add('hidden');
-      return;
+        return;
     }
     runQuery({ replace: true });
   }
@@ -734,7 +755,7 @@ export function initAhRecepten() {
   // Favorites are fetched in parallel instead of awaited first: a slow or
   // failing favorites request must never hold up the recipe grid itself.
   (function init() {
-    pruneClientCache();
+    pruneOldCaches();
     renderTabs();
     renderSubcategoryChips();
     runQuery({ replace: true });

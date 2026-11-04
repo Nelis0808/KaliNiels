@@ -38,6 +38,7 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml, prefersReducedMotion } from './utils.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
 import { getAuth, onAuthChange } from './auth.js';
 import {
   getCollections,
@@ -557,6 +558,7 @@ export function initCollections() {
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(async () => {
+      if (!isUserActive()) return; // nobody is looking (poll-guard.js)
       if (openPickerRewardId || animating) return; // don't yank the picker/animation out from under the person
       await loadLiveGifts({ silent: true });
       renderPanel();
@@ -570,6 +572,7 @@ export function initCollections() {
     if (document.hidden) stopPolling();
     else { loadLiveGifts({ silent: true }).then(renderPanel); startPolling(); }
   });
+  onPollResume(() => { if (!openPickerRewardId && !animating) loadLiveGifts({ silent: true }).then(renderPanel); });
 
   // ---- Initial load ----------------------------------------------------
 

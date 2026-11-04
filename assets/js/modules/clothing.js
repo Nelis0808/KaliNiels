@@ -27,6 +27,8 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml } from './utils.js';
+import { isUserActive, onPollResume } from './poll-guard.js';
+import { setupPhotoField } from './photo-field.js';
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_STARS = 5;
@@ -233,28 +235,21 @@ export function initClothing() {
     const sizeInput = qs('.clothing-add-size', form);
     const descInput = qs('.clothing-add-desc', form);
     const starPicker = qs('.snack-star-picker', form);
-    const photoInput = qs('.clothing-add-photo', form);
-    const photoFilenameEl = qs('.snack-add-photo-filename', form);
-    const errorEl = qs('.clothing-add-error', form);
+    // The message line sits right after the form (not inside it).
+    const errorEl = form.nextElementSibling;
     const submitBtn = qs('button[type="submit"]', form);
     const cancelBtn = qs('.clothing-edit-cancel', form);
 
     let editingId = null;
     let formRating = 0;
 
+    // Photo box: choose a file, drag one in, or paste (Ctrl+V) — same as the gifts page.
+    const photoCtl = setupPhotoField(form, { errorEl, urlInput, maxBytes: MAX_ORIGINAL_UPLOAD_BYTES });
+
     // This person's items, in their stored order
     function personItems() {
       return items.filter((it) => it.person === person);
     }
-
-    // Resets the "chosen file" label back to its placeholder text
-    function resetPhotoFilename() {
-      photoFilenameEl.textContent = photoFilenameEl.dataset.defaultText || 'Kies bestand';
-    }
-
-    photoInput.addEventListener('change', () => {
-      photoFilenameEl.textContent = photoInput.files?.[0]?.name || photoFilenameEl.dataset.defaultText || 'Kies bestand';
-    });
 
     // Redraws this column's card list from personItems()
     function render() {
@@ -328,7 +323,7 @@ export function initClothing() {
       descInput.value = item.description || '';
       formRating = item.rating || 0;
       renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-      resetPhotoFilename();
+      photoCtl.showExisting(item.photo);
       submitBtn.textContent = 'Opslaan';
       cancelBtn.classList.remove('hidden');
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -341,7 +336,7 @@ export function initClothing() {
       form.reset();
       formRating = 0;
       renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-      resetPhotoFilename();
+      photoCtl.clear();
       submitBtn.textContent = 'Toevoegen';
       cancelBtn.classList.add('hidden');
     }
@@ -350,7 +345,8 @@ export function initClothing() {
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (errorEl) errorEl.textContent = "Er is iets niet goed gegaan.";
+      if (errorEl) errorEl.textContent = '';
+      await photoCtl.whenReady(); // a picture dragged in from another website may still be downloading
 
       const name = nameInput.value.trim();
       if (!name) {
@@ -369,11 +365,7 @@ export function initClothing() {
         }
       }
 
-      const photoFile = photoInput.files?.[0] || null;
-      if (photoFile && photoFile.size > MAX_ORIGINAL_UPLOAD_BYTES) {
-        if (errorEl) errorEl.textContent = `Foto is te groot (max ${Math.floor(MAX_ORIGINAL_UPLOAD_BYTES / 1024 / 1024)}MB).`;
-        return;
-      }
+      const photoFile = photoCtl.getFile();
 
       submitBtn.disabled = true;
       const payload = {
@@ -393,7 +385,7 @@ export function initClothing() {
         form.reset();
         formRating = 0;
         renderStarPicker(starPicker, formRating, (value) => { formRating = value; });
-        resetPhotoFilename();
+        photoCtl.clear();
         nameInput.focus();
       }
       submitBtn.disabled = false;
@@ -426,7 +418,7 @@ export function initClothing() {
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (!saveInFlight) loadItems({ silent: true });
+      if (isUserActive() && !saveInFlight) loadItems({ silent: true });
     }, POLL_INTERVAL_MS);
   }
 
@@ -444,6 +436,7 @@ export function initClothing() {
       startPolling();
     }
   });
+  onPollResume(() => { if (!saveInFlight) loadItems({ silent: true }); });
 
   // ---- Initial load --------------------------------------------------
 

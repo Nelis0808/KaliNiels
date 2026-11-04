@@ -2,7 +2,7 @@
 // NAV "MEER" DROPDOWN
 // -----------------------------------------------------------------
 // Renders every page from siteConfig.pages that ISN'T one of the
-// permanent nav links (Home / Lijstje / Ticketmaster) into a
+// permanent nav links (Home / Lijstje / Ticketmaster / Studie Timer) into a
 // dropdown — including "coming soon" placeholders, shown disabled.
 // Add a new page to config.js's `pages` array and it appears here
 // automatically; no HTML edits needed for that part.
@@ -13,7 +13,7 @@ import { qsa, escapeHtml, siteRootUrl } from './utils.js';
 
 // hrefs that already have their own permanent link in the nav —
 // keep this in sync with the <nav> markup in every HTML file.
-const PERMANENT_LINKS = new Set(['index.html', 'lijstje.html', 'ticketmaster.html']);
+const PERMANENT_LINKS = new Set(['index.html', 'lijstje.html', 'ticketmaster.html', 'timer.html']);
 
 // Renders one dropdown row: a real link if available, else a disabled
 // (greyed out) placeholder.

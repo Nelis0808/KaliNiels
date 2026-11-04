@@ -62,6 +62,7 @@ import { initSnake } from './modules/snake.js';
 import { initWallz } from './modules/wallz.js';
 import { initStudyTimer } from './modules/study-timer.js';
 import { initStudyTimerBadge } from './modules/study-timer-badge.js';
+import { initNoAutofill } from './modules/no-autofill.js';
 import { initValentine } from './modules/valentine.js';
 import { initDevPage } from './modules/dev.js';
 
@@ -121,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await safeInit('initLayout', initLayout);
 
   // Site-wide chrome (safe no-ops on pages without these elements)
+  safeInit('initNoAutofill', initNoAutofill);
   safeInit('initTheme', initTheme);
   safeInit('initColorTheme', initColorTheme);
   safeInit('initNavDropdown', initNavDropdown);        /* Must run before initMobileMenu*/
