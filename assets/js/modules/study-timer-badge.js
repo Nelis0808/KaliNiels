@@ -26,6 +26,12 @@
 //    are whether the clock is showing or not. While idle/hidden the
 //    clock is display:none (.is-idle) and leaves no gap.
 //
+//    AUTO-STOP AFTER BEING AWAY: every open page of the site writes a
+//    "last seen" time (heartbeat). If a page finds that nobody had the
+//    site open for more than an hour (browser closed by accident, laptop
+//    asleep, ...) the running timer is stopped completely — for every
+//    person — and with it the clock in the header. See expireStaleTimer().
+//
 //    HIDDEN ("verborgen") STATE: the eye button on the Studie Timer
 //    page hides the countdown there. That choice is stored here
 //    (isTimerHidden()/setTimerHidden(), localStorage) and makes the
@@ -59,6 +65,10 @@ const NOTIFICATIONS_PREF_KEY = 'study-timer-notifications-enabled';
 const HIDDEN_KEY = 'studyTimerHiddenV1';
 const VISIBILITY_EVENT = 'study-timer:visibility';
 const CHECK_INTERVAL_MS = 1000;
+const LAST_SEEN_KEY = 'studyTimerLastSeenV1';
+const MAX_AWAY_MS = 60 * 60 * 1000;      // a timer is stopped when the site wasn't open for this long
+const HEARTBEAT_EVERY_MS = 15 * 1000;    // how often an open page refreshes "last seen"
+const EXPIRED_EVENT = 'study-timer:expired';
 
 /** True when the person hid the timer with the eye button on the Studie Timer page. */
 export function isTimerHidden() {
@@ -75,6 +85,47 @@ export function setTimerHidden(hidden) {
 }
 
 function today() { return new Date().toISOString().slice(0, 10); }
+
+let lastHeartbeatWrite = 0;
+
+function readLastSeen() {
+  try { return Number(localStorage.getItem(LAST_SEEN_KEY)) || 0; } catch { return 0; }
+}
+
+/** Marks "the site is open right now". Throttled so it isn't written every second. */
+function touchLastSeen(force = false) {
+  const now = Date.now();
+  if (!force && now - lastHeartbeatWrite < HEARTBEAT_EVERY_MS) return;
+  lastHeartbeatWrite = now;
+  try { localStorage.setItem(LAST_SEEN_KEY, String(now)); } catch { /* storage unavailable */ }
+}
+
+/**
+ * If the site hasn't been open anywhere for more than an hour, stop every
+ * running timer (the clock in the header disappears with it) and tell this
+ * tab's Studie Timer page. Always refreshes "last seen" afterwards, so calling
+ * it twice in a row (badge + timer page both do, on load) is harmless.
+ * Returns true when a timer was actually stopped.
+ */
+export function expireStaleTimer() {
+  const lastSeen = readLastSeen();
+  let stopped = false;
+  if (lastSeen && Date.now() - lastSeen > MAX_AWAY_MS) {
+    try {
+      const store = JSON.parse(localStorage.getItem(KEY) || '{}');
+      Object.values(store).forEach((person) => {
+        if (person && person.runningTimer) {
+          person.runningTimer = null;
+          stopped = true;
+        }
+      });
+      if (stopped) localStorage.setItem(KEY, JSON.stringify(store));
+    } catch { /* unreadable state: nothing to stop */ }
+  }
+  touchLastSeen(true);
+  if (stopped) window.dispatchEvent(new CustomEvent(EXPIRED_EVENT));
+  return stopped;
+}
 
 function readAll() {
   try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; }
@@ -145,6 +196,7 @@ function initNotificationsToggle() {
 
 export function initStudyTimerBadge() {
   initNotificationsToggle();
+  expireStaleTimer(); // first thing on every page: was the site closed for over an hour?
 
   const badges = Array.from(document.querySelectorAll('[data-study-timer-badge]'));
   if (badges.length === 0) return;
@@ -206,6 +258,9 @@ export function initStudyTimerBadge() {
   }
 
   function tick() {
+    // Heartbeat + "was everything asleep/closed for over an hour?" (e.g. the laptop was
+    // closed with this tab open: the first tick after waking up stops the timer).
+    if (Date.now() - lastHeartbeatWrite >= HEARTBEAT_EVERY_MS) expireStaleTimer();
     const runningTimer = currentRunningTimer();
     if (!runningTimer) {
       paint({ visible: false });

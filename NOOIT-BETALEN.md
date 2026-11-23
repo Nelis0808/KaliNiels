@@ -135,6 +135,21 @@ het bestand uit de map `cloudflare/…` → *Deploy*. Nieuwe bindings of secrets
 Pas de website (de rest van de bestanden) daarna op GitHub Pages aan zoals
 gewoonlijk.
 
+**Cache van de cadeaulijst wissen:** dev-pagina → paneel *🎁 Cadeaus-cache wissen* → knop. Daarna haalt de
+cadeaus-pagina alle plaatjes en prijzen opnieuw op (browser én Worker-cache). Je cadeaus en foto's blijven staan.
+Een verkeerd automatisch gekozen plaatje verwijder je per cadeau via bewerken → foto verwijderen.
+
+**G. bol.com betrouwbaar: de officiële, gratis bol-API (aanbevolen voor bol).**
+bol blokkeert alle automatische bezoeken; dit omzeilt dat netjes via bol's eigen API
+(productnaam, plaatje én prijs, op basis van het productnummer in de link). Kosten: niets.
+1. Meld je aan voor het gratis bol.com Partnerprogramma (partner.bol.com; goedkeuring kan even duren).
+2. Log in op login.bol.com → *Account* → blok **Open API** → *Toevoegen* → kopieer de **Client ID**
+   en klik *Toon secret* voor de **Client Secret**.
+3. Cloudflare → de **gifts**-Worker → *Settings* → *Variables and Secrets* → twee Secrets toevoegen:
+   `BOL_CLIENT_ID` en `BOL_CLIENT_SECRET` → *Deploy*.
+4. Test met `/gifts/debug?url=<bol-link>`: `bolApiKeysPresent` moet `true` zijn en bij de stap
+   `bol-api` staan de statuscodes (token / toEan / detail / media / offer).
+
 **F. Optioneel voor plaatjes van winkels die de Worker blokkeren (bol.com, HEMA, ...).**
 Dan vraagt de Worker het plaatje aan microlink.io. Zonder sleutel gebruikt hij het gratis
 adres (beperkt); met een gratis sleutel (microlink.io → account → API key) krijg je meer
@@ -143,6 +158,9 @@ ruimte. Instellen, precies zo:
 1. Cloudflare → *Workers & Pages* → de **gifts**-Worker → *Settings* → *Variables and Secrets*.
 2. *Add* → Type **Secret**, naam exact `MICROLINK_API_KEY` (hoofdletters, met underscore),
    waarde = je sleutel (zonder spaties). *Deploy*.
+   Heb je een tweede sleutel (ander account)? Zet die als Secret `MICROLINK_API_KEY_BACKUP`: de Worker
+   gebruikt hem automatisch zodra de eerste sleutel zijn quotum (429) bereikt heeft. Per productlink wordt
+   één microlink-aanroep gedaan, en alleen als de winkel de Worker zelf blokkeert.
 3. Plak de nieuwste `cloudflare/gifts/gifts_worker.js` in die Worker (*Edit code*) en klik *Deploy*.
    Nodig: oudere versies gebruikten het verkeerde microlink-adres, waarmee een sleutel niets deed.
 4. Test: open in je browser
@@ -151,8 +169,6 @@ ruimte. Instellen, precies zo:
    de reader r.jina.ai; de sleutel zelf wordt nooit getoond). Staat er `microlinkKeyPresent: false`,
    dan staat het Secret op de verkeerde Worker of is er niet op *Deploy* geklikt.
 5. Een eerder mislukt resultaat wordt niet meer 24 uur onthouden; ververs de pagina met Ctrl+F5.
-6. Blokkeert een winkel (bol.com) álle servers, dan werkt de **bladwijzer** op de cadeaus-pagina
-   altijd: hij draait in je eigen browser op de winkelpagina en geeft link, titel, prijs en plaatje door.
-   Bij een gewone link zonder foto/prijs vraagt de Worker nu automatisch ook de prijs op en bewaart hij het
+6. Bij een gewone link zonder foto/prijs vraagt de Worker automatisch ook de prijs op en bewaart hij het
    gevonden productplaatje als eigen foto van dat cadeau (telt mee voor de 20 uploads per dag).
    Optioneel: een gratis `JINA_API_KEY` (Secret, zelfde stappen als hierboven) geeft de reader-route meer ruimte.

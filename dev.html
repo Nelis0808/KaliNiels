@@ -177,6 +177,7 @@
           </div>
           <progress id="devAhSyncProgress" class="dev-progress hidden" value="0" max="1"></progress>
           <p id="devAhSyncStatus" class="dev-status" role="status"></p>
+          <p id="devAhLastSaved" class="dev-status" role="status"></p>
 
           <div id="devAhBrowserBox" class="dev-ah-browser hidden">
             <h3>Stappenplan: ophalen met je eigen browser (eenmalig)</h3>
@@ -194,6 +195,14 @@
               <textarea id="devAhScriptText" class="dev-ah-script" readonly rows="6" aria-label="Script voor de console"></textarea>
             </details>
           </div>
+        </div>
+
+        <!-- Cadeaus-cache: makes the gifts page fetch every picture / price lookup fresh (browser + Worker cache). -->
+        <div class="dev-panel">
+          <h2>🎁 Cadeaus-cache wissen</h2>
+          <p class="dev-panel-hint">Verouderde plaatjes of prijzen op de cadeaus-pagina? Hiermee worden alle opgeslagen plaatjes en zoekresultaten (in je browser én in de Worker-cache) als verouderd gemarkeerd en bij het volgende bezoek opnieuw opgehaald. Je cadeaus, eigen foto's en lijsten blijven staan.</p>
+          <button type="button" id="devGiftsCacheBtn" class="btn btn-outline btn-sm">Cadeaus-cache wissen</button>
+          <p id="devGiftsCacheStatus" class="dev-status" role="status"></p>
         </div>
 
         <!-- DANGER ZONE — nuclear option, wipes every localStorage key

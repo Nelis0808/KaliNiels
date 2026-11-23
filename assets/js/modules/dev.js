@@ -293,6 +293,30 @@ export function initDevPage() {
     return lists;
   }
 
+  // "Laatst opgehaald van AH.nl": komt uit de opgeslagen lijst (backupSavedAt). Staat alleen hier, niet op de AH-pagina zelf.
+  const ahLastSavedEl = document.getElementById('devAhLastSaved');
+  async function refreshAhLastSaved() {
+    if (!ahLastSavedEl) return;
+    const workerUrl = siteConfig.ahRecipes?.workerUrl || '';
+    if (!workerUrl || workerUrl.includes('YOUR-SUBDOMAIN')) {
+      ahLastSavedEl.textContent = '';
+      return;
+    }
+    try {
+      const first = (siteConfig.ahRecipes?.categories || [])[0];
+      const params = new URLSearchParams({ page: '0' });
+      if (first) params.set('type', first.type);
+      const response = await fetch(`${workerUrl}/recipes?${params.toString()}`);
+      const data = await response.json().catch(() => ({}));
+      const when = data && data.backupSavedAt ? new Date(data.backupSavedAt) : null;
+      ahLastSavedEl.textContent = when && !Number.isNaN(when.getTime())
+        ? `Laatst opgehaald van AH.nl: ${when.toLocaleString('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}.`
+        : 'Nog niets opgehaald van AH.nl.';
+    } catch {
+      ahLastSavedEl.textContent = '';
+    }
+  }
+
   async function ahFetchLive(workerUrl, list, page) {
     const params = new URLSearchParams({ page: String(page), type: list.type });
     if (list.query) params.set('query', list.query);
@@ -472,7 +496,10 @@ export function initDevPage() {
     ahSyncBtn.disabled = false;
     ahStopBtn.classList.add('hidden');
     ahProgress.classList.add('hidden');
+    refreshAhLastSaved();
   }
+
+  refreshAhLastSaved();
 
   ahImportFile?.addEventListener('change', async () => {
     const file = ahImportFile.files?.[0];
@@ -557,6 +584,7 @@ export function initDevPage() {
     ahSyncBtn.disabled = false;
     ahStopBtn.classList.add('hidden');
     ahProgress.classList.add('hidden');
+    refreshAhLastSaved();
   });
 
   // ---- Site-sessie ---------------------------------------------------------
@@ -575,6 +603,23 @@ export function initDevPage() {
   });
 
   renderSession();
+
+  // ---- Cadeaus-cache wissen ---------------------------------------------------
+  // Only sets a timestamp: gifts.js adds it to every image/meta request, which makes the browser's
+  // and the Worker's cached answers unreachable (new address = fresh lookup). Nothing is deleted.
+  document.getElementById('devGiftsCacheBtn')?.addEventListener('click', async () => {
+    const status = document.getElementById('devGiftsCacheStatus');
+    try {
+      localStorage.setItem('giftsCacheBustV1', String(Date.now()));
+      if (window.caches && caches.keys) {
+        const names = await caches.keys();
+        await Promise.all(names.map((name) => caches.delete(name)));
+      }
+      if (status) status.textContent = '✅ Cache gewist. Open de cadeaus-pagina (of ververs hem); alles wordt opnieuw opgehaald.';
+    } catch {
+      if (status) status.textContent = '❌ Kon de cache niet wissen (opslag niet beschikbaar in deze browser).';
+    }
+  });
 
   // ---- Alles wissen ---------------------------------------------------------
 

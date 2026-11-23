@@ -61,19 +61,28 @@
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const pause = () => sleep(OPTIONS.delayMinMs + Math.random() * (OPTIONS.delayMaxMs - OPTIONS.delayMinMs));
 
+  const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', euro: '€', eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë', agrave: 'à', aacute: 'á', acirc: 'â', auml: 'ä', iuml: 'ï', icirc: 'î', ouml: 'ö', ocirc: 'ô', uuml: 'ü', ucirc: 'û', ccedil: 'ç', ntilde: 'ñ', deg: '°', ndash: '–', mdash: '—', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', frac12: '½', frac14: '¼', frac34: '¾', times: '×' };
+  // Eén pass over &#x27; / &#39; / &quot; / &eacute; ... : "&#x27;Soto ayam&#x27;" wordt "'Soto ayam'".
+  function decodeEntitiesRaw(str) {
+    return String(str || '').replace(/&(?:#x([0-9a-f]+)|#(\d+)|([a-z][a-z0-9]*));/gi, (whole, hex, dec, name) => {
+      if (hex || dec) {
+        const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
+        try { return code === 160 ? ' ' : String.fromCodePoint(code); } catch { return whole; }
+      }
+      const known = NAMED_ENTITIES[name] !== undefined ? NAMED_ENTITIES[name] : NAMED_ENTITIES[name.toLowerCase()];
+      return known === undefined ? whole : known;
+    });
+  }
   function stripTags(html) {
-    return html
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"')
-      .replace(/&#0?39;|&apos;/gi, "'").replace(/&eacute;/gi, 'é')
-      .replace(/\s+/g, ' ').trim();
+    return decodeEntitiesRaw(
+      String(html || '')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+    ).replace(/\s+/g, ' ').trim();
   }
   function decodeEntities(str) {
-    return String(str || '')
-      .replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#0?39;|&apos;/gi, "'")
-      .replace(/&eacute;/gi, 'é').replace(/&nbsp;/gi, ' ').trim();
+    return decodeEntitiesRaw(str).trim();
   }
   function titleFromSlug(slug) {
     let clean = slug || '';

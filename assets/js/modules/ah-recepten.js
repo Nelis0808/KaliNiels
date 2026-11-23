@@ -57,7 +57,7 @@
 // fallback). The backups are filled by ONE button on dev.html ("Alles
 // ophalen van AH.nl"), which walks over every category and subcategory.
 // If AH blocks the Worker, nothing here changes: the backup stays.
-// "Meer laden" only appears when a next page is actually stored. Opening a
+// All stored pages are shown at once (no "Meer laden"). Opening a
 // recipe uses its own backup too: only the very first time a recipe is
 // opened does the Worker fetch its details from AH (and keeps them).
 // See ah_recepten_worker.js for the other half.
@@ -155,6 +155,37 @@ function pruneOldCaches() {
   }
 }
 
+// Text from AH sometimes arrives with HTML entities ("&#x27;Soto ayam&#x27;").
+// Decoded here, once, for every list/detail that comes in (Worker or this
+// device's own backup), so older stored data is shown correctly too.
+const NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', euro: '€', eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë', agrave: 'à', aacute: 'á', acirc: 'â', auml: 'ä', iuml: 'ï', icirc: 'î', ouml: 'ö', ocirc: 'ô', uuml: 'ü', ucirc: 'û', ccedil: 'ç', ntilde: 'ñ', deg: '°', ndash: '–', mdash: '—', hellip: '…', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', frac12: '½', frac14: '¼', frac34: '¾', times: '×' };
+
+export function decodeEntities(text) {
+  return String(text).replace(/&(?:#x([0-9a-f]+)|#(\d+)|([a-z][a-z0-9]*));/gi, (whole, hex, dec, name) => {
+    if (hex || dec) {
+      const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
+      try {
+        return code === 160 ? ' ' : String.fromCodePoint(code);
+      } catch {
+        return whole;
+      }
+    }
+    const known = NAMED_ENTITIES[name] ?? NAMED_ENTITIES[name.toLowerCase()];
+    return known === undefined ? whole : known;
+  });
+}
+
+function decodeDeep(value) {
+  if (typeof value === 'string') return value.includes('&') ? decodeEntities(value) : value;
+  if (Array.isArray(value)) return value.map(decodeDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [key, inner] of Object.entries(value)) out[key] = decodeDeep(inner);
+    return out;
+  }
+  return value;
+}
+
 async function requestJson(url) {
   const response = await fetch(url);
   const data = await response.json().catch(() => ({}));
@@ -163,7 +194,7 @@ async function requestJson(url) {
     err.sourceUrl = data.sourceUrl;
     throw err;
   }
-  return data;
+  return decodeDeep(data);
 }
 
 // GET /recipes: the stored backup of one list — never AH itself. The Worker's
@@ -179,7 +210,7 @@ async function fetchRecipeList(workerUrl, params) {
     const next = readBackup(`list:${nextParams.toString()}`);
     return Boolean(next && Array.isArray(next.payload.recipes) && next.payload.recipes.length);
   };
-  const fromLocal = () => ({ ...local.payload, fromBackup: true, backupSavedAt: local.savedAt, source: 'local', hasMore: localHasMore() });
+  const fromLocal = () => decodeDeep({ ...local.payload, fromBackup: true, backupSavedAt: local.savedAt, source: 'local', hasMore: localHasMore() });
 
   try {
     const data = await requestJson(`${workerUrl}/recipes?${params.toString()}`);
@@ -199,7 +230,7 @@ async function fetchRecipeList(workerUrl, params) {
 async function fetchRecipeDetailData(workerUrl, path) {
   const key = `detail:${path}`;
   const local = readBackup(key);
-  if (local) return local.payload;
+  if (local) return decodeDeep(local.payload);
 
   const data = await requestJson(`${workerUrl}/recipe?url=${encodeURIComponent(path)}`);
   writeBackup(key, data);
@@ -236,8 +267,6 @@ export function initAhRecepten() {
   const servingsInput = qs('#reptServingsInput', root);
   const statusEl = qs('#reptStatus', root);
   const resultsEl = qs('#reptResults', root);
-  const loadMoreBtn = qs('#reptLoadMore', root);
-  const backupInfoEl = qs('#reptBackupInfo', root);
 
   const modalOverlay = document.getElementById('reptModalOverlay');
   const modalClose = document.getElementById('reptModalClose');
@@ -326,7 +355,6 @@ export function initAhRecepten() {
     renderTabs();
     renderSubcategoryChips();
     searchRowEl.classList.toggle('hidden', mode === 'favorites');
-    setBackupInfo(null);
 
     if (mode === 'favorites') {
       renderFavoritesView();
@@ -337,11 +365,10 @@ export function initAhRecepten() {
       searchInput.focus();
       statusEl.textContent = 'Typ een zoekterm en druk op zoeken.';
       resultsEl.innerHTML = '';
-      loadMoreBtn.classList.add('hidden');
       return;
     }
 
-    runQuery({ replace: true });
+    runQuery();
   }
 
   // ---- Querying the Worker -----------------------------------------
@@ -368,66 +395,60 @@ export function initAhRecepten() {
     return [cat?.label, subcat?.label, state.query].filter(Boolean).join(' · ') || 'je selectie';
   }
 
-  // The line under the results: when the shown list was last retrieved from AH.
-  function setBackupInfo(data) {
-    const savedAt = data && data.backupSavedAt ? new Date(data.backupSavedAt).toLocaleString('nl-NL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
-    backupInfoEl.textContent = savedAt ? `Laatst opgehaald van AH.nl: ${savedAt}.` : '';
-  }
+  // Shows the stored backup of the current selection: ALL stored pages at once
+  // (AH itself is never contacted from here). A newer selection cancels an
+  // older one that is still loading.
+  let queryToken = 0;
+  const MAX_PAGES = 12; // safety net; the lists are normally 1-3 pages
 
-  // Shows the stored backup of the current selection (AH itself is never contacted from here).
-  async function runQuery({ replace }) {
+  async function runQuery() {
     if (state.mode === 'favorites') {
       renderFavoritesView();
       return;
     }
-    if (state.loading) return;
-    state.loading = true;
-
-    if (replace) {
-      state.page = 0;
-      resultsEl.innerHTML = '';
-    }
-
+    const token = (queryToken += 1);
+    resultsEl.innerHTML = '';
     statusEl.textContent = 'Bezig met laden…';
-    loadMoreBtn.classList.add('hidden');
 
     try {
-      const params = buildParams();
-      const data = await fetchRecipeList(workerUrl, params);
-      const recipes = Array.isArray(data.recipes) ? data.recipes : [];
+      let total = 0;
+      let count = 0;
+      let fallbackUsed = false;
+      let noBackup = false;
 
-      if (recipes.length === 0) {
-        if (replace) {
-          resultsEl.innerHTML = '';
-          statusEl.textContent = data.noBackup
-            ? `Nog niets opgeslagen voor ${describeSelection()}. Haal de recepten op via de dev-pagina (“Alles ophalen van AH.nl”).`
-            : 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.';
-          setBackupInfo(null);
-        } else {
-          statusEl.textContent = 'Geen recepten meer.';
+      for (let page = 0; page < MAX_PAGES; page += 1) {
+        state.page = page;
+        const data = await fetchRecipeList(workerUrl, buildParams());
+        if (token !== queryToken) return; // another selection was made meanwhile
+        const recipes = Array.isArray(data.recipes) ? data.recipes : [];
+        if (page === 0) {
+          noBackup = Boolean(data.noBackup);
+          count = Number(data.count) || 0;
+          fallbackUsed = Boolean(data.fallbackUsed);
         }
-        loadMoreBtn.classList.add('hidden');
+        if (recipes.length === 0) break;
+
+        recipes.forEach((recipe) => recipesById.set(recipe.id, recipe));
+        resultsEl.insertAdjacentHTML('beforeend', recipes.map(renderCard).join(''));
+        qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
+        total += recipes.length;
+        if (!data.hasMore) break;
+      }
+
+      if (total === 0) {
+        statusEl.textContent = noBackup
+          ? `Nog niets opgeslagen voor ${describeSelection()}. Haal de recepten op via de dev-pagina (“Alles ophalen van AH.nl”).`
+          : 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.';
         return;
       }
 
-      recipes.forEach((recipe) => recipesById.set(recipe.id, recipe));
-      resultsEl.insertAdjacentHTML('beforeend', recipes.map(renderCard).join(''));
-      qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
-
-      const shownCount = resultsEl.children.length;
-      let statusText = `${shownCount} recept${shownCount === 1 ? '' : 'en'} getoond${data.count ? ` (van ${data.count.toLocaleString('nl-NL')} totaal bij AH)` : ''}.`;
-      if (data.fallbackUsed) statusText += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
+      let statusText = `${total} recept${total === 1 ? '' : 'en'}${count > total ? ` (van ${count.toLocaleString('nl-NL')} totaal bij AH)` : ''}.`;
+      if (fallbackUsed) statusText += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
       statusEl.textContent = statusText;
-      setBackupInfo(data);
-      // "Meer laden" only exists while a further page is actually stored.
-      loadMoreBtn.classList.toggle('hidden', !data.hasMore);
     } catch (error) {
+      if (token !== queryToken) return;
       console.error('Recepten worker error:', error);
-      if (!replace) state.page = Math.max(0, state.page - 1);
       statusEl.textContent = `❌ Kon geen recepten laden (${error.message}). Probeer het later opnieuw.`;
-      loadMoreBtn.classList.add('hidden');
-    } finally {
-      state.loading = false;
     }
   }
 
@@ -489,7 +510,6 @@ export function initAhRecepten() {
   }
 
   function renderFavoritesView() {
-    loadMoreBtn.classList.add('hidden');
     if (favorites.length === 0) {
       resultsEl.innerHTML = '';
       statusEl.textContent = 'Nog geen favorieten opgeslagen — klik op het hartje bij een recept.';
@@ -658,7 +678,7 @@ export function initAhRecepten() {
     if (!chip) return;
     state.subcategoryId = chip.dataset.subcategory;
     renderSubcategoryChips();
-    runQuery({ replace: true });
+    runQuery();
   });
 
   function triggerSearch() {
@@ -666,10 +686,9 @@ export function initAhRecepten() {
     if (state.mode === 'search' && !state.query) {
       statusEl.textContent = 'Typ een zoekterm en druk op zoeken.';
       resultsEl.innerHTML = '';
-      loadMoreBtn.classList.add('hidden');
         return;
     }
-    runQuery({ replace: true });
+    runQuery();
   }
 
   searchBtn.addEventListener('click', triggerSearch);
@@ -685,11 +704,6 @@ export function initAhRecepten() {
       if (searchInput.value.trim().length === 0 || searchInput.value.trim().length >= 3) triggerSearch();
     }, 600)
   );
-
-  loadMoreBtn.addEventListener('click', () => {
-    state.page += 1;
-    runQuery({ replace: false });
-  });
 
   // Native number inputs also change value on mouse-wheel scroll while
   // focused, and browsers already draw their own up/down arrows on top
@@ -758,7 +772,7 @@ export function initAhRecepten() {
     pruneOldCaches();
     renderTabs();
     renderSubcategoryChips();
-    runQuery({ replace: true });
+    runQuery();
     loadFavorites().then(() => {
       // Sync the hearts on whatever is already on screen (or re-render the
       // Favorieten tab if that's the one that's open by now).

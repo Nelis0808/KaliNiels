@@ -2,7 +2,7 @@ import { siteConfig } from '../config.js';
 import { getAuth, currentPersonLabel, onAuthChange } from './auth.js';
 import { escapeHtml } from './utils.js';
 import { awardCollectible } from './collectibles.js';
-import { isTimerHidden, setTimerHidden } from './study-timer-badge.js';
+import { isTimerHidden, setTimerHidden, expireStaleTimer } from './study-timer-badge.js';
 
 // Achter-de-schermen spelbalans. Niet als instellingen op de website tonen.
 const REWARD_CONFIG = Object.freeze({
@@ -237,6 +237,7 @@ export function initStudyTimer() {
   const loggedOutMarkup = `<div class="study-login card-like"><h1>Studie Timer</h1><p>Log in via <strong>Profiel</strong> rechtsboven om je eigen studieplanning en boom te gebruiken.</p></div>`;
   const loggedInMarkup = root.innerHTML;
 
+  expireStaleTimer(); // site closed for over an hour -> a timer left running is stopped before it is read
   let all = readAll();
   const auth = getAuth();
   let selectedWho = auth?.who || null;
@@ -755,6 +756,18 @@ export function initStudyTimer() {
     running = true;
     tickFrom(saved.endsAt);
   }
+
+  // The header badge found that the site had been closed/asleep for over an hour while this
+  // page was still open: stop here too (otherwise the next save() would bring the timer back).
+  window.addEventListener('study-timer:expired', () => {
+    if (!state || !state.runningTimer) return;
+    clearInterval(interval);
+    running = false;
+    state.runningTimer = null;
+    setRemainingFromStep();
+    save();
+    renderTimer();
+  });
 
   function advanceStep() {
     const preset = selectedPreset();

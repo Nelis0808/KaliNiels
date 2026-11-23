@@ -515,15 +515,6 @@ body.rpt-modal-open {
   font-weight: 700;
 }
 
-/* == BACKUP-INFO (wanneer de getoonde lijst voor het laatst is opgehaald) == */
-.rpt-backup-info {
-  margin: var(--space-4) auto 0;
-  max-width: 60ch;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--fs-sm);
-}
-
 /* Stack ingredients/steps on narrower screens */
 @media (max-width: 760px) {
   .rpt-modal-columns {

@@ -204,6 +204,10 @@ export function initGifts() {
   // gift id -> timestamp of its last upload (cache-buster). Kept in localStorage too, so
   // after a page reload the browser doesn't fall back to an older cached answer for the
   // same address (e.g. the "no picture" reply from before the photo was uploaded).
+  // Set by the dev page ("Cadeaus-cache wissen"): a timestamp that is added to every image/meta request,
+  // so the browser AND the Worker's edge cache treat them as new addresses and fetch everything fresh.
+  let cacheBust = 0;
+  try { cacheBust = Number(localStorage.getItem('giftsCacheBustV1')) || 0; } catch { cacheBust = 0; }
   const VERSION_STORAGE_KEY = 'giftPhotoVersionsV1';
   let imageVersion = {};
   try { imageVersion = JSON.parse(localStorage.getItem(VERSION_STORAGE_KEY) || '{}') || {}; } catch { imageVersion = {}; }
@@ -414,7 +418,7 @@ export function initGifts() {
 
   // Fetches a gift's thumbnail (custom photo or the link's preview image) via the Worker
   async function loadGiftImage(gift, imageEl) {
-    const version = imageVersion[gift.id] || 0;
+    const version = Math.max(imageVersion[gift.id] || 0, cacheBust);
     const key = `${gift.id}|${gift.url}|${version}`;
     const showBlob = (blob) => {
       const objectUrl = URL.createObjectURL(blob);
@@ -516,7 +520,8 @@ export function initGifts() {
   // Asks the Worker what it can learn about a pasted link: { title, price, imageUrl } (all optional)
   async function fetchMetaFor(url) {
     try {
-      const response = await fetch(`${workerUrl}/gifts/meta?url=${encodeURIComponent(url)}`);
+      // no-store: an older answer without price must never be reused from the browser's own cache
+      const response = await fetch(`${workerUrl}/gifts/meta?url=${encodeURIComponent(url)}&v=3${cacheBust ? `&cb=${cacheBust}` : ''}`, { cache: 'no-store' });
       if (!response.ok) return {};
       return (await response.json()) || {};
     } catch {
@@ -736,7 +741,7 @@ export function initGifts() {
       showFilename('Afbeelding van website');
     }
 
-    photoCtl[person] = { clear: clearPhoto, setSrc: setPhotoSrc };
+    photoCtl[person] = { clear: clearPhoto };
 
     photoInput?.addEventListener('change', () => {
       setPhotoFile(photoInput.files?.[0] || null);
@@ -840,89 +845,6 @@ export function initGifts() {
       cancelBtn.addEventListener('click', () => exitEditMode(columnEls[person]));
     }
   });
-
-  // ---- Bladwijzer: een cadeau uit een winkel overnemen -------------------------
-  // Sommige winkels (bol.com, HEMA, ...) blokkeren onze server, dus daar komt soms geen
-  // plaatje of prijs uit. De bladwijzer draait in JOUW browser op de winkelpagina zelf, leest
-  // daar link, titel, plaatje en prijs, en opent deze pagina met `#add=<gegevens>`. Hieronder
-  // vang je dat op en vul je het formulier van Kalina of Niels in.
-  const bookmarkletEl = qs('#giftsBookmarklet', root);
-  const incomingEl = qs('#giftsIncoming', root);
-  const incomingTitleEl = qs('#giftsIncomingTitle', root);
-  let incoming = null;
-
-  function bookmarkletSource(pageUrl) {
-    // Leesbare broncode; wordt hieronder als javascript:-adres in de knop gezet.
-    return `(function(){
-var q=function(s){var e=document.querySelector(s);return (e&&e.content)||''};
-var img=q('meta[property="og:image"]')||q('meta[name="twitter:image"]')||'';
-var title=q('meta[property="og:title"]')||document.title||'';
-var price=q('meta[property="product:price:amount"]')||q('meta[property="og:price:amount"]')||'';
-function walk(n,d){if(!n||d>6)return;if(Array.isArray(n)){n.forEach(function(x){walk(x,d+1)});return}if(typeof n!=='object')return;
-if(!price&&n.price!=null)price=String(n.price);if(!price&&n.lowPrice!=null)price=String(n.lowPrice);
-if(!img&&n.image){var i=[].concat(n.image)[0];img=typeof i==='string'?i:((i&&i.url)||'')}
-walk(n.offers,d+1);walk(n['@graph'],d+1)}
-[].forEach.call(document.querySelectorAll('script[type="application/ld+json"]'),function(s){try{walk(JSON.parse(s.textContent),0)}catch(e){}});
-if(!price){var t=(document.body.innerText||'').match(/prijs van dit product is (\\d+) euro(?: en (\\d+) cent)?/i);if(t)price=t[1]+'.'+(t[2]||'00')}
-if(!price){var p=document.querySelector('[itemprop=price]');if(p)price=p.content||p.textContent||''}
-if(!img){var g=document.querySelector('main img,[class*=product] img');if(g)img=g.currentSrc||g.src||''}
-try{img=img?new URL(img,location.href).href:''}catch(e){img=''}
-var d={u:location.href.split('#')[0],t:title.trim(),i:img,p:String(price).trim()};
-window.open(${JSON.stringify(pageUrl)}+'#add='+encodeURIComponent(JSON.stringify(d)),'_blank');
-})()`;
-  }
-
-  if (bookmarkletEl) {
-    const pageUrl = `${location.origin}${location.pathname}`;
-    bookmarkletEl.href = 'javascript:' + encodeURIComponent(bookmarkletSource(pageUrl));
-    bookmarkletEl.addEventListener('click', (event) => {
-      event.preventDefault();
-      alert('Sleep deze knop naar je bladwijzerbalk (niet hier klikken). Klik hem daarna op de pagina van het product in de winkel.');
-    });
-  }
-
-  function readIncoming() {
-    const match = location.hash.match(/^#add=(.+)$/);
-    if (!match) return;
-    try {
-      const data = JSON.parse(decodeURIComponent(match[1]));
-      if (!data || typeof data.u !== 'string' || !/^https?:\/\//i.test(data.u)) return;
-      incoming = {
-        url: data.u.slice(0, 2000),
-        title: String(data.t || '').slice(0, 200),
-        image: /^https?:\/\//i.test(data.i || '') ? String(data.i) : '',
-        price: parsePriceInput(String(data.p || '').replace(/[^\d.,]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')),
-      };
-    } catch {
-      return;
-    }
-    history.replaceState(null, '', location.pathname + location.search);
-    incomingTitleEl.textContent = incoming.title || incoming.url;
-    incomingEl.classList.remove('hidden');
-    incomingEl.scrollIntoView({ block: 'center' });
-  }
-
-  incomingEl?.addEventListener('click', (event) => {
-    const personBtn = event.target.closest('[data-incoming-person]');
-    if (personBtn && incoming) {
-      const person = personBtn.dataset.incomingPerson;
-      const { form } = columnEls[person];
-      qs('.gf-add-url', form).value = incoming.url;
-      qs('.gf-add-title', form).value = incoming.title;
-      const priceInput = qs('.gf-add-price', form);
-      if (priceInput && incoming.price !== null) priceInput.value = String(incoming.price);
-      photoCtl[person]?.clear();
-      if (incoming.image) photoCtl[person]?.setSrc(incoming.image);
-      incomingEl.classList.add('hidden');
-      incoming = null;
-      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (event.target.closest('#giftsIncomingCancel')) {
-      incomingEl.classList.add('hidden');
-      incoming = null;
-    }
-  });
-
-  readIncoming();
 
   columnsEl.addEventListener('change', (event) => {
     if (!event.target.matches('.gf-reward-select')) return;
