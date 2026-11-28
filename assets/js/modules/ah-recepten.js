@@ -65,6 +65,7 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml, debounce, preventNumberInputScroll } from './utils.js';
+import { setupRecipeToList } from './recipe-to-list.js';
 
 const SERVINGS_STORAGE_KEY = 'ah-recepten-personen';
 const MIN_SERVINGS = 1;
@@ -237,6 +238,59 @@ async function fetchRecipeDetailData(workerUrl, path) {
   return data;
 }
 
+// ---- Zoeken in de opgeslagen lijsten --------------------------------
+// De backups zijn per exacte selectie bewaard (categorie [+ subcategorie]),
+// dus een vrije zoekterm als "kip" bestaat daar nooit als eigen lijst. Daarom
+// wordt er bij een zoekterm NIET naar een (niet bestaande) opgeslagen lijst
+// gevraagd, maar worden alle relevante opgeslagen lijsten samengevoegd en
+// hier in de browser op woorden doorzocht.
+
+const SEARCH_MAX_PAGES = 12;
+
+// Zelfde volgorde van parameters als buildParams() (de backup-sleutel is de
+// letterlijke querystring, dus de volgorde moet kloppen).
+function listParams(type, query, page) {
+  const params = new URLSearchParams({ page: String(page) });
+  if (type) params.set('type', type);
+  if (query) params.set('query', query);
+  return params;
+}
+
+// Alle pagina's van één opgeslagen lijst. Eerst de kopie op dit apparaat
+// (geen netwerk), anders de Worker.
+async function loadWholeStoredList(workerUrl, type, query) {
+  const recipes = [];
+  for (let page = 0; page < SEARCH_MAX_PAGES; page += 1) {
+    const params = listParams(type, query, page);
+    const local = readBackup(`list:${params.toString()}`);
+    let data;
+    if (local && Array.isArray(local.payload.recipes) && local.payload.recipes.length) {
+      const next = readBackup(`list:${listParams(type, query, page + 1).toString()}`);
+      data = decodeDeep({ ...local.payload, hasMore: Boolean(next && next.payload.recipes?.length) });
+    } else {
+      try {
+        data = await fetchRecipeList(workerUrl, params);
+      } catch {
+        break;
+      }
+    }
+    const batch = Array.isArray(data.recipes) ? data.recipes : [];
+    if (batch.length === 0) break;
+    recipes.push(...batch);
+    if (!data.hasMore) break;
+  }
+  return recipes;
+}
+
+function normalizeText(value) {
+  return String(value ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function numberOf(value) {
+  const n = parseFloat(String(value ?? '').replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function initAhRecepten() {
   // See the comment on <section id="ahReceptenApp"> in ah-recepten.html
   // for why this must NOT be 'receptenApp' (recepten.js's own root id).
@@ -267,6 +321,10 @@ export function initAhRecepten() {
   const servingsInput = qs('#reptServingsInput', root);
   const statusEl = qs('#reptStatus', root);
   const resultsEl = qs('#reptResults', root);
+  const sortRowEl = qs('#reptSortRow', root);
+  const sortSelect = qs('#reptSortSelect', root);
+  const filterFastBtn = qs('#reptFilterFast', root);
+  const filterLightBtn = qs('#reptFilterLight', root);
 
   const modalOverlay = document.getElementById('reptModalOverlay');
   const modalClose = document.getElementById('reptModalClose');
@@ -355,6 +413,7 @@ export function initAhRecepten() {
     renderTabs();
     renderSubcategoryChips();
     searchRowEl.classList.toggle('hidden', mode === 'favorites');
+    sortRowEl.classList.toggle('hidden', mode === 'favorites');
 
     if (mode === 'favorites') {
       renderFavoritesView();
@@ -362,6 +421,7 @@ export function initAhRecepten() {
     }
 
     if (mode === 'search') {
+      currentRecipes = [];
       searchInput.focus();
       statusEl.textContent = 'Typ een zoekterm en druk op zoeken.';
       resultsEl.innerHTML = '';
@@ -397,13 +457,83 @@ export function initAhRecepten() {
 
   // Shows the stored backup of the current selection: ALL stored pages at once
   // (AH itself is never contacted from here). A newer selection cancels an
-  // older one that is still loading.
+  // older one that is still loading. With a search word: see runSearch().
   let queryToken = 0;
   const MAX_PAGES = 12; // safety net; the lists are normally 1-3 pages
+
+  // What is currently loaded (before sorting/filtering) + how to describe it.
+  let currentRecipes = [];
+  let currentMeta = { count: 0, fallbackUsed: false, emptyMessage: '' };
+
+  // Sorteren + snelfilters (alleen voor wat nu op het scherm staat).
+  const FAST_MAX_MINUTES = 30;
+  const LIGHT_MAX_KCAL = 500;
+  const sortState = { key: 'default', fast: false, light: false };
+
+  const poolCache = new Map(); // "type|query" -> recipes of that stored list
+
+  function syncSortControls() {
+    sortSelect.value = sortState.key;
+    filterFastBtn.setAttribute('aria-pressed', String(sortState.fast));
+    filterLightBtn.setAttribute('aria-pressed', String(sortState.light));
+  }
+
+  // Applies filters + sort to `currentRecipes` and draws the cards + status.
+  function renderResults() {
+    currentRecipes.forEach((recipe) => recipesById.set(recipe.id, recipe));
+
+    if (currentRecipes.length === 0) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = currentMeta.emptyMessage || 'Geen recepten gevonden.';
+      return;
+    }
+
+    let list = currentRecipes.slice();
+    if (sortState.fast) list = list.filter((r) => { const m = numberOf(r.cookTimeMinutes); return m !== null && m <= FAST_MAX_MINUTES; });
+    if (sortState.light) list = list.filter((r) => { const k = numberOf(r.kcal); return k !== null && k <= LIGHT_MAX_KCAL; });
+
+    const valueOf = { kcal: (r) => numberOf(r.kcal), time: (r) => numberOf(r.cookTimeMinutes) }[sortState.key];
+    let missing = 0;
+    if (valueOf) {
+      list = list
+        .map((recipe, index) => ({ recipe, index, value: valueOf(recipe) }))
+        .sort((x, y) => {
+          if (x.value === null && y.value === null) return x.index - y.index;
+          if (x.value === null) return 1;
+          if (y.value === null) return -1;
+          return x.value - y.value || x.index - y.index;
+        })
+        .map((entry) => { if (entry.value === null) missing += 1; return entry.recipe; });
+    } else if (sortState.key === 'title') {
+      list.sort((x, y) => String(x.title).localeCompare(String(y.title), 'nl'));
+    }
+
+    if (list.length === 0) {
+      resultsEl.innerHTML = '';
+      statusEl.textContent = 'Geen recepten voldoen aan de gekozen filters. Zet een filter uit om weer recepten te zien.';
+      return;
+    }
+
+    resultsEl.innerHTML = list.map(renderCard).join('');
+    qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
+
+    const total = currentRecipes.length;
+    const filtered = list.length !== total;
+    let text = `${list.length} recept${list.length === 1 ? '' : 'en'}${filtered ? ` (van ${total})` : ''}`;
+    if (!filtered && currentMeta.count > total) text += ` (van ${currentMeta.count.toLocaleString('nl-NL')} totaal bij AH)`;
+    text += '.';
+    if (missing) text += ` ${missing} zonder ${sortState.key === 'kcal' ? 'kcal-gegevens' : 'tijd'} staan onderaan.`;
+    if (currentMeta.fallbackUsed) text += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
+    statusEl.textContent = text;
+  }
 
   async function runQuery() {
     if (state.mode === 'favorites') {
       renderFavoritesView();
+      return;
+    }
+    if (state.query) {
+      runSearch();
       return;
     }
     const token = (queryToken += 1);
@@ -411,7 +541,7 @@ export function initAhRecepten() {
     statusEl.textContent = 'Bezig met laden…';
 
     try {
-      let total = 0;
+      const collected = [];
       let count = 0;
       let fallbackUsed = false;
       let noBackup = false;
@@ -427,28 +557,95 @@ export function initAhRecepten() {
           fallbackUsed = Boolean(data.fallbackUsed);
         }
         if (recipes.length === 0) break;
-
-        recipes.forEach((recipe) => recipesById.set(recipe.id, recipe));
-        resultsEl.insertAdjacentHTML('beforeend', recipes.map(renderCard).join(''));
-        qsa('.fade-up', resultsEl).forEach((el) => el.classList.add('visible'));
-        total += recipes.length;
+        collected.push(...recipes);
         if (!data.hasMore) break;
       }
 
-      if (total === 0) {
-        statusEl.textContent = noBackup
+      currentRecipes = collected;
+      currentMeta = {
+        count,
+        fallbackUsed,
+        emptyMessage: noBackup
           ? `Nog niets opgeslagen voor ${describeSelection()}. Haal de recepten op via de dev-pagina (“Alles ophalen van AH.nl”).`
-          : 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.';
-        return;
-      }
-
-      let statusText = `${total} recept${total === 1 ? '' : 'en'}${count > total ? ` (van ${count.toLocaleString('nl-NL')} totaal bij AH)` : ''}.`;
-      if (fallbackUsed) statusText += ' Categorie niet exact herkend bij AH — er is op trefwoord gezocht.';
-      statusEl.textContent = statusText;
+          : 'Geen recepten gevonden. Probeer een andere subcategorie of zoekterm.',
+      };
+      renderResults();
     } catch (error) {
       if (token !== queryToken) return;
       console.error('Recepten worker error:', error);
       statusEl.textContent = `❌ Kon geen recepten laden (${error.message}). Probeer het later opnieuw.`;
+    }
+  }
+
+  // Which stored lists to search through for the current screen:
+  //  - a category + subcategory chosen -> just that stored list
+  //  - a category                       -> its main list + all its subcategories
+  //  - the Zoeken tab                   -> every category (main list + subcategories)
+  // `tag` = extra words a recipe of that list counts as matching (a recipe
+  // from the "Pasta · kip" list is a chicken recipe even if its title says
+  // something else), so "kip" also finds those.
+  function searchSpecs() {
+    const cat = state.mode === 'category' ? activeCategory() : null;
+    const sub = cat?.subcategories?.find((s) => s.id === state.subcategoryId);
+    if (cat && sub) return [{ type: cat.type, query: sub.query, tag: `${sub.query} ${sub.label}` }];
+
+    const specs = [];
+    (cat ? [cat] : categories).forEach((c) => {
+      specs.push({ type: c.type, query: '', tag: c.label });
+      (c.subcategories || []).forEach((s) => specs.push({ type: c.type, query: s.query, tag: `${s.query} ${s.label}` }));
+    });
+    return specs;
+  }
+
+  async function runSearch() {
+    const token = (queryToken += 1);
+    resultsEl.innerHTML = '';
+    const words = normalizeText(state.query).split(/\s+/).filter(Boolean);
+    const specs = searchSpecs();
+    const pool = new Map(); // id -> { recipe, hay }
+
+    try {
+      let done = 0;
+      statusEl.textContent = `Doorzoeken… (0/${specs.length} lijsten)`;
+      for (let i = 0; i < specs.length; i += 4) {
+        const chunk = specs.slice(i, i + 4);
+        const lists = await Promise.all(chunk.map(async (spec) => {
+          const key = `${spec.type}|${spec.query}`;
+          if (!poolCache.has(key)) poolCache.set(key, await loadWholeStoredList(workerUrl, spec.type, spec.query));
+          return { spec, recipes: poolCache.get(key) };
+        }));
+        if (token !== queryToken) return;
+        lists.forEach(({ spec, recipes }) => {
+          recipes.forEach((recipe) => {
+            const extra = `${spec.tag} ${recipe.title} ${recipe.category || ''} ${recipe.subcategory || ''}`;
+            const entry = pool.get(recipe.id);
+            if (entry) entry.hay += ` ${spec.tag}`;
+            else pool.set(recipe.id, { recipe, hay: extra });
+          });
+        });
+        done += chunk.length;
+        statusEl.textContent = `Doorzoeken… (${done}/${specs.length} lijsten)`;
+      }
+
+      const matches = [];
+      pool.forEach(({ recipe, hay }) => {
+        const haystack = normalizeText(hay);
+        if (words.every((word) => haystack.includes(word))) matches.push(recipe);
+      });
+
+      currentRecipes = matches;
+      currentMeta = {
+        count: 0,
+        fallbackUsed: false,
+        emptyMessage: pool.size === 0
+          ? 'Er is nog niets opgeslagen om in te zoeken. Haal de recepten op via de dev-pagina (“Alles ophalen van AH.nl”).'
+          : `Geen recepten gevonden voor “${state.query}”. Probeer een ander woord.`,
+      };
+      renderResults();
+    } catch (error) {
+      if (token !== queryToken) return;
+      console.error('Zoeken mislukt:', error);
+      statusEl.textContent = `❌ Zoeken mislukt (${error.message}). Probeer het later opnieuw.`;
     }
   }
 
@@ -705,6 +902,21 @@ export function initAhRecepten() {
     }, 600)
   );
 
+  sortSelect.addEventListener('change', () => {
+    sortState.key = sortSelect.value;
+    if (state.mode !== 'favorites') renderResults();
+  });
+  filterFastBtn.addEventListener('click', () => {
+    sortState.fast = !sortState.fast;
+    syncSortControls();
+    if (state.mode !== 'favorites') renderResults();
+  });
+  filterLightBtn.addEventListener('click', () => {
+    sortState.light = !sortState.light;
+    syncSortControls();
+    if (state.mode !== 'favorites') renderResults();
+  });
+
   // Native number inputs also change value on mouse-wheel scroll while
   // focused, and browsers already draw their own up/down arrows on top
   // of the custom −/+ buttons here — neither is wanted (see recepten.css
@@ -765,11 +977,34 @@ export function initAhRecepten() {
     renderScaledIngredients();
   });
 
+  // 🛒 Dit gerecht als nieuw boodschappenlijstje (dialoog + bevestiging +
+  // melding): zie recipe-to-list.js. Gebruikt de hoeveelheden zoals ze nu
+  // in de popup staan (al geschaald naar het gekozen aantal personen).
+  setupRecipeToList({
+    button: document.getElementById('reptModalAddToList'),
+    getRecipe: () => {
+      if (!currentDetail) return null;
+      const target = clampServings(parseInt(modalServingsInput.value, 10));
+      const ratio = target / (currentDetail.servings || 4);
+      return {
+        title: currentDetail.title || 'Recept',
+        servings: target,
+        lines: (currentDetail.ingredients || []).map((ingredient) => (
+          ingredient.quantity == null
+            ? String(ingredient.raw || '').trim()
+            : `${formatQuantity(ingredient.quantity * ratio)} ${ingredient.rest || ''}`.trim()
+        )).filter(Boolean),
+      };
+    },
+  });
+
+
   // ---- Initial load --------------------------------------------------
   // Favorites are fetched in parallel instead of awaited first: a slow or
   // failing favorites request must never hold up the recipe grid itself.
   (function init() {
     pruneOldCaches();
+    syncSortControls();
     renderTabs();
     renderSubcategoryChips();
     runQuery();

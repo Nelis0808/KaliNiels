@@ -378,6 +378,9 @@ body.rpt-modal-open {
 
 .rpt-modal-title {
   margin: 0;
+  /* Houdt de titel vrij van de sluitknop (✕) rechtsboven, ook als er
+     geen hero-foto boven de titel staat (zoals in recepten.html). */
+  padding-right: calc(36px + var(--space-3));
 }
 
 .rpt-modal-description {
@@ -514,6 +517,139 @@ body.rpt-modal-open {
   color: inherit;
   font-weight: 700;
 }
+
+.rpt-modal-ingredients,
+.rpt-modal-steps {
+  /* Dit zijn <section>-elementen: zonder deze reset kregen ze de globale
+     section-padding (layout.css, --space-9 boven en onder) = een groot gat. */
+  padding: 0;
+}
+
+/* Knoppen onderaan de popup: boodschappenlijstje boven de bron-link */
+.rpt-modal-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+/* Sorteerrij (AH-Recepten) */
+.rpt-sort-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.rpt-sort-row.hidden { display: none; }
+.rpt-sort-row label { font-weight: 700; font-size: var(--fs-sm); }
+.rpt-sort-row select {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+.rpt-sort-row .rpt-chip[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Breder op laptop/desktop: meer tekst naast elkaar, maar nog steeds
+   ruimte aan beide kanten om naast de popup te klikken (= sluiten). */
+@media (min-width: 1000px) {
+  .rpt-modal-card { width: min(86vw, 1000px); }
+  .rpt-modal-columns { grid-template-columns: 1fr 1.6fr; }
+}
+
+/* == "NAAR BOODSCHAPPENLIJSTJE" DIALOOG + MELDING ==
+   Dialoog ligt boven de receptpopup (z-overlay + 10), de melding
+   rechtsboven onder de navbar. Gebouwd door recipe-to-list.js. */
+.rpt-list-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-overlay) + 10);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5) var(--space-4);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+.rpt-list-card {
+  width: min(94vw, 520px);
+  margin: var(--space-7) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+}
+.rpt-list-card h3 { margin: 0 0 var(--space-2); }
+.rpt-list-intro { margin: 0 0 var(--space-4); color: var(--color-text-muted); font-size: var(--fs-sm); }
+.rpt-list-label { display: block; font-weight: 700; font-size: var(--fs-sm); margin-bottom: var(--space-1); }
+.rpt-list-card input[type='text'] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  min-height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+.rpt-list-rows {
+  list-style: none;
+  margin: var(--space-4) 0 var(--space-3);
+  padding: 0;
+  max-height: 42vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.rpt-list-row { display: flex; align-items: center; gap: var(--space-2); }
+.rpt-list-row input[type='checkbox'] { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--color-primary); }
+.rpt-list-row.is-off input[type='text'] { text-decoration: line-through; opacity: 0.5; }
+.rpt-list-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
+.rpt-list-error { color: var(--color-danger); font-size: var(--fs-sm); min-height: 1.2em; margin: var(--space-2) 0 0; }
+.rpt-list-summary { padding-left: 1.2em; margin: var(--space-3) 0; font-size: var(--fs-sm); color: var(--color-text-muted); }
+
+.rpt-toast {
+  position: fixed;
+  right: var(--space-4);
+  z-index: calc(var(--z-overlay) + 20);
+  max-width: min(92vw, 360px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 5px solid var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  animation: rpt-toast-in 0.3s ease both;
+}
+.rpt-toast a { color: inherit; text-decoration: none; display: block; flex: 1; }
+.rpt-toast a:hover strong, .rpt-toast a:focus-visible strong { text-decoration: underline; }
+.rpt-toast strong { display: block; }
+.rpt-toast small { color: var(--color-text-muted); }
+.rpt-toast button {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--radius-full);
+  background: var(--color-bg); color: var(--color-text); cursor: pointer;
+}
+@keyframes rpt-toast-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .rpt-toast { animation: none; } }
 
 /* Stack ingredients/steps on narrower screens */
 @media (max-width: 760px) {

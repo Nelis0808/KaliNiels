@@ -1,0 +1,363 @@
+/* =============================================================
+   PAGE: dealtjes.html
+   -------------------------------------------------------------
+   Categorie-blokken met een kaartenraster, plus één popup voor
+   alle formulieren. Laadt naast gifts.css: de foto-knop, het
+   voorbeeldplaatje en de sleep-zone (.gf-add-photo-label,
+   .gf-photo-preview, .gf-dropzone-hint, .gf-config-warning) komen
+   daar vandaan, zodat het uploaden er hetzelfde uitziet.
+   ============================================================= */
+
+#dealtjesApp {
+  padding-bottom: var(--space-8);
+}
+
+.dl-status {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.dl-status.dl-status-error { color: var(--color-danger); }
+
+.dl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-6);
+}
+.dl-view-toggle { display: inline-flex; gap: var(--space-2); }
+.dl-toolbar .btn[aria-pressed='true'],
+.dl-edit-toggle[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* == CATEGORY BLOCK == */
+.dl-categories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dl-category {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+}
+
+.dl-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.dl-category-title {
+  margin: 0;
+  font-size: var(--fs-h3);
+  overflow-wrap: anywhere;
+}
+
+.dl-category-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dl-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+.dl-icon-btn:hover:not(:disabled),
+.dl-icon-btn:focus-visible:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.dl-icon-btn:disabled { opacity: 0.35; cursor: default; }
+.dl-icon-btn.dl-danger:hover:not(:disabled),
+.dl-icon-btn.dl-danger:focus-visible:not(:disabled) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-white);
+}
+
+/* Dagkeuze-chips (zelfde look als de subcategorie-chips op recepten) */
+.dl-day-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.dl-chip {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
+}
+.dl-chip:hover, .dl-chip:focus-visible { border-color: var(--color-primary); color: var(--color-primary); }
+.dl-chip[aria-selected='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* == CARDS == */
+.dl-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* een los kaartje (of een halve laatste rij) staat in het midden */
+  gap: var(--space-4);
+}
+
+.dl-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  /* Maximaal 4 per rij: vier kaarten + drie tussenruimtes = 100% */
+  flex: 0 0 calc((100% - 3 * var(--space-4)) / 4);
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+.dl-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+/* Logo's staan altijd op wit: de meeste zijn voor een lichte achtergrond gemaakt */
+.dl-card-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  padding: var(--space-3);
+  background: #fff;
+}
+.dl-card-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+a.dl-card-image { cursor: pointer; }
+
+.dl-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  flex: 1;
+  min-width: 0;
+}
+.dl-card-title { margin: 0; font-size: var(--fs-lg); overflow-wrap: anywhere; }
+.dl-card-line { margin: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.dl-card-label { font-weight: 700; color: var(--color-text-muted); margin-right: var(--space-1); }
+.dl-card-desc { margin: 0; color: var(--color-text-muted); font-size: var(--fs-sm); white-space: pre-line; overflow-wrap: anywhere; }
+.dl-card-extra-img { max-width: 100%; max-height: 140px; object-fit: contain; border-radius: var(--radius-sm); background: #fff; }
+.dl-card-link { align-self: center; text-decoration: none; }
+.dl-card-cat { margin: 0; font-size: 0.75rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.dl-days, .dl-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+.dl-day, .dl-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.dl-day.dl-day-today {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.dl-card-actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+}
+.dl-card-actions .dl-icon-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #191970;
+}
+
+.dl-category-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.dl-no-items { color: var(--color-text-muted); text-align: center; padding: var(--space-4) 0; }
+
+/* == MODAL == */
+.dl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5) var(--space-4);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  overflow-y: auto;
+}
+.dl-modal-overlay.hidden { display: none; }
+body.dl-modal-open { overflow: hidden; }
+
+.dl-modal-card {
+  position: relative;
+  width: min(94vw, 640px);
+  margin: var(--space-6) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+}
+.dl-modal-title { margin: 0 0 var(--space-4); padding-right: 48px; font-size: var(--fs-h3); }
+.dl-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.dl-modal-close:hover, .dl-modal-close:focus-visible { background: var(--color-danger); color: var(--color-white); }
+
+/* == FORMS IN THE MODAL == */
+.dl-form { display: flex; flex-direction: column; gap: var(--space-4); }
+.dl-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.dl-label { font-weight: 700; font-size: var(--fs-sm); color: var(--color-text-muted); }
+.dl-form input[type='text'],
+.dl-form input[type='url'],
+.dl-form select,
+.dl-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  min-height: 44px;
+}
+.dl-form textarea { min-height: 90px; }
+
+.dl-row { display: flex; gap: var(--space-3); }
+.dl-row .dl-emoji-input { width: 72px; flex: 0 0 72px; text-align: center; font-size: 1.3rem; }
+
+.dl-form-error { color: var(--color-danger); font-size: var(--fs-sm); min-height: 1.2em; margin: 0; }
+.dl-form-buttons { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: center; }
+.dl-center { display: flex; justify-content: center; }
+.dl-center-text { text-align: center; max-width: none; }
+.dl-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
+.dl-picker-btn { flex: 0 1 190px; }
+.dl-picker-btn { text-align: center; }
+.btn.dl-btn-danger { border-color: var(--color-danger); color: var(--color-danger); }
+.btn.dl-btn-danger:hover, .btn.dl-btn-danger:focus-visible { background: var(--color-danger); color: var(--color-white); }
+
+/* Template picker ("wat voor soort items?") */
+.dl-templates { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--space-3); }
+.dl-template {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.dl-template:hover, .dl-template:focus-visible { border-color: var(--color-primary); }
+.dl-template[aria-pressed='true'] { border-color: var(--color-primary); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.dl-template strong { display: block; }
+.dl-template span { display: block; font-size: var(--fs-sm); color: var(--color-text-muted); }
+
+/* Field editor (categorie aanpassen) */
+.dl-fields { display: flex; flex-direction: column; gap: var(--space-2); }
+.dl-field-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+.dl-field-row-main { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; min-width: 0; }
+.dl-field-row-main input[type='text'] { flex: 1 1 140px; min-height: 38px; padding: var(--space-2) var(--space-3); }
+.dl-field-row-main select { flex: 0 1 190px; min-height: 38px; padding: var(--space-2) var(--space-3); }
+.dl-field-row .dl-icon-btn { width: 30px; height: 30px; font-size: 0.75rem; }
+.dl-field-move { display: flex; flex-direction: column; gap: 2px; }
+.dl-check { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-sm); font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
+.dl-check input { width: auto; min-height: 0; padding: 0; }
+
+/* Day toggle buttons in the item form */
+.dl-day-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+.dl-day-picker .dl-chip[aria-pressed='true'] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-white); }
+.dl-hint { margin: 0; font-size: var(--fs-sm); color: var(--color-text-muted); }
+
+/* Image field: dashed drop box */
+.dl-image-field {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  gap: var(--space-2);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.dl-image-field.gf-dropzone-active { border-color: var(--color-primary); background: var(--color-bg); }
+.dl-image-field .gf-photo-preview { width: 120px; height: 90px; background: #fff; }
+.dl-image-field .gf-photo-preview-img { object-fit: contain; }
+
+@media (max-width: 1100px) { .dl-card { flex-basis: calc((100% - 2 * var(--space-4)) / 3); } }
+@media (max-width: 800px)  { .dl-card { flex-basis: calc((100% - var(--space-4)) / 2); } }
+@media (max-width: 480px)  { .dl-card { flex-basis: 100%; } }
+
+@media (max-width: 560px) {
+  .dl-modal-card { padding: var(--space-5); }
+  .dl-field-row { grid-template-columns: 1fr; }
+  .dl-field-move { flex-direction: row; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl-card { transition: none; }
+}

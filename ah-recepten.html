@@ -94,6 +94,21 @@
             <button type="button" id="reptSearchBtn" class="btn btn-primary">Zoeken</button>
           </div>
 
+          <!-- Sorteren + snelfilters. Werkt op de recepten die nu getoond worden
+               (kcal en bereidingstijd komen uit de opgeslagen lijst; recepten
+               zonder die gegevens komen onderaan / vallen bij een filter af). -->
+          <div id="reptSortRow" class="rpt-sort-row">
+            <label for="reptSortSelect">↕️ Sorteren</label>
+            <select id="reptSortSelect">
+              <option value="default">Standaard</option>
+              <option value="kcal">Gezondst eerst (minste kcal)</option>
+              <option value="time">Snelst klaar (kortste tijd)</option>
+              <option value="title">Naam (A–Z)</option>
+            </select>
+            <button type="button" id="reptFilterFast" class="rpt-chip" aria-pressed="false">⚡ Max. 30 min</button>
+            <button type="button" id="reptFilterLight" class="rpt-chip" aria-pressed="false">🥗 Max. 500 kcal</button>
+          </div>
+
           <!-- Aantal personen: standaardwaarde voor elk recept dat je
                opent (zie ook de stepper in de modal hieronder, die deze
                waarde overneemt maar er per recept van kan afwijken). -->
@@ -164,7 +179,10 @@
             </section>
           </div>
 
-          <div class="text-center mt-2">
+          <div class="rpt-modal-actions">
+            <!-- Maakt een NIEUW boodschappenlijstje van dit gerecht (eerst controleren,
+                 dan bevestigen) — logica in assets/js/modules/recipe-to-list.js -->
+            <button type="button" id="reptModalAddToList" class="btn btn-primary">🛒 Zet op boodschappenlijstje</button>
             <a id="reptModalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
               Bekijk op AH.nl
             </a>

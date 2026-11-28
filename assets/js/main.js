@@ -44,6 +44,7 @@ import { initTodo } from './modules/todo.js';
 import { initSnackRating } from './modules/snack-rating.js';
 import { initClothing } from './modules/clothing.js';
 import { initGifts } from './modules/gifts.js';
+import { initDealtjes } from './modules/dealtjes.js';
 import { initRecepten } from './modules/recepten.js';
 import { initAhRecepten } from './modules/ah-recepten.js';
 import { initCollections } from './modules/collections.js';
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit('initSnackRating', initSnackRating);     // snack-rating.html
   safeInit('initClothing', initClothing);           // clothing.html
   safeInit('initGifts', initGifts);                 // gifts.html
+  safeInit('initDealtjes', initDealtjes);           // dealtjes.html
   safeInit('initRecepten', initRecepten);           // recepten.html
   safeInit('initAhRecepten', initAhRecepten);        // ah-recepten.html
   safeInit('initCollections', initCollections);     // collections.html

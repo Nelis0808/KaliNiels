@@ -110,12 +110,6 @@
         <div id="reptModalLoading" class="rpt-modal-loading">Recept laden…</div>
 
         <div id="reptModalContent" class="rpt-modal-content hidden">
-          <!-- Hero image: bleeds out to the modal card's own edges
-               (negative margins in recepten.css) so it sits above
-               everything else in the modal, edge-to-edge, with the
-               close (✕) button floating on top of it. -->
-          <img id="reptModalImage" class="rpt-modal-image" alt="" referrerpolicy="no-referrer" loading="lazy">
-
           <h2 id="reptModalTitle" class="rpt-modal-title"></h2>
 
           <p id="reptModalDescription" class="rpt-modal-description"></p>
@@ -153,7 +147,10 @@
             </section>
           </div>
 
-          <div class="text-center mt-2">
+          <div class="rpt-modal-actions">
+            <!-- Maakt een NIEUW boodschappenlijstje van dit gerecht (eerst controleren,
+                 dan bevestigen) — logica in assets/js/modules/recipe-to-list.js -->
+            <button type="button" id="reptModalAddToList" class="btn btn-primary">🛒 Zet op boodschappenlijstje</button>
             <a id="reptModalSourceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
               Bekijk bron
             </a>

@@ -17,3 +17,20 @@
 /*  Hero heading and paragraph styles, including margin and font size. */
 .hero h1 { margin-bottom: var(--space-4); }
 .hero p  { font-size: var(--fs-lg); margin: 0 auto var(--space-6); }
+
+/* Even veel ruimte boven de titel als onder de laatste regel tekst.
+   Het eerste en laatste element in de hero krijgen geen eigen marge meer
+   (die telde er anders nog bovenop de padding), zodat de padding van
+   .hero zelf de enige ruimte is. Gaan H1 en/of p over meerdere regels,
+   dan blijft dat kloppen. */
+.hero > .container > :first-child { margin-top: 0; }
+.hero > .container > :last-child  { margin-bottom: 0; }
+
+/* Nog scherper: de lege ruimte die een lettertype standaard boven de
+   eerste en onder de laatste regel laat (line-height) wordt weggesneden
+   (Chrome/Edge/Safari). Browsers zonder text-box-trim gebruiken gewoon
+   bovenstaande marges. */
+@supports (text-box-trim: trim-start) {
+  .hero > .container > h1:first-child { text-box: trim-start cap alphabetic; }
+  .hero > .container > p:last-child   { text-box: trim-end cap alphabetic; }
+}

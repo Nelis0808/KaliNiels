@@ -451,6 +451,19 @@ sync across devices, `collectibles.js`'s `readStore()`/`writeStore()`
 are the only two functions that would need to change (swap them for
 `fetch` calls to a new Worker, following the same shape as §1.1).
 
+### 2.11 `cloudflare/dealtjes/` — Dealtjes
+
+**File:** `cloudflare/dealtjes/dealtjes_worker.js` (+ `wrangler.toml`)
+**Config field:** `dealtjes.workerUrl` in `config.js`.
+
+- **Bindings:** `DEALTJES_KV` (new KV namespace). No secrets, no login.
+- Same "read it all, write it all back" pattern as `rating`/`clothing`;
+  images are downscaled client-side and stored as data URLs in the document.
+- Routes: `GET /dealtjes[?since=]`, `PUT /dealtjes`.
+- Until `workerUrl` is replaced (it still contains `YOUR-SUBDOMAIN`) the page
+  works in a local-only mode (localStorage, this browser only).
+- Soorten items ("sjablonen") staan in `config.js` → `dealtjes.templates`.
+
 ### 2.8 `cloudflare/ticketmaster/` — Ticketmaster API proxy
 
 **File:** `cloudflare/ticketmaster/ticketmaster_worker.js`

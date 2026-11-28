@@ -6,6 +6,8 @@
 //   het scherm (en wordt groter, als een soort "hoofdknop").
 // - Na een willekeurig aantal ontwijkingen (3-10) verstopt "Nee" zich
 //   precies achter "Ja", zodat hij niet meer aan te klikken is.
+// - Elke keer dat "Nee" wegspringt wordt "Ja" een stukje groter.
+// - Zodra "Nee" onder "Ja" is gedoken wordt de Nee-knop helemaal verwijderd.
 // - Klikken op "Ja" toont het bedankbericht, wisselt de foto, en laat
 //   hartjes/sterren over het scherm vallen.
 //
@@ -32,6 +34,8 @@ export function initValentine() {
   let hasStarted = false; // has the chase begun (Ja moved to center)?
   let settled = false; // has Nee hidden behind Ja for good?
   let moveCount = 0;
+  let yesScale = 1; // groeit na elke ontwijking van "Nee"
+  const YES_GROWTH = 0.12; // +12% per sprong (vanuit het midden van de knop)
   const vanishAfter = 3 + Math.floor(Math.random() * 8); // random 3-10 inclusive
 
   // Freezes a button's current on-screen position as inline left/top,
@@ -117,18 +121,21 @@ export function initValentine() {
 
     const finalizeHidden = () => {
       noBtn.removeEventListener('transitionend', finalizeHidden);
-      noBtn.classList.remove('val-btn--hiding');
-      noBtn.classList.add('val-btn--stuck');
-
-      // Onbereikbaar maken voor muis, touch én toetsenbord.
-      noBtn.tabIndex = -1;
-      noBtn.setAttribute('aria-disabled', 'true');
-      noBtn.setAttribute('aria-hidden', 'true');
+      // Nee is nu helemaal onder Ja verdwenen: haal de knop uit de pagina
+      // (dan is hij er ook voor toetsenbord/schermlezer niet meer).
+      noBtn.remove();
     };
 
     noBtn.addEventListener('transitionend', finalizeHidden, { once: true });
     // Vangnet mocht transitionend niet vuren (bv. reduced motion).
     window.setTimeout(finalizeHidden, 900);
+  }
+
+  // "Ja" een stukje groter na elke sprong van "Nee". Via transform: scale zodat
+  // de knop vanuit zijn eigen midden groeit en op dezelfde plek blijft staan.
+  function growYes() {
+    yesScale += YES_GROWTH;
+    yesBtn.style.transform = `scale(${(yesScale * 2).toFixed(2)}, ${yesScale.toFixed(2)})`;
   }
 
   // Runs one dodge: starts the chase if needed, then either hides "Nee"
@@ -138,6 +145,7 @@ export function initValentine() {
 
     startChase();
     moveCount += 1;
+    growYes();
 
     if (moveCount >= vanishAfter) {
       hideNeeUnderJa();
@@ -203,11 +211,14 @@ export function initValentine() {
 
   yesBtn.addEventListener('click', sayYes);
 
-  // Handles the "Ja" click: swaps photo, shows the message, spawns hearts.
+  // Handles the "Ja" click: removes both buttons, swaps photo, shows the
+  // message, spawns hearts.
   function sayYes() {
     yesBtn.removeEventListener('click', sayYes);
-    yesBtn.disabled = true;
-    noBtn.style.display = 'none';
+    yesBtn.disabled = true; // grijs...
+    yesBtn.remove(); // ...en meteen weg
+    noBtn.remove();
+    document.getElementById('valButtons')?.remove();
     stage.classList.add('val-stage--yes');
 
     if (image && image.dataset.yesSrc) {
@@ -218,15 +229,8 @@ export function initValentine() {
     if (message) {
       message.hidden = false;
       message.textContent =
-        'Dankjewel cutie <3 Love you!!!!';
+        'Dankjewel cutie <3 Love you!!!';
     }
-
-    // "Ja" terug naar een nette, statische plek in de flow.
-    yesBtn.classList.remove('val-btn--roaming');
-    yesBtn.style.position = '';
-    yesBtn.style.left = '';
-    yesBtn.style.top = '';
-    yesBtn.style.transform = '';
 
     if (!reduceMotion) spawnHearts();
   }
@@ -253,7 +257,7 @@ export function initValentine() {
   // Als "Nee" al verstopt zit onder "Ja" en het venster van formaat
   // verandert (bv. rotatie op mobiel), volg "Ja" mee.
   window.addEventListener('resize', () => {
-    if (!settled) return;
+    if (!settled || !noBtn.isConnected || !yesBtn.isConnected) return;
     const yesRect = yesBtn.getBoundingClientRect();
     const noWidth = noBtn.offsetWidth;
     const noHeight = noBtn.offsetHeight;

@@ -53,6 +53,7 @@
 
 import { siteConfig } from '../config.js';
 import { qs, qsa, escapeHtml, debounce, preventNumberInputScroll } from './utils.js';
+import { setupRecipeToList } from './recipe-to-list.js';
 
 const SERVINGS_STORAGE_KEY = 'recepten-personen';
 const MIN_SERVINGS = 1;
@@ -232,7 +233,6 @@ export function initRecepten() {
   const modalLoading = document.getElementById('reptModalLoading');
   const modalContent = document.getElementById('reptModalContent');
   const modalError = document.getElementById('reptModalError');
-  const modalImageEl = document.getElementById('reptModalImage');
   const modalTitleEl = document.getElementById('reptModalTitle');
   const modalFavoriteBtn = document.getElementById('reptModalFavorite');
   const modalDescriptionEl = document.getElementById('reptModalDescription');
@@ -549,23 +549,9 @@ export function initRecepten() {
   }
 
   function renderModalContent(data) {
-    // Real <img> (see recepten.html) rather than a CSS background so a
-    // failed/blocked load can be caught via onerror (falls back to
-    // hiding the element, same idea as the card grid's fallback icon —
-    // see renderCard()) instead of just silently showing nothing.
-    // referrerpolicy="no-referrer" is set once in the HTML; it matters
-    // here specifically because some image hosts (AH's included)
-    // refuse a hotlinked image whose Referer header names a different
-    // site than their own.
-    modalImageEl.onerror = () => { modalImageEl.classList.add('hidden'); };
-    if (data.image) {
-      modalImageEl.classList.remove('hidden');
-      modalImageEl.src = data.image;
-    } else {
-      modalImageEl.removeAttribute('src');
-      modalImageEl.classList.add('hidden');
-    }
-    modalImageEl.alt = data.title || '';
+    // Bewust geen grote foto meer bovenin de popup (net als bij
+    // AH-Recepten): alleen titel, info, ingrediënten en bereiding.
+    // De kaartjes in het overzicht houden hun eigen plaatje.
     modalTitleEl.textContent = data.title || 'Recept';
 
     modalDescriptionEl.textContent = data.description || '';
@@ -720,6 +706,28 @@ export function initRecepten() {
     modalServingsInput.value = clampServings(parseInt(modalServingsInput.value, 10) + 1);
     renderScaledIngredients();
   });
+
+  // 🛒 Dit gerecht als nieuw boodschappenlijstje (dialoog + bevestiging +
+  // melding): zie recipe-to-list.js. Gebruikt de hoeveelheden zoals ze nu
+  // in de popup staan (al geschaald naar het gekozen aantal personen).
+  setupRecipeToList({
+    button: document.getElementById('reptModalAddToList'),
+    getRecipe: () => {
+      if (!currentDetail) return null;
+      const target = clampServings(parseInt(modalServingsInput.value, 10));
+      const ratio = target / (currentDetail.servings || 4);
+      return {
+        title: currentDetail.title || 'Recept',
+        servings: target,
+        lines: (currentDetail.ingredients || []).map((ingredient) => (
+          ingredient.quantity == null
+            ? String(ingredient.raw || '').trim()
+            : `${formatQuantity(ingredient.quantity * ratio)} ${ingredient.rest || ''}`.trim()
+        )).filter(Boolean),
+      };
+    },
+  });
+
 
   // ---- Initial load --------------------------------------------------
   // Favorites are fetched in parallel instead of awaited first: a slow or

@@ -155,6 +155,13 @@ export const siteConfig = {
       status: 'available',
     },
     {
+      title: 'Dealtjes',
+      description: 'Kortingen en acties per categorie, met dagen.',
+      href: 'dealtjes.html',
+      emoji: '🏷️',
+      status: 'available',
+    },
+    {
       title: 'TODO Lijst',
       description: 'Met prioriteit per taak.',
       href: 'todo.html',
@@ -404,6 +411,15 @@ export const siteConfig = {
           { id: 'groente', label: 'Groente', query: 'groenteschotel' },
         ],
       },
+      {
+        id: 'airfryer', label: 'Airfryer', emoji: '🍟', type: 'airfryer',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'groente', label: 'Groente', query: 'groente' },
+          { id: 'aardappel', label: 'Aardappel', query: 'aardappel' },
+          { id: 'vis', label: 'Vis', query: 'vis' },
+        ],
+      },
     ],
   },
 
@@ -549,6 +565,21 @@ export const siteConfig = {
           { id: 'peulvruchten', label: 'Peulvruchten', query: 'peulvruchten' },
           { id: 'groente', label: 'Groente', query: 'groenteschotel' },
         ],
+      },
+      {
+        id: 'airfryer', label: 'Airfryer', emoji: '🍟', type: 'airfryer',
+        subcategories: [
+          { id: 'kip', label: 'Kip', query: 'kip' },
+          { id: 'groente', label: 'Groente', query: 'groente' },
+          { id: 'aardappel', label: 'Aardappel', query: 'aardappel' },
+          { id: 'vis', label: 'Vis', query: 'vis' },
+        ],
+      },
+      // Alleen AH-vers-pakketten. Geen subcategorieën. `type` is best-effort,
+      // zoals bij de andere categorieën (valt anders terug op trefwoord 'verspakket').
+      {
+        id: 'verspakket', label: 'Vers pakket', emoji: '📦', type: 'verspakket',
+        subcategories: [],
       },
     ],
   },
@@ -698,6 +729,71 @@ export const siteConfig = {
       a: 'Niels',
       b: 'Kalina',
     },
+  },
+
+  // Config for the Dealtjes page (assets/js/modules/dealtjes.js).
+  // Opslag: één Worker + KV-namespace (zie cloudflare/dealtjes/ en
+  // ACTION-EXPANSION-PLAN.md §2.11). De Worker moet 'dealtjes' heten
+  // (wrangler.toml) om op deze URL te staan. Bevat workerUrl hieronder
+  // 'YOUR-SUBDOMAIN', dan slaat de pagina alles alleen op in dit ene
+  // apparaat/browser (localStorage).
+  //
+  // `templates` = de keuzelijst "wat voor soort items?" bij het aanmaken
+  // van een nieuwe categorie. Elk veld heeft:
+  //   - label:   wat er boven het invulveld / op de kaart staat
+  //   - type:    'text' | 'longtext' | 'link' | 'image' | 'days' | 'tags'
+  //   - visible: false = wel invulbaar, maar niet getoond op de kaart
+  // Een categorie kopieert het gekozen sjabloon bij het aanmaken en kan
+  // daarna op de pagina zelf (✏️ bij de categorie) worden aangepast:
+  // velden toevoegen, hernoemen, verplaatsen, verbergen of verwijderen.
+  // Nieuw soort sjabloon nodig? Voeg hier gewoon een entry toe.
+  dealtjes: {
+    workerUrl: 'https://dealtjes.niels-luijten7.workers.dev',
+    templates: [
+      {
+        id: 'deal',
+        emoji: '🏷️',
+        label: 'Dealtje',
+        description: 'Naam, logo, link, beschrijving en dagen',
+        fields: [
+          { label: 'Naam', type: 'text', visible: true },
+          { label: 'Logo', type: 'image', visible: true },
+          { label: 'Link', type: 'link', visible: true },
+          { label: 'Beschrijving', type: 'longtext', visible: true },
+          { label: 'Dagen', type: 'days', visible: true },
+        ],
+      },
+      {
+        id: 'logo',
+        emoji: '🖼️',
+        label: 'Logo + link',
+        description: 'Alleen een logo met een link erbij',
+        fields: [
+          { label: 'Naam', type: 'text', visible: false },
+          { label: 'Logo', type: 'image', visible: true },
+          { label: 'Link', type: 'link', visible: true },
+        ],
+      },
+      {
+        id: 'tekst',
+        emoji: '📝',
+        label: 'Tekst',
+        description: 'Een titel met een beschrijving',
+        fields: [
+          { label: 'Titel', type: 'text', visible: true },
+          { label: 'Beschrijving', type: 'longtext', visible: true },
+        ],
+      },
+      {
+        id: 'leeg',
+        emoji: '🧩',
+        label: 'Zelf samenstellen',
+        description: 'Begin met alleen een naam en bouw zelf verder',
+        fields: [
+          { label: 'Naam', type: 'text', visible: true },
+        ],
+      },
+    ],
   },
 
   // Config for the shared chip balance used by BlackJack

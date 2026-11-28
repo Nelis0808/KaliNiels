@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!--
+  DEALTJES PAGE
+  Kortingen/acties, gegroepeerd per categorie (bv. Tanken -> Tinq, Esso).
+  Per categorie kies je zelf welke velden een item heeft (naam, logo,
+  link, beschrijving, dagen, ...) en welke daarvan op de kaart getoond
+  worden. Logica staat in assets/js/modules/dealtjes.js — dit bestand
+  bevat alleen de skeletmarkup (toolbar, lijst, popup) die de module vult.
+  Opslag: Cloudflare Worker + KV (cloudflare/dealtjes/), en zolang die
+  nog niet is gekoppeld: localStorage in deze browser.
+-->
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Dealtjes en acties per categorie, met dagen.">
+  <meta name="theme-color" content="#F5F5F5">
+
+  <title>Dealtjes</title>
+
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/pages/gifts.css">
+  <link rel="stylesheet" href="assets/css/pages/dealtjes.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Ga naar inhoud</a>
+
+  <noscript>
+    <p style="text-align:center; padding:1rem; background:#FFD700;">
+      Deze pagina heeft JavaScript nodig om te werken.
+    </p>
+  </noscript>
+
+  <div data-include="header"></div>
+
+  <main id="main">
+    <section id="hero" class="hero">
+      <div class="container">
+        <h1>🏷️ Dealtjes</h1>
+        <p>Alle kortingen en acties per categorie, met logo, link en de dagen waarop ze gelden.</p>
+      </div>
+    </section>
+
+    <section class="container" id="dealtjesApp">
+      <!-- Getoond zolang config.js's dealtjes.workerUrl nog de placeholder is -->
+      <div id="dlLocalNotice" class="gf-config-warning hidden">
+        ⚠️ Nog geen Worker gekoppeld: alles wordt nu alleen in <strong>dit apparaat</strong> bewaard.
+        Zie <strong>ACTION-EXPANSION-PLAN.md</strong> (§2.11) om het te delen en te synchroniseren.
+      </div>
+
+      <p id="dlStatus" class="dl-status hidden" aria-live="polite"></p>
+
+      <div class="dl-toolbar">
+        <button type="button" id="dlAddCategory" class="btn btn-primary">➕ Nieuwe categorie</button>
+        <button type="button" id="dlTodayToggle" class="btn btn-outline" aria-pressed="false">📅 Alleen vandaag</button>
+        <!-- Weergave: elke categorie apart, of alles samen in één blok per dag -->
+        <div class="dl-view-toggle" role="group" aria-label="Weergave">
+          <button type="button" id="dlViewCategories" class="btn btn-outline" aria-pressed="true">📂 Per categorie</button>
+          <button type="button" id="dlViewAll" class="btn btn-outline" aria-pressed="false">🗓️ Alles samen</button>
+        </div>
+      </div>
+
+      <div id="dlCategories" class="dl-categories"></div>
+      <div id="dlEmpty" class="empty-state hidden">Nog geen categorieën. Maak er een aan, bijvoorbeeld “Tanken”.</div>
+    </section>
+  </main>
+
+  <!-- POPUP — gevuld door dealtjes.js (categorie aanmaken/aanpassen, item toevoegen/aanpassen) -->
+  <div id="dlModalOverlay" class="dl-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dlModalTitle">
+    <div class="dl-modal-card">
+      <button type="button" id="dlModalClose" class="dl-modal-close" aria-label="Sluiten">✕</button>
+      <h2 id="dlModalTitle" class="dl-modal-title"></h2>
+      <div id="dlModalBody"></div>
+    </div>
+  </div>
+
+  <div data-include="chrome-end"></div>
+
+  <script src="assets/js/main-watchdog.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
